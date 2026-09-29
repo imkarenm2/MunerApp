@@ -1,0 +1,148 @@
+@{
+    ViewData["Title"] = "Guía de estilos";
+    var colores = new[]
+    {
+        ("Principal", "#0F5257", "--mu-principal", "Botones principales, enlaces, encabezados"),
+        ("Acento", "#E8704A", "--mu-acento", "Íconos y detalles decorativos"),
+        ("Acento fuerte", "#C4461F", "--mu-acento-fuerte", "Botón de apoyar (donar, apadrinar)"),
+        ("Éxito", "#2E9E6B", "--mu-exito", "Progreso de causas, confirmaciones"),
+        ("Alerta", "#B7791F", "--mu-alerta", "Pendientes, advertencias"),
+        ("Error", "#C0392B", "--mu-error", "Errores y validaciones"),
+        ("Fondo", "#FAF8F5", "--mu-fondo", "Fondo general"),
+        ("Texto", "#1F2A2E", "--mu-texto", "Texto principal"),
+    };
+}
+
+<div class="container py-5">
+    <span class="mu-badge acento mb-2">Solo desarrollo</span>
+    <h1 class="mb-2">Guía de estilos de MunerApp</h1>
+    <p class="text-suave mb-5">Copien de aquí los componentes. Si necesitan uno nuevo, agréguenlo a <code>site.css</code> y a esta página.</p>
+
+    <h2 class="h4 mb-3">Colores</h2>
+    <div class="row g-3 mb-5">
+        @foreach (var (nombre, hex, variable, uso) in colores)
+        {
+            <div class="col-6 col-md-3">
+                <div class="muestra-color mb-2" style="background: @hex"></div>
+                <div class="fw-semibold">@nombre</div>
+                <div class="small text-suave"><code>@variable</code> · @hex</div>
+                <div class="small text-suave">@uso</div>
+            </div>
+        }
+    </div>
+
+    <h2 class="h4 mb-3">Tipografía</h2>
+    <div class="mu-card p-4 mb-5">
+        <h1 class="mb-1">Título 1 · Nunito 800</h1>
+        <h2 class="mb-1">Título 2</h2>
+        <h3 class="mb-3">Título 3</h3>
+        <p class="lead">Texto destacado · Inter</p>
+        <p class="mb-1">Texto normal. Úsenlo para párrafos y descripciones.</p>
+        <p class="text-suave mb-0">Texto suave (<code>.text-suave</code>) para ayudas y datos secundarios.</p>
+    </div>
+
+    <h2 class="h4 mb-3">Botones</h2>
+    <div class="mu-card p-4 mb-2 d-flex flex-wrap gap-2 align-items-center">
+        <button class="btn btn-primary">Principal</button>
+        <button class="btn btn-apoyar"><i class="bi bi-heart-fill me-2"></i>Donar</button>
+        <button class="btn btn-outline-primary">Secundario</button>
+        <button class="btn btn-suave">Suave</button>
+        <button class="btn btn-google"><i class="bi bi-google"></i>Continuar con Google</button>
+        <button class="btn btn-primary" disabled>Deshabilitado</button>
+    </div>
+    <p class="small text-suave mb-5">
+        <code>.btn-apoyar</code> se usa solo para la acción de apoyo más importante de la pantalla (donar, apadrinar, postularse). Máximo uno por pantalla.
+    </p>
+
+    <h2 class="h4 mb-3">Formularios</h2>
+    <div class="mu-card p-4 mb-5" style="max-width: 520px">
+        <div class="mb-3">
+            <label class="form-label" for="demoCorreo">Correo electrónico</label>
+            <div class="input-icono">
+                <i class="bi bi-envelope" aria-hidden="true"></i>
+                <input id="demoCorreo" class="form-control" placeholder="tucorreo@ejemplo.com" />
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="demoClave">Contraseña</label>
+            <div class="input-icono con-boton">
+                <i class="bi bi-lock" aria-hidden="true"></i>
+                <input id="demoClave" type="password" class="form-control" value="secreto123" />
+                <button type="button" class="btn-ver-clave" data-ver-clave="demoClave" aria-label="Mostrar contraseña"><i class="bi bi-eye"></i></button>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="demoError">Campo con error</label>
+            <input id="demoError" class="form-control input-validation-error" value="correo-invalido" />
+            <span class="field-validation-error">El correo no es válido.</span>
+        </div>
+        <div class="mb-0">
+            <label class="form-label" for="demoSelect">Selección</label>
+            <select id="demoSelect" class="form-select"><option>Fundación infantil</option><option>Refugio animal</option></select>
+        </div>
+    </div>
+
+    <h2 class="h4 mb-3">Tarjeta de causa (vaki)</h2>
+    <div class="row g-4 mb-5">
+        <div class="col-12 col-md-6 col-lg-4">
+            <article class="mu-card mu-card-hover h-100 overflow-hidden">
+                <div class="bg-light d-flex align-items-center justify-content-center text-suave" style="height: 160px">
+                    <i class="bi bi-image fs-1" aria-hidden="true"></i>
+                </div>
+                <div class="p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="mu-badge exito">Activa</span>
+                        <span class="small text-suave"><i class="bi bi-clock me-1"></i>12 días</span>
+                    </div>
+                    <h3 class="h5">Título de la causa</h3>
+                    <p class="text-suave small">Descripción corta de la necesidad que se quiere cubrir.</p>
+                    <div class="mu-progreso mb-2"><span style="width: 42%"></span></div>
+                    <div class="d-flex justify-content-between small mb-3">
+                        <span><strong>$840.000</strong> de $2.000.000</span>
+                        <span class="text-suave">42 %</span>
+                    </div>
+                    <button class="btn btn-apoyar w-100">Donar a esta causa</button>
+                </div>
+            </article>
+        </div>
+    </div>
+
+    <h2 class="h4 mb-3">Insignias de estado</h2>
+    <div class="d-flex flex-wrap gap-2 mb-5">
+        <span class="mu-badge">Informativa</span>
+        <span class="mu-badge exito"><i class="bi bi-check-circle"></i>Confirmada</span>
+        <span class="mu-badge alerta"><i class="bi bi-hourglass-split"></i>Pendiente</span>
+        <span class="mu-badge error"><i class="bi bi-x-circle"></i>Rechazada</span>
+        <span class="mu-badge acento">Destacada</span>
+    </div>
+
+    <h2 class="h4 mb-3">Alertas</h2>
+    <div class="mb-5" style="max-width: 640px">
+        <div class="alert alert-success"><i class="bi bi-check-circle-fill"></i><div>Tu donación fue confirmada.</div></div>
+        <div class="alert alert-info"><i class="bi bi-info-circle-fill"></i><div>Recibirás el comprobante en tu correo.</div></div>
+        <div class="alert alert-warning"><i class="bi bi-exclamation-triangle-fill"></i><div>Este medicamento vence en 5 días.</div></div>
+        <div class="alert alert-danger"><i class="bi bi-exclamation-circle-fill"></i><div>No pudimos procesar el pago.</div></div>
+    </div>
+
+    <h2 class="h4 mb-3">Íconos</h2>
+    <p class="text-suave">Usamos <a href="https://icons.getbootstrap.com/" target="_blank" rel="noopener">Bootstrap Icons</a>: <code>&lt;i class="bi bi-heart"&gt;&lt;/i&gt;</code></p>
+    <div class="d-flex flex-wrap gap-3 mb-5">
+        <div class="icono-circulo"><i class="bi bi-house-heart"></i></div>
+        <div class="icono-circulo acento"><i class="bi bi-cash-coin"></i></div>
+        <div class="icono-circulo exito"><i class="bi bi-people"></i></div>
+        <div class="icono-circulo alerta"><i class="bi bi-capsule"></i></div>
+    </div>
+
+    <h2 class="h4 mb-3">Reglas para que la plataforma sea intuitiva</h2>
+    <div class="mu-card p-4">
+        <ol class="mb-0 d-grid gap-2">
+            <li><strong>Una acción principal por pantalla.</strong> Si todo resalta, nada resalta.</li>
+            <li><strong>Textos cercanos y en segunda persona:</strong> "Crea tu cuenta", no "Registro de usuario".</li>
+            <li><strong>Los errores dicen cómo arreglarlo:</strong> "La contraseña debe tener un número", no "Dato inválido".</li>
+            <li><strong>Siempre confirmar lo que pasó:</strong> después de guardar, mostrar un mensaje de éxito.</li>
+            <li><strong>Pantallas vacías con salida:</strong> si no hay datos, explicar por qué y qué hacer.</li>
+            <li><strong>Pensar primero en celular:</strong> probar cada pantalla en 375 px de ancho.</li>
+            <li><strong>Accesibilidad:</strong> todo input con su label, todo ícono decorativo con <code>aria-hidden="true"</code>.</li>
+        </ol>
+    </div>
+</div>

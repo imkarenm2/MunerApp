@@ -1,0 +1,17 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+*.rsuser
+[Dd]ebug/
+[Rr]elease/
+TestResults/
+*.log
+
+## Secretos: nunca subir
+appsettings.*.local.json
+*.pfx
+.env

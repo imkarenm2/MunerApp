@@ -1,0 +1,150 @@
+@{
+    ViewData["Title"] = "Apoya a las fundaciones de tu región";
+    var autenticado = User.Identity?.IsAuthenticated ?? false;
+}
+
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center gy-5">
+            <div class="col-12 col-lg-6">
+                <span class="hero-etiqueta mb-3"><i class="bi bi-shield-check" aria-hidden="true"></i> Ayuda transparente</span>
+                <h1 class="mb-3">Tu ayuda llega.<br /><span class="text-principal">Y puedes verlo.</span></h1>
+                <p class="lead mb-4">
+                    Conoce a las fundaciones de tu región, mira en qué se usa cada donación
+                    y elige la forma de apoyar que va contigo.
+                </p>
+                <div class="d-flex flex-column flex-sm-row gap-2">
+                    @* TODO HU-010: enlazar al listado de fundaciones *@
+                    <a class="btn btn-apoyar btn-lg" href="#fundaciones"><i class="bi bi-heart-fill me-2" aria-hidden="true"></i>Quiero ayudar</a>
+                    @if (!autenticado)
+                    {
+                        <a class="btn btn-outline-primary btn-lg" asp-controller="Cuenta" asp-action="Registrar">Crear mi cuenta</a>
+                    }
+                </div>
+            </div>
+            <div class="col-12 col-lg-6">
+                <div class="hero-panel mx-auto" style="max-width: 460px" aria-hidden="true">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="icono-circulo acento"><i class="bi bi-house-heart"></i></div>
+                        <div>
+                            <div class="fw-bold">Causa de ejemplo</div>
+                            <div class="small text-suave">Así se ve una causa en MunerApp</div>
+                        </div>
+                        <span class="mu-badge exito ms-auto">Activa</span>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-2">
+                        <span class="fw-semibold">Recaudado</span>
+                        <span class="text-suave">65 %</span>
+                    </div>
+                    <div class="mu-progreso mb-3"><span style="width: 65%"></span></div>
+                    <div class="row g-2 text-center small">
+                        <div class="col-4"><div class="mu-card py-2"><i class="bi bi-cash-coin text-principal"></i><div>Donar</div></div></div>
+                        <div class="col-4"><div class="mu-card py-2"><i class="bi bi-balloon-heart text-acento"></i><div>Apadrinar</div></div></div>
+                        <div class="col-4"><div class="mu-card py-2"><i class="bi bi-people text-principal"></i><div>Voluntariado</div></div></div>
+                    </div>
+                    <div class="alert alert-info small mt-3 mb-0">
+                        <i class="bi bi-receipt" aria-hidden="true"></i>
+                        <div>Cada donación confirmada genera un comprobante.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="seccion seccion-blanca" id="formas-de-ayudar">
+    <div class="container">
+        <div class="seccion-titulo">
+            <div class="sobretitulo mb-2">Formas de ayudar</div>
+            <h2 class="h1">Hay más de una forma de apoyar</h2>
+            <p class="text-suave mb-0">Cada fundación elige cómo quiere recibir ayuda. Tú eliges la que mejor se ajusta a ti.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="mu-card mu-card-hover h-100 p-4">
+                    <div class="icono-circulo acento mb-3"><i class="bi bi-cash-coin" aria-hidden="true"></i></div>
+                    <h3 class="h5">Donar</h3>
+                    <p class="text-suave mb-0">Aporta a una causa en línea o por transferencia, y recibe tu comprobante.</p>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="mu-card mu-card-hover h-100 p-4">
+                    <div class="icono-circulo mb-3"><i class="bi bi-balloon-heart" aria-hidden="true"></i></div>
+                    <h3 class="h5">Apadrinar</h3>
+                    <p class="text-suave mb-0">Acompaña a un beneficiario con un aporte periódico y sigue sus novedades.</p>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="mu-card mu-card-hover h-100 p-4">
+                    <div class="icono-circulo exito mb-3"><i class="bi bi-people" aria-hidden="true"></i></div>
+                    <h3 class="h5">Ser voluntario</h3>
+                    <p class="text-suave mb-0">Dona tu tiempo o tus conocimientos en las labores que la fundación necesita.</p>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="mu-card mu-card-hover h-100 p-4">
+                    <div class="icono-circulo alerta mb-3"><i class="bi bi-bag-heart" aria-hidden="true"></i></div>
+                    <h3 class="h5">Comprar en su tienda</h3>
+                    <p class="text-suave mb-0">Algunas fundaciones venden productos propios. Cada compra también ayuda.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="seccion" id="transparencia">
+    <div class="container">
+        <div class="seccion-titulo">
+            <div class="sobretitulo mb-2">Transparencia</div>
+            <h2 class="h1">Sabes a dónde va tu ayuda</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-12 col-md-4">
+                <div class="d-flex gap-3">
+                    <span class="paso-numero">1</span>
+                    <div>
+                        <h3 class="h5 mb-1">Conoce la fundación</h3>
+                        <p class="text-suave mb-0">Su historia, su misión y sus documentos legales, en un solo lugar.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="d-flex gap-3">
+                    <span class="paso-numero">2</span>
+                    <div>
+                        <h3 class="h5 mb-1">Apoya con confianza</h3>
+                        <p class="text-suave mb-0">El dinero llega directo a la cuenta de la fundación, y tú recibes tu comprobante.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="d-flex gap-3">
+                    <span class="paso-numero">3</span>
+                    <div>
+                        <h3 class="h5 mb-1">Mira el resultado</h3>
+                        <p class="text-suave mb-0">La fundación publica en qué se usó cada causa, con fotos y soportes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="seccion pt-0" id="fundaciones">
+    <div class="container">
+        <div class="cta-fundaciones">
+            <div class="row align-items-center gy-3">
+                <div class="col-12 col-lg-8">
+                    <h2 class="mb-2">¿Eres una fundación?</h2>
+                    <p class="mb-0 opacity-75">
+                        Construimos MunerApp contigo: levantamos tus necesidades y activamos solo los módulos que te sirven.
+                    </p>
+                </div>
+                <div class="col-12 col-lg-4 text-lg-end">
+                    @* TODO: enlace a la solicitud de ingreso de ESAL (Sprint 2 en adelante) *@
+                    <a class="btn btn-light btn-lg fw-bold text-principal" href="#">Quiero participar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
