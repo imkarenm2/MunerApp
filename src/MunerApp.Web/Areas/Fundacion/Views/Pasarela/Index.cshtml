@@ -1,0 +1,79 @@
+@model PasarelaViewModel
+@{
+    ViewData["Title"] = "Pagos en línea";
+    ViewData["Seccion"] = "Pasarela";
+}
+<div class="container py-4 py-md-5">
+    <h1 class="h2 mb-1">Pagos en línea con Wompi</h1>
+    <p class="text-suave mb-3">Con tu cuenta de Wompi, los donantes pueden pagar las causas con tarjeta, PSE o Nequi. El dinero llega directo a la cuenta de la fundación.</p>
+
+    <partial name="_NavFundacion" />
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            @if (Model.TieneConfiguracion)
+            {
+                <div class="alert @(Model.Activa ? "alert-success" : "alert-warning")" role="status">
+                    <i class="bi @(Model.Activa ? "bi-check-circle-fill" : "bi-pause-circle-fill")" aria-hidden="true"></i>
+                    <div>
+                        @if (Model.Activa)
+                        {
+                            <span>Pagos en línea <strong>habilitados</strong> @(Model.Ambiente == "Sandbox" ? "en modo de pruebas (sandbox)" : "en producción").</span>
+                        }
+                        else
+                        {
+                            <span>Los pagos en línea están <strong>desactivados</strong>.</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <form asp-action="Index" method="post" novalidate class="mu-card p-4">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <div class="mb-3">
+                    <label asp-for="LlavePublica" class="form-label"></label>
+                    <input asp-for="LlavePublica" class="form-control font-monospace" placeholder="pub_test_..." autocomplete="off" />
+                    <span asp-validation-for="LlavePublica"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="SecretoIntegridad" class="form-label"></label>
+                    <input asp-for="SecretoIntegridad" type="password" class="form-control font-monospace" autocomplete="off"
+                           placeholder="@(Model.TieneConfiguracion ? "•••••••• (déjalo vacío para no cambiarlo)" : "test_integrity_...")" />
+                    <span asp-validation-for="SecretoIntegridad"></span>
+                </div>
+                <div class="mb-4">
+                    <label asp-for="SecretoEventos" class="form-label"></label>
+                    <input asp-for="SecretoEventos" type="password" class="form-control font-monospace" autocomplete="off"
+                           placeholder="@(Model.TieneConfiguracion ? "•••••••• (déjalo vacío para no cambiarlo)" : "test_events_...")" />
+                    <span asp-validation-for="SecretoEventos"></span>
+                </div>
+                <div class="d-flex flex-column flex-sm-row gap-2">
+                    <button type="submit" class="btn btn-primary" data-cargando="Verificando con Wompi...">
+                        @(Model.TieneConfiguracion ? "Guardar y verificar" : "Verificar y habilitar pagos")
+                    </button>
+                </div>
+            </form>
+
+            @if (Model.TieneConfiguracion && Model.Activa)
+            {
+                <form asp-action="Desactivar" method="post" class="mt-3">
+                    <button type="submit" class="btn btn-link text-danger p-0 small">Desactivar pagos en línea</button>
+                </form>
+            }
+        </div>
+        <div class="col-12 col-lg-5">
+            <div class="mu-card p-4">
+                <h2 class="h6 fw-bold mb-3"><i class="bi bi-question-circle me-1 text-principal" aria-hidden="true"></i>¿Dónde encuentro estas llaves?</h2>
+                <ol class="small text-suave ps-3 mb-3 d-grid gap-1">
+                    <li>Entra a tu panel de comercios de Wompi.</li>
+                    <li>Ve a <strong>Desarrolladores</strong>.</li>
+                    <li>Copia la llave pública y los secretos de integridad y de eventos.</li>
+                </ol>
+                <div class="alert alert-info small mb-0">
+                    <i class="bi bi-lock-fill" aria-hidden="true"></i>
+                    <div>Los secretos se guardan cifrados y nunca se vuelven a mostrar. MunerApp no recibe ni guarda datos de tarjetas.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

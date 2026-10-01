@@ -1,0 +1,48 @@
+@model EsalDatosViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Editar fundación";
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Fundaciones</a>
+    <h1 class="h2 mt-2 mb-4">Editar @Model.Nombre</h1>
+
+    <form asp-action="Editar" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <input type="hidden" asp-for="Id" />
+        <div class="mu-card p-4 mb-4">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label asp-for="Nombre" class="form-label"></label>
+                        <input asp-for="Nombre" class="form-control" placeholder="Ej. Fundación El Reino de los Gatos" />
+                        <span asp-validation-for="Nombre"></span>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label asp-for="Nit" class="form-label"></label>
+                        <input asp-for="Nit" class="form-control" placeholder="900123456-7" inputmode="numeric" />
+                        <span asp-validation-for="Nit"></span>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label asp-for="TipoEntidad" class="form-label"></label>
+                        <select asp-for="TipoEntidad" class="form-select" asp-items="@(new SelectList(TiposEntidad.Todos))">
+                            <option value="">Selecciona...</option>
+                        </select>
+                        <span asp-validation-for="TipoEntidad"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="CorreoContacto" class="form-label"></label>
+                        <input asp-for="CorreoContacto" class="form-control" placeholder="contacto@fundacion.org" />
+                        <span asp-validation-for="CorreoContacto"></span>
+                    </div>
+                </div>
+        </div>
+        <div class="d-flex flex-column flex-sm-row gap-2 justify-content-end">
+            <a asp-action="Index" class="btn btn-suave">Cancelar</a>
+            <button type="submit" class="btn btn-primary" data-cargando="Guardando...">Guardar cambios</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

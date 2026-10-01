@@ -19,9 +19,17 @@
                 <div class="small text-suave">@User.Identity?.Name</div>
             </li>
             <li><hr class="dropdown-divider" /></li>
-            @* TODO HU-002: enlaces a "Mi panel", "Mis donaciones" según el rol *@
+            @if (User.IsInRole(Roles.SuperAdministrador))
+            {
+                <li><a class="dropdown-item rounded-2" asp-area="Plataforma" asp-controller="Esales" asp-action="Index"><i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Panel de plataforma</a></li>
+            }
+            @if (User.IsInRole(Roles.AdministradorESAL) || User.IsInRole(Roles.Voluntario))
+            {
+                <li><a class="dropdown-item rounded-2" asp-area="Fundacion" asp-controller="Panel" asp-action="Index"><i class="bi bi-grid me-2" aria-hidden="true"></i>Panel de mi fundación</a></li>
+            }
+            @* TODO Sprint 2 (HU-014): "Mis donaciones" para donantes *@
             <li>
-                <form asp-controller="Cuenta" asp-action="CerrarSesion" method="post">
+                <form asp-area="" asp-controller="Cuenta" asp-action="CerrarSesion" method="post">
                     <button type="submit" class="dropdown-item rounded-2">
                         <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Cerrar sesión
                     </button>
@@ -33,7 +41,7 @@
 else
 {
     <div class="d-flex flex-column flex-lg-row gap-2">
-        <a class="btn btn-suave" asp-controller="Cuenta" asp-action="IniciarSesion">Iniciar sesión</a>
-        <a class="btn btn-primary" asp-controller="Cuenta" asp-action="Registrar">Crear cuenta</a>
+        <a class="btn btn-suave" asp-area="" asp-controller="Cuenta" asp-action="IniciarSesion">Iniciar sesión</a>
+        <a class="btn btn-primary" asp-area="" asp-controller="Cuenta" asp-action="Registrar">Crear cuenta</a>
     </div>
 }

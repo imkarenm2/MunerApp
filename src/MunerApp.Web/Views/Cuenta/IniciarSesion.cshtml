@@ -10,7 +10,7 @@
                 <h1 class="h3 mb-1">¡Hola de nuevo!</h1>
                 <p class="text-suave mb-4">Inicia sesión para seguir apoyando.</p>
 
-                @* TODO HU-003 (Santiago): botón "Continuar con Google" aquí, con separador "o" *@
+                <partial name="_BotonGoogle" />
 
                 <form asp-action="IniciarSesion" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" novalidate>
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2" role="alert"></div>
@@ -27,8 +27,7 @@
                     <div class="mb-2">
                         <div class="d-flex justify-content-between align-items-baseline">
                             <label asp-for="Contrasena" class="form-label"></label>
-                            @* TODO HU-004 (Santiago): asp-action="OlvideContrasena" *@
-                            <a href="#" class="small">¿Olvidaste tu contraseña?</a>
+                            <a asp-action="OlvideContrasena" class="small">¿Olvidaste tu contraseña?</a>
                         </div>
                         <div class="input-icono con-boton">
                             <i class="bi bi-lock" aria-hidden="true"></i>

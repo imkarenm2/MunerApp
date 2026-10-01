@@ -16,6 +16,8 @@ public static class DependencyInjection
 
         services.AddScoped<IModuloService, ModuloService>();
         services.AddScoped<ICorreoService, CorreoSmtpService>();
+        services.AddScoped<ISecretosService, SecretosService>();
+        services.AddHttpClient<IWompiService, WompiService>();
 
         return services;
     }

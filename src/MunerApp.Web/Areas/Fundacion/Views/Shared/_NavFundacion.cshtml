@@ -1,0 +1,18 @@
+@{
+    var seccion = ViewData["Seccion"] as string ?? "";
+    var principal = User.IsInRole(Roles.AdministradorESAL) && User.HasClaim(MunerAppClaims.Perfil, Perfiles.Principal);
+    var admin = User.IsInRole(Roles.AdministradorESAL);
+    string Activa(string s) => s == seccion ? "active" : "";
+}
+<nav class="nav nav-pills nav-panel mb-4 flex-nowrap overflow-auto" aria-label="Secciones del panel">
+    <a class="nav-link @Activa("Inicio")" asp-area="Fundacion" asp-controller="Panel" asp-action="Index"><i class="bi bi-grid me-1" aria-hidden="true"></i>Inicio</a>
+    @if (admin)
+    {
+        <a class="nav-link @Activa("Usuarios")" asp-area="Fundacion" asp-controller="Usuarios" asp-action="Index"><i class="bi bi-people me-1" aria-hidden="true"></i>Equipo</a>
+    }
+    @if (principal)
+    {
+        <a class="nav-link @Activa("Redes")" asp-area="Fundacion" asp-controller="Redes" asp-action="Index"><i class="bi bi-share me-1" aria-hidden="true"></i>Redes sociales</a>
+        <a class="nav-link @Activa("Pasarela")" asp-area="Fundacion" asp-controller="Pasarela" asp-action="Index"><i class="bi bi-credit-card me-1" aria-hidden="true"></i>Pagos en línea</a>
+    }
+</nav>

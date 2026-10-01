@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MunerApp.Application.Interfaces;
+using MunerApp.Application.Seguridad;
+using MunerApp.Domain.Constantes;
 using MunerApp.Infrastructure;
 using MunerApp.Infrastructure.Identity;
 using MunerApp.Infrastructure.Persistence;
+using MunerApp.Web.Seguridad;
 using MunerApp.Web.Servicios;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +16,7 @@ builder.Services.AddControllersWithViews(options =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IEsalActual, EsalActual>();
+builder.Services.AddScoped<InvitacionService>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // ---- Identity (documento de diseño, sección 9) ----
@@ -32,8 +36,11 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
     .AddErrorDescriber<IdentityErrorDescriberEs>()
     .AddClaimsPrincipalFactory<MunerAppClaimsFactory>();
 
-// Enlaces de recuperación de contraseña: vigencia de 1 hora (HU-004)
+// Enlaces de recuperación e invitación: vigencia de 1 hora (HU-004)
 builder.Services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = TimeSpan.FromHours(1));
+
+// Si a un usuario le cambian el rol o lo desactivan, su sesión se revalida en máximo 1 minuto (HU-008)
+builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
 
 // Sesión: expiración por inactividad (HU-005)
 builder.Services.ConfigureApplicationCookie(options =>
@@ -45,6 +52,13 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(Politicas.AdminEsalPrincipal, p => p
+        .RequireRole(Roles.AdministradorESAL)
+        .RequireClaim(MunerAppClaims.Perfil, Perfiles.Principal));
 });
 
 // Login con Gmail (HU-003): se activa cuando se configuran las credenciales de Google
@@ -71,6 +85,10 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "areas",
+    pattern: "{area:exists}/{controller=Panel}/{action=Index}/{id?}");
 
 app.MapControllerRoute(
     name: "default",

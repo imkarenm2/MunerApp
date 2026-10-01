@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
+using MunerApp.Domain.Entities;
 using MunerApp.Infrastructure.Persistence;
 
 namespace MunerApp.Infrastructure.Servicios;
@@ -20,5 +21,18 @@ public class ModuloService : IModuloService
 
         return await _db.EsalModulos.IgnoreQueryFilters().AsNoTracking()
             .AnyAsync(em => em.EsalId == esalId && em.ModuloId == modulo.Id && em.Activo, ct);
+    }
+
+    public async Task<IReadOnlyList<Modulo>> ObtenerActivosAsync(int esalId, CancellationToken ct = default)
+    {
+        var configurablesActivos = await _db.EsalModulos.IgnoreQueryFilters().AsNoTracking()
+            .Where(em => em.EsalId == esalId && em.Activo)
+            .Select(em => em.ModuloId)
+            .ToListAsync(ct);
+
+        return await _db.Modulos.AsNoTracking()
+            .Where(m => !m.EsConfigurable || configurablesActivos.Contains(m.Id))
+            .OrderBy(m => m.Id)
+            .ToListAsync(ct);
     }
 }

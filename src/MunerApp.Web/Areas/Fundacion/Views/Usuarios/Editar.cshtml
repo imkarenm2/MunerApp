@@ -1,0 +1,55 @@
+@model UsuarioEsalFormViewModel
+@{
+    ViewData["Title"] = "Editar persona";
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Equipo</a>
+    <h1 class="h2 mt-2 mb-1">Editar persona</h1>
+    <p class="text-suave mb-4">Cambia su rol o su nombre.</p>
+
+    <form asp-action="Editar" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <input type="hidden" asp-for="Id" />
+        <div class="mu-card p-4 mb-4">
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label asp-for="NombreCompleto" class="form-label"></label>
+                    <input asp-for="NombreCompleto" class="form-control" />
+                    <span asp-validation-for="NombreCompleto"></span>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" readonly />
+                    <div class="form-text">El correo no se puede cambiar.</div>
+                </div>
+            </div>
+        </div>
+
+        <fieldset class="mb-4">
+            <legend class="form-label fs-6 mb-2">Rol en la fundación</legend>
+            <div class="d-grid gap-2">
+                @foreach (var opcion in UsuarioEsalFormViewModel.Opciones)
+                {
+                    var id = "rol-" + opcion.Valor.Replace("|", "-");
+                    <label class="mu-card p-3 d-flex gap-3 align-items-start rol-opcion" for="@id">
+                        <input class="form-check-input mt-1" type="radio" name="RolPerfil" id="@id" value="@opcion.Valor" @(Model.RolPerfil == opcion.Valor ? "checked" : "") />
+                        <span>
+                            <span class="fw-semibold d-block">@opcion.Texto</span>
+                            <span class="small text-suave">@opcion.Descripcion</span>
+                        </span>
+                    </label>
+                }
+            </div>
+            <span asp-validation-for="RolPerfil"></span>
+        </fieldset>
+
+        <div class="d-flex flex-column flex-sm-row gap-2 justify-content-end">
+            <a asp-action="Index" class="btn btn-suave">Cancelar</a>
+            <button type="submit" class="btn btn-primary" data-cargando="Guardando...">Guardar cambios</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,50 @@
+@model ModulosEsalViewModel
+@{
+    ViewData["Title"] = "Módulos de " + Model.EsalNombre;
+    var info = new Dictionary<string, (string Icono, string Descripcion)>
+    {
+        [CodigosModulo.Beneficiarios] = ("bi-balloon-heart", "Hoja de vida e historia clínica de los beneficiarios, y apadrinamiento."),
+        [CodigosModulo.Tienda] = ("bi-bag-heart", "Catálogo de productos en tarjetas y chat para acordar la compra."),
+        [CodigosModulo.Adopcion] = ("bi-house-heart", "Formulario de adopción y panel de revisión. Requiere Beneficiarios."),
+        [CodigosModulo.Salud] = ("bi-capsule", "Agenda de salud, inventario clínico y alertas. Requiere Beneficiarios.")
+    };
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Fundaciones</a>
+    <h1 class="h2 mt-2 mb-1">Módulos de @Model.EsalNombre</h1>
+    <p class="text-suave mb-4">
+        Perfil, donaciones, voluntariado y boletín están siempre activos.
+        Activa solo lo que la fundación necesita según el levantamiento.
+    </p>
+
+    <form asp-action="Modulos" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <input type="hidden" asp-for="EsalId" />
+        <div class="d-grid gap-3 mb-4">
+            @for (var i = 0; i < Model.Modulos.Count; i++)
+            {
+                var m = Model.Modulos[i];
+                var datos = info.TryGetValue(m.Codigo, out var d) ? d : ("bi-puzzle", "");
+                <label class="mu-card p-3 p-md-4 d-flex align-items-center gap-3 modulo-opcion" for="modulo-@m.ModuloId">
+                    <input type="hidden" asp-for="Modulos[i].ModuloId" />
+                    <input type="hidden" asp-for="Modulos[i].Codigo" />
+                    <input type="hidden" asp-for="Modulos[i].Nombre" />
+                    <div class="icono-circulo flex-shrink-0"><i class="bi @datos.Item1" aria-hidden="true"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">@m.Nombre</div>
+                        <div class="small text-suave">@datos.Item2</div>
+                    </div>
+                    <div class="form-check form-switch m-0">
+                        <input class="form-check-input fs-4" type="checkbox" role="switch" id="modulo-@m.ModuloId"
+                               name="Modulos[@i].Activo" value="true" @(m.Activo ? "checked" : "") />
+                    </div>
+                </label>
+            }
+        </div>
+        <p class="small text-suave"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Desactivar un módulo lo oculta, pero no borra la información registrada.</p>
+        <div class="d-flex flex-column flex-sm-row gap-2 justify-content-end">
+            <a asp-action="Index" class="btn btn-suave">Cancelar</a>
+            <button type="submit" class="btn btn-primary" data-cargando="Guardando...">Guardar módulos</button>
+        </div>
+    </form>
+</div>
