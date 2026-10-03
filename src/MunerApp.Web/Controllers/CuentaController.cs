@@ -292,6 +292,7 @@ public class CuentaController : Controller
     public async Task<IActionResult> CerrarSesion()
     {
         await _signInManager.SignOutAsync();
+        TempData["Mensaje"] = "Cerraste sesión correctamente. ¡Gracias por pasar!";
         return RedirectToAction("Index", "Home");
     }
 
@@ -320,6 +321,13 @@ public class CuentaController : Controller
     /// <summary>HU-002 escenario 1: cada rol llega a su panel.</summary>
     private async Task<IActionResult> RedirigirSegunRolAsync(Usuario usuario, string? returnUrl)
     {
+        // Mensaje de confirmación del ingreso (observación de pruebas Sprint 1); no pisa uno anterior
+        if (TempData.Peek("Mensaje") is null)
+        {
+            var nombre = (usuario.NombreCompleto ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            TempData["Mensaje"] = string.IsNullOrEmpty(nombre) ? "Iniciaste sesión." : $"Hola, {nombre}. Iniciaste sesión.";
+        }
+
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return LocalRedirect(returnUrl);
 

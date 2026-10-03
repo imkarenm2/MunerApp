@@ -1,3 +1,4 @@
+using MunerApp.Web.Validacion;
 using System.ComponentModel.DataAnnotations;
 
 namespace MunerApp.Web.Areas.Plataforma.Models;
@@ -33,7 +34,7 @@ public class EsalDatosViewModel
     public string TipoEntidad { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Ingresa el correo de contacto.")]
-    [EmailAddress(ErrorMessage = "El correo no es válido.")]
+    [Correo]
     [Display(Name = "Correo de contacto de la fundación")]
     public string CorreoContacto { get; set; } = string.Empty;
 }
@@ -46,7 +47,7 @@ public class EsalCrearViewModel : EsalDatosViewModel
     public string AdminNombre { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Ingresa el correo del administrador.")]
-    [EmailAddress(ErrorMessage = "El correo no es válido.")]
+    [Correo]
     [Display(Name = "Correo del administrador principal")]
     public string AdminEmail { get; set; } = string.Empty;
 }

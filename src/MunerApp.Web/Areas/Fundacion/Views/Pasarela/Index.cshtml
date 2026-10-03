@@ -56,7 +56,11 @@
 
             @if (Model.TieneConfiguracion && Model.Activa)
             {
-                <form asp-action="Desactivar" method="post" class="mt-3">
+                <form asp-action="Desactivar" method="post" class="mt-3"
+                      data-confirmar="Los donantes ya no podrán pagar en línea con Wompi; verán los datos para donar por transferencia. Tus llaves quedan guardadas."
+                      data-confirmar-titulo="¿Desactivar los pagos en línea?"
+                      data-confirmar-boton="Sí, desactivar"
+                      data-confirmar-tipo="peligro">
                     <button type="submit" class="btn btn-link text-danger p-0 small">Desactivar pagos en línea</button>
                 </form>
             }

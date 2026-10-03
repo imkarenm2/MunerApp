@@ -525,3 +525,34 @@ a { text-underline-offset: 3px; }
     border-radius: var(--mu-radio-sm);
     border: 1px solid rgba(0, 0, 0, .06);
 }
+
+/* ---------- Ventana de confirmación (observación de pruebas Sprint 1) ---------- */
+.mu-modal {
+    border: 0;
+    border-radius: var(--mu-radio);
+    box-shadow: var(--mu-sombra-hover);
+}
+.mu-modal-icono {
+    width: 56px;
+    height: 56px;
+    margin-inline: auto;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 1.6rem;
+    background: var(--mu-principal-suave);
+    color: var(--mu-principal);
+}
+.mu-modal-icono.peligro {
+    background: var(--mu-error-suave);
+    color: var(--mu-error);
+}
+.mu-modal .btn { min-width: 130px; }
+.btn-danger {
+    --bs-btn-bg: var(--mu-error);
+    --bs-btn-border-color: var(--mu-error);
+    --bs-btn-hover-bg: #a5301f;
+    --bs-btn-hover-border-color: #a5301f;
+    --bs-btn-active-bg: #8e2a1f;
+    --bs-btn-active-border-color: #8e2a1f;
+}

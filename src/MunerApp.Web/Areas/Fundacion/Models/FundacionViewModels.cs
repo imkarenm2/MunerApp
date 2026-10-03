@@ -1,3 +1,4 @@
+using MunerApp.Web.Validacion;
 using System.ComponentModel.DataAnnotations;
 using MunerApp.Domain.Constantes;
 
@@ -40,7 +41,7 @@ public class UsuarioEsalFormViewModel
     public string NombreCompleto { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Ingresa el correo.")]
-    [EmailAddress(ErrorMessage = "El correo no es válido.")]
+    [Correo]
     [Display(Name = "Correo electrónico")]
     public string Email { get; set; } = string.Empty;
 

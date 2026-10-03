@@ -63,7 +63,11 @@
                                     <div class="d-inline-flex gap-1">
                                         <a class="btn btn-sm btn-suave" asp-action="Modulos" asp-route-id="@e.Id" title="Módulos"><i class="bi bi-puzzle" aria-hidden="true"></i><span class="d-none d-lg-inline ms-1">Módulos</span></a>
                                         <a class="btn btn-sm btn-suave" asp-action="Editar" asp-route-id="@e.Id" title="Editar"><i class="bi bi-pencil" aria-hidden="true"></i><span class="d-none d-lg-inline ms-1">Editar</span></a>
-                                        <form asp-action="CambiarEstado" asp-route-id="@e.Id" method="post" class="d-inline">
+                                        <form asp-action="CambiarEstado" asp-route-id="@e.Id" method="post" class="d-inline"
+                                              data-confirmar="@(e.Activa ? $"{e.Nombre} dejará de ser visible para los donantes y sus usuarios no podrán ingresar. Puedes volver a activarla cuando quieras." : $"{e.Nombre} volverá a ser visible y sus usuarios podrán ingresar.")"
+                                              data-confirmar-titulo="@(e.Activa ? "¿Desactivar la fundación?" : "¿Activar la fundación?")"
+                                              data-confirmar-boton="@(e.Activa ? "Sí, desactivar" : "Sí, activar")"
+                                              data-confirmar-tipo="@(e.Activa ? "peligro" : "normal")">
                                             <button type="submit" class="btn btn-sm @(e.Activa ? "btn-outline-danger" : "btn-outline-primary")"
                                                     title="@(e.Activa ? "Desactivar" : "Activar")">
                                                 <i class="bi @(e.Activa ? "bi-pause" : "bi-play")" aria-hidden="true"></i>

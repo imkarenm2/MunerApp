@@ -88,6 +88,23 @@
         </div>
     </footer>
 
+    <!-- Ventana de confirmación general: se usa con <form data-confirmar="..."> (ver site.js) -->
+    <div class="modal fade" id="modalConfirmar" tabindex="-1" aria-labelledby="modalConfirmarTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content mu-modal">
+                <div class="modal-body p-4 text-center">
+                    <div class="mu-modal-icono mb-3" data-icono aria-hidden="true"><i class="bi bi-question-lg"></i></div>
+                    <h2 class="h5 fw-bold mb-2" id="modalConfirmarTitulo" data-titulo>¿Estás seguro?</h2>
+                    <p class="text-suave mb-0" data-mensaje></p>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4 justify-content-center gap-2">
+                    <button type="button" class="btn btn-suave" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" data-aceptar>Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

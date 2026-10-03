@@ -58,11 +58,10 @@ public class EsalesController : Controller
     [HttpPost]
     public async Task<IActionResult> Crear(EsalCrearViewModel model)
     {
-        model.Nit = model.Nit?.Trim() ?? string.Empty;
+        Normalizar(model);
         model.AdminEmail = model.AdminEmail?.Trim() ?? string.Empty;
 
-        if (await _db.Esales.AnyAsync(e => e.Nit == model.Nit))
-            ModelState.AddModelError(nameof(model.Nit), "Ya existe una fundación registrada con este NIT.");
+        await ValidarDuplicadosAsync(model);
 
         if (!string.IsNullOrEmpty(model.AdminEmail) && await _userManager.FindByEmailAsync(model.AdminEmail) is not null)
             ModelState.AddModelError(nameof(model.AdminEmail), "Ya existe un usuario con este correo en la plataforma.");
@@ -76,10 +75,10 @@ public class EsalesController : Controller
 
         var esal = new Esal
         {
-            Nombre = model.Nombre.Trim(),
+            Nombre = model.Nombre,
             Nit = model.Nit,
             TipoEntidad = model.TipoEntidad,
-            CorreoContacto = model.CorreoContacto.Trim()
+            CorreoContacto = model.CorreoContacto
         };
 
         // Los módulos configurables nacen desactivados; se activan después del levantamiento (HU-007)
@@ -144,17 +143,16 @@ public class EsalesController : Controller
         var esal = await _db.Esales.FirstOrDefaultAsync(e => e.Id == model.Id);
         if (esal is null) return NotFound();
 
-        model.Nit = model.Nit?.Trim() ?? string.Empty;
-        if (await _db.Esales.AnyAsync(e => e.Nit == model.Nit && e.Id != model.Id))
-            ModelState.AddModelError(nameof(model.Nit), "Ya existe otra fundación registrada con este NIT.");
+        Normalizar(model);
+        await ValidarDuplicadosAsync(model);
         if (!TiposEntidad.Todos.Contains(model.TipoEntidad))
             ModelState.AddModelError(nameof(model.TipoEntidad), "Selecciona un tipo de entidad de la lista.");
         if (!ModelState.IsValid) return View(model);
 
-        esal.Nombre = model.Nombre.Trim();
+        esal.Nombre = model.Nombre;
         esal.Nit = model.Nit;
         esal.TipoEntidad = model.TipoEntidad;
-        esal.CorreoContacto = model.CorreoContacto.Trim();
+        esal.CorreoContacto = model.CorreoContacto;
         await _db.SaveChangesAsync();
 
         TempData["Mensaje"] = $"Actualizaste los datos de {esal.Nombre}.";
@@ -235,6 +233,36 @@ public class EsalesController : Controller
 
         TempData["Mensaje"] = $"Guardaste los módulos de {esal.Nombre}.";
         return RedirectToAction(nameof(Index));
+    }
+
+    // ---------- Observación de pruebas Sprint 1: no permitir fundaciones duplicadas ----------
+
+    private static void Normalizar(EsalDatosViewModel model)
+    {
+        // Quita espacios repetidos para que "Reino  de los Gatos " cuente igual que "Reino de los Gatos"
+        model.Nombre = string.Join(' ', (model.Nombre ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        model.Nit = model.Nit?.Trim() ?? string.Empty;
+        model.CorreoContacto = model.CorreoContacto?.Trim().ToLowerInvariant() ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Una fundación no puede repetir el NIT, el nombre ni el correo de contacto de otra
+    /// (sin importar mayúsculas). En Editar se excluye la misma fundación.
+    /// </summary>
+    private async Task ValidarDuplicadosAsync(EsalDatosViewModel model)
+    {
+        var otras = _db.Esales.AsNoTracking().Where(e => e.Id != model.Id);
+        var nombre = model.Nombre.ToLower();
+        var correo = model.CorreoContacto.ToLower();
+
+        if (!string.IsNullOrEmpty(model.Nit) && await otras.AnyAsync(e => e.Nit == model.Nit))
+            ModelState.AddModelError(nameof(model.Nit), "Ya existe una fundación registrada con este NIT.");
+
+        if (!string.IsNullOrEmpty(nombre) && await otras.AnyAsync(e => e.Nombre.ToLower() == nombre))
+            ModelState.AddModelError(nameof(model.Nombre), "Ya existe una fundación registrada con este nombre.");
+
+        if (!string.IsNullOrEmpty(correo) && await otras.AnyAsync(e => e.CorreoContacto.ToLower() == correo))
+            ModelState.AddModelError(nameof(model.CorreoContacto), "Este correo ya es el contacto de otra fundación.");
     }
 
     private string MensajeCorreoNoEnviado(ResultadoEnvio envio) => _entorno.IsDevelopment()
