@@ -16,6 +16,14 @@ public class PanelViewModel
     public int UsuariosActivos { get; set; }
     public bool PasarelaActiva { get; set; }
     public int RedesConfiguradas { get; set; }
+
+    // Sprint 2
+    public string? Slug { get; set; }
+    public int PerfilCompleto { get; set; }
+    public int DocumentosVisibles { get; set; }
+    public bool DatosDonacionConfigurados { get; set; }
+    public int DonacionesPendientes { get; set; }
+    public int PostulacionesPendientes { get; set; }
 }
 
 public class UsuarioEsalItem

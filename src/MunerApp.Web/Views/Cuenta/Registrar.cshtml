@@ -12,7 +12,7 @@
 
                 <partial name="_BotonGoogle" />
 
-                <form asp-action="Registrar" method="post" novalidate>
+                <form asp-action="Registrar" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" novalidate>
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2" role="alert"></div>
 
                     <div class="mb-3">
@@ -62,7 +62,7 @@
                 </form>
 
                 <p class="mt-4 mb-0 text-center text-suave">
-                    ¿Ya tienes cuenta? <a asp-action="IniciarSesion" class="fw-semibold">Inicia sesión</a>
+                    ¿Ya tienes cuenta? <a asp-action="IniciarSesion" asp-route-returnUrl="@ViewData["ReturnUrl"]" class="fw-semibold">Inicia sesión</a>
                 </p>
             </div>
         </div>

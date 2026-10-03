@@ -1,11 +1,15 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.FileProviders;
 using MunerApp.Application.Interfaces;
 using MunerApp.Application.Seguridad;
 using MunerApp.Domain.Constantes;
 using MunerApp.Infrastructure;
 using MunerApp.Infrastructure.Identity;
 using MunerApp.Infrastructure.Persistence;
+using MunerApp.Infrastructure.Servicios;
 using MunerApp.Web.Seguridad;
 using MunerApp.Web.Servicios;
 
@@ -80,8 +84,34 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Formatos de Colombia: $ 50.000 y fechas en español
+var culturaCo = new CultureInfo("es-CO");
+CultureInfo.DefaultThreadCurrentCulture = culturaCo;
+CultureInfo.DefaultThreadCurrentUICulture = culturaCo;
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture(culturaCo),
+    SupportedCultures = new[] { culturaCo },
+    SupportedUICultures = new[] { culturaCo }
+});
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// Archivos públicos que suben las fundaciones (logo, fotos, documentos de transparencia).
+// Los soportes privados NO se sirven aquí: se entregan por controladores que validan permisos.
+var rutaPublica = AlmacenamientoLocal.RutaPublica(app.Configuration, app.Environment);
+Directory.CreateDirectory(rutaPublica);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(rutaPublica),
+    RequestPath = AlmacenamientoLocal.RutaUrlPublica,
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        ctx.Context.Response.Headers.CacheControl = "public,max-age=604800";
+    }
+});
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();

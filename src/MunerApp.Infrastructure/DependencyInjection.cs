@@ -19,6 +19,12 @@ public static class DependencyInjection
         services.AddScoped<ISecretosService, SecretosService>();
         services.AddHttpClient<IWompiService, WompiService>();
 
+        // Sprint 2
+        services.AddSingleton<IAlmacenamientoArchivos, AlmacenamientoLocal>();
+        services.AddScoped<INotificacionService, NotificacionService>();
+        services.AddSingleton<IComprobanteService, ComprobantePdfService>();
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
         return services;
     }
 }

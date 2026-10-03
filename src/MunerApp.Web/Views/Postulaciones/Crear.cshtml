@@ -1,0 +1,141 @@
+@model PostulacionViewModel
+@{
+    ViewData["Title"] = "Ser voluntario en " + Model.NombreEsal;
+    var practicante = Model.Tipo == TipoPostulacion.PracticanteSalud;
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Voluntariado en")' />
+
+    <h1 class="h2 mb-1">Postúlate como voluntario</h1>
+    <p class="text-suave mb-4">Cuéntale a la fundación cómo y cuándo puedes ayudar. Revisarán tu postulación y te avisaremos.</p>
+
+    @if (Model.Aviso is not null)
+    {
+        @* HU-035 escenario 3: ya tiene una postulación en proceso *@
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-person-check" aria-hidden="true"></i></div>
+            <h2 class="h5 mb-2">@Model.Aviso</h2>
+            <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 mt-3">
+                <a class="btn btn-suave" href="/mis-postulaciones">Ver mis postulaciones</a>
+                <a class="btn btn-outline-primary" href="/fundaciones/@Model.Slug#como-ayudar">Otras formas de ayudar</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <form asp-action="Crear" asp-route-slug="@Model.Slug" method="post" enctype="multipart/form-data" novalidate class="mu-card p-4 p-md-5"
+              data-confirmar="La fundación verá tu nombre, tu correo, tu celular y tu disponibilidad para contactarte."
+              data-confirmar-titulo="¿Enviar tu postulación a @Model.NombreEsal?" data-confirmar-boton="Sí, enviar">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <fieldset class="mb-4">
+                <legend class="form-label">¿Cómo quieres ayudar?</legend>
+                <div class="row g-2">
+                    <div class="col-12 @(Model.PermitePracticante ? "col-sm-6" : "")">
+                        <input type="radio" class="btn-check" name="Tipo" id="tipoGeneral" value="@TipoPostulacion.General" @(practicante ? "" : "checked") data-tipo-postulacion />
+                        <label class="opcion-tarjeta" for="tipoGeneral">
+                            <i class="bi bi-people" aria-hidden="true"></i>
+                            <span class="fw-semibold">Voluntario general</span>
+                            <span class="small text-suave">Labores de cuidado, eventos, jornadas y apoyo en la fundación.</span>
+                        </label>
+                    </div>
+                    @if (Model.PermitePracticante)
+                    {
+                        <div class="col-12 col-sm-6">
+                            <input type="radio" class="btn-check" name="Tipo" id="tipoPracticante" value="@TipoPostulacion.PracticanteSalud" @(practicante ? "checked" : "") data-tipo-postulacion />
+                            <label class="opcion-tarjeta" for="tipoPracticante">
+                                <i class="bi bi-heart-pulse" aria-hidden="true"></i>
+                                <span class="fw-semibold">Practicante de salud</span>
+                                <span class="small text-suave">Estudiantes de veterinaria o áreas afines, con soporte académico.</span>
+                            </label>
+                        </div>
+                    }
+                </div>
+                <span asp-validation-for="Tipo"></span>
+            </fieldset>
+
+            <div class="row g-3">
+                <div class="col-12 col-sm-6">
+                    <label asp-for="Telefono" class="form-label"></label>
+                    <div class="input-icono">
+                        <i class="bi bi-phone" aria-hidden="true"></i>
+                        <input asp-for="Telefono" class="form-control" inputmode="tel" placeholder="3001234567" autocomplete="tel" />
+                    </div>
+                    <span asp-validation-for="Telefono"></span>
+                </div>
+                <div class="col-12 col-sm-6">
+                    <label asp-for="Jornada" class="form-label"></label>
+                    <select asp-for="Jornada" class="form-select">
+                        <option value="">Selecciona…</option>
+                        @foreach (var j in PostulacionViewModel.Jornadas)
+                        {
+                            <option value="@j">@j</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Jornada"></span>
+                </div>
+                <div class="col-12">
+                    <span class="form-label d-block" id="etiquetaDias">Días disponibles</span>
+                    <div class="d-flex flex-wrap gap-2" role="group" aria-labelledby="etiquetaDias">
+                        @foreach (var dia in PostulacionViewModel.DiasSemana)
+                        {
+                            var id = "dia" + dia.Normalize(System.Text.NormalizationForm.FormD).Where(char.IsLetter).Aggregate("", (a, c) => a + c);
+                            <input type="checkbox" class="btn-check" name="Dias" id="@id" value="@dia" @(Model.Dias.Contains(dia) ? "checked" : "") />
+                            <label class="chip" for="@id">@dia</label>
+                        }
+                    </div>
+                    <span asp-validation-for="Dias"></span>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Motivacion" class="form-label"></label>
+                    <textarea asp-for="Motivacion" class="form-control" rows="3" maxlength="500"></textarea>
+                    <span asp-validation-for="Motivacion"></span>
+                </div>
+            </div>
+
+            @* HU-035 escenario 2: datos del practicante *@
+            @if (Model.PermitePracticante)
+            {
+                <div class="bloque-practicante mt-4 @(practicante ? "" : "d-none")" data-bloque-practicante>
+                    <h2 class="h6 fw-bold mb-3"><i class="bi bi-mortarboard me-2 text-principal" aria-hidden="true"></i>Datos académicos</h2>
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <label asp-for="Institucion" class="form-label"></label>
+                            <input asp-for="Institucion" class="form-control" placeholder="Universidad de Cundinamarca" />
+                            <span asp-validation-for="Institucion"></span>
+                        </div>
+                        <div class="col-8 col-sm-4">
+                            <label asp-for="Programa" class="form-label"></label>
+                            <input asp-for="Programa" class="form-control" placeholder="Zootecnia" />
+                            <span asp-validation-for="Programa"></span>
+                        </div>
+                        <div class="col-4 col-sm-2">
+                            <label asp-for="Semestre" class="form-label"></label>
+                            <input asp-for="Semestre" class="form-control" inputmode="numeric" min="1" max="14" />
+                            <span asp-validation-for="Semestre"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="SoporteAcademico" class="form-label"></label>
+                            <label class="zona-archivo" for="SoporteAcademico">
+                                <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+                                <span class="fw-semibold" data-nombre-archivo>Selecciona el archivo</span>
+                                <span class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Documento)</span>
+                            </label>
+                            <input asp-for="SoporteAcademico" type="file" class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Documento)" data-archivo />
+                            <span asp-validation-for="SoporteAcademico"></span>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+                <button type="submit" class="btn btn-apoyar btn-lg" data-cargando="Enviando...">Enviar postulación</button>
+                <a class="btn btn-link" href="/fundaciones/@Model.Slug">Cancelar</a>
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

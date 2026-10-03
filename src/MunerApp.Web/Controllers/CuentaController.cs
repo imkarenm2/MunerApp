@@ -39,12 +39,17 @@ public class CuentaController : Controller
 
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult Registrar() => View(new RegistroViewModel());
+    public IActionResult Registrar(string? returnUrl = null)
+    {
+        ViewData["ReturnUrl"] = returnUrl;
+        return View(new RegistroViewModel());
+    }
 
     [HttpPost]
     [AllowAnonymous]
-    public async Task<IActionResult> Registrar(RegistroViewModel model)
+    public async Task<IActionResult> Registrar(RegistroViewModel model, string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = returnUrl;
         if (!ModelState.IsValid) return View(model);
 
         var usuario = new Usuario
@@ -58,6 +63,14 @@ public class CuentaController : Controller
         if (resultado.Succeeded)
         {
             await _userManager.AddToRoleAsync(usuario, Roles.Donante);
+            // HU-016 escenario 2: si venía de una opción que requiere cuenta, entra de una vez y vuelve a ella
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                await _signInManager.SignInAsync(usuario, isPersistent: false);
+                TempData["Mensaje"] = "¡Bienvenido a MunerApp! Tu cuenta fue creada.";
+                return LocalRedirect(returnUrl);
+            }
+
             TempData["Mensaje"] = "Tu cuenta fue creada. Ya puedes iniciar sesión.";
             return RedirectToAction(nameof(IniciarSesion));
         }

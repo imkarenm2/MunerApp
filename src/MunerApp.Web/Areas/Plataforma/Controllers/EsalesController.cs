@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MunerApp.Domain.Common;
 using MunerApp.Domain.Constantes;
 using MunerApp.Domain.Entities;
 using MunerApp.Infrastructure.Identity;
@@ -38,6 +39,7 @@ public class EsalesController : Controller
             {
                 Id = e.Id,
                 Nombre = e.Nombre,
+                Slug = e.Slug,
                 Nit = e.Nit,
                 TipoEntidad = e.TipoEntidad,
                 Activa = e.Activa,
@@ -73,8 +75,15 @@ public class EsalesController : Controller
 
         await using var transaccion = await _db.Database.BeginTransactionAsync();
 
+        // Dirección pública del perfil (HU-010): /fundaciones/{slug}
+        var baseSlug = Slugs.Generar(model.Nombre);
+        var usados = new HashSet<string>(await _db.Esales
+            .Where(e => e.Slug != null && e.Slug.StartsWith(baseSlug))
+            .Select(e => e.Slug!).ToListAsync());
+
         var esal = new Esal
         {
+            Slug = DataSeeder.SlugUnico(baseSlug, usados),
             Nombre = model.Nombre,
             Nit = model.Nit,
             TipoEntidad = model.TipoEntidad,

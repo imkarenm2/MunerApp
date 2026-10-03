@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="MunerApp: conoce fundaciones, mira en qué se usan las donaciones y elige cómo ayudar." />
+    <meta name="description" content="@(ViewData["Descripcion"] as string ?? "MunerApp: conoce fundaciones, mira en qué se usan las donaciones y elige cómo ayudar.")" />
     <meta name="theme-color" content="#0F5257" />
     <title>@ViewData["Title"] · MunerApp</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -27,7 +27,7 @@
                 </button>
                 <div class="collapse navbar-collapse" id="menu">
                     <ul class="navbar-nav mx-lg-auto my-3 my-lg-0 gap-lg-1">
-                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="fundaciones">Fundaciones</a></li>
+                        <li class="nav-item"><a class="nav-link @(ViewData["Nav"] as string == "Fundaciones" ? "active" : "")" href="/fundaciones">Fundaciones</a></li>
                         <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar">Cómo ayudar</a></li>
                         <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="transparencia">Transparencia</a></li>
                     </ul>
@@ -73,7 +73,7 @@
                 <div class="col-6 col-md-3">
                     <h3 class="h6 fw-bold">Plataforma</h3>
                     <ul class="list-unstyled d-grid gap-2 mb-0">
-                        <li><a asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="fundaciones">Fundaciones</a></li>
+                        <li><a href="/fundaciones">Fundaciones</a></li>
                         <li><a asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar">Cómo ayudar</a></li>
                         <li><a asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="transparencia">Transparencia</a></li>
                     </ul>

@@ -1,0 +1,10 @@
+@* Encabezado pequeño con el logo y el nombre de la fundación, para formularios públicos *@
+@model (LogoEsalModel Logo, string Slug, string Subtitulo)
+<a class="encabezado-esal mb-4" href="/fundaciones/@Model.Slug">
+    <partial name="_LogoEsal" model="Model.Logo" />
+    <span>
+        <span class="d-block small text-suave">@Model.Subtitulo</span>
+        <span class="d-block fw-bold text-body">@Model.Logo.Nombre</span>
+    </span>
+    <i class="bi bi-chevron-right ms-auto text-suave" aria-hidden="true"></i>
+</a>

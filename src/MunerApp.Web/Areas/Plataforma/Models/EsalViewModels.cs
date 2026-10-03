@@ -7,6 +7,7 @@ public class EsalListaItem
 {
     public int Id { get; set; }
     public string Nombre { get; set; } = string.Empty;
+    public string? Slug { get; set; }
     public string Nit { get; set; } = string.Empty;
     public string TipoEntidad { get; set; } = string.Empty;
     public bool Activa { get; set; }

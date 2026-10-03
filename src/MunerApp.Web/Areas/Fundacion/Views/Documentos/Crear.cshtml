@@ -1,0 +1,61 @@
+@model DocumentoFormViewModel
+@{
+    ViewData["Title"] = "Publicar documento";
+    var categorias = Enum.GetValues<CategoriaDocumento>();
+}
+<div class="container py-4 py-md-5" style="max-width: 720px">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Transparencia</a>
+    <h1 class="h2 mt-2 mb-1">Publicar documento</h1>
+    <p class="text-suave mb-4">Aparecerá en la sección Transparencia del perfil, con la fecha de hoy.</p>
+
+    <form asp-action="Crear" method="post" enctype="multipart/form-data" novalidate class="mu-card p-4 p-md-5"
+          data-confirmar="Cualquier persona podrá verlo y descargarlo desde el perfil de la fundación."
+          data-confirmar-titulo="¿Publicar este documento?" data-confirmar-boton="Sí, publicar">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <div class="row g-3">
+            <div class="col-12 col-md-7">
+                <label asp-for="Titulo" class="form-label"></label>
+                <input asp-for="Titulo" class="form-control" maxlength="150" placeholder="Certificado de existencia y representación legal" />
+                <span asp-validation-for="Titulo"></span>
+            </div>
+            <div class="col-12 col-md-5">
+                <label asp-for="Categoria" class="form-label"></label>
+                <select asp-for="Categoria" class="form-select">
+                    <option value="">Selecciona…</option>
+                    @foreach (var c in categorias)
+                    {
+                        <option value="@c" selected="@(Model.Categoria == c)">@Textos.De(c)</option>
+                    }
+                </select>
+                <span asp-validation-for="Categoria"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Descripcion" class="form-label"></label>
+                <input asp-for="Descripcion" class="form-control" maxlength="300" placeholder="Ej.: expedido por la Cámara de Comercio de Facatativá en septiembre de 2026" />
+                <span asp-validation-for="Descripcion"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Archivo" class="form-label"></label>
+                <label class="zona-archivo" for="Archivo">
+                    <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+                    <span class="fw-semibold" data-nombre-archivo>Selecciona el archivo</span>
+                    <span class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Documento)</span>
+                </label>
+                <input asp-for="Archivo" type="file" class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Documento)" data-archivo />
+                <span asp-validation-for="Archivo"></span>
+            </div>
+        </div>
+        <div class="alert alert-warning small mt-4 mb-0">
+            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+            <div>El documento será público. Antes de subirlo, tapen los datos personales que no deban mostrarse (cédulas, teléfonos o direcciones de personas).</div>
+        </div>
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary" data-cargando="Publicando...">Publicar</button>
+            <a asp-action="Index" class="btn btn-link">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

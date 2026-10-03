@@ -1,0 +1,49 @@
+@model List<DonacionItem>
+@{
+    ViewData["Title"] = "Mis donaciones";
+    var confirmado = Model.Where(d => d.Estado == EstadoDonacion.Confirmada).Sum(d => d.Valor);
+}
+<div class="container py-4 py-md-5" style="max-width: 960px">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Mis donaciones</h1>
+            <p class="text-suave mb-0">El estado de cada donación que has reportado.</p>
+        </div>
+        @if (Model.Count > 0)
+        {
+            <div class="mu-card px-4 py-3 text-end">
+                <div class="small text-suave">Total confirmado</div>
+                <div class="h4 fw-bold text-principal mb-0">@Formatos.Pesos(confirmado)</div>
+            </div>
+        }
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo acento mb-3"><i class="bi bi-heart" aria-hidden="true"></i></div>
+            <h2 class="h5">Aún no has reportado donaciones</h2>
+            <p class="text-suave">Elige una fundación, transfiere a su cuenta oficial y reporta tu donación para recibir tu comprobante.</p>
+            <a class="btn btn-apoyar" href="/fundaciones">Explorar fundaciones</a>
+        </div>
+    }
+    else
+    {
+        <div class="d-grid gap-2">
+            @foreach (var d in Model)
+            {
+                <a class="fila-lista mu-card mu-card-hover" href="/mis-donaciones/@d.Codigo">
+                    <partial name="_LogoEsal" model="new LogoEsalModel(d.NombreEsal, d.LogoUrl, 44)" />
+                    <span class="flex-grow-1 min-w-0">
+                        <span class="d-block fw-semibold text-body text-truncate">@d.NombreEsal</span>
+                        <span class="d-block small text-suave">@d.Codigo · @Formatos.Fecha(d.FechaTransferencia)</span>
+                    </span>
+                    <span class="text-end">
+                        <span class="d-block fw-bold text-body">@Formatos.Pesos(d.Valor)</span>
+                        <partial name="_EstadoDonacion" model="d.Estado" />
+                    </span>
+                </a>
+            }
+        </div>
+    }
+</div>

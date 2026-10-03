@@ -43,7 +43,13 @@
                         {
                             <tr>
                                 <td>
-                                    <div class="fw-semibold">@e.Nombre</div>
+                                    <div class="fw-semibold">
+                                        @e.Nombre
+                                        @if (e.Activa && e.Slug is not null)
+                                        {
+                                            <a class="small ms-1" href="/fundaciones/@e.Slug" target="_blank" rel="noopener" title="Ver perfil público" aria-label="Ver perfil público de @e.Nombre"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
+                                        }
+                                    </div>
                                     <div class="small text-suave">@e.TipoEntidad · desde @e.FechaRegistro.ToLocalTime().ToString("dd/MM/yyyy")</div>
                                 </td>
                                 <td>@e.Nit</td>

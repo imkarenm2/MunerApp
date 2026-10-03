@@ -1,0 +1,12 @@
+@model LogoEsalModel
+@{
+    var estilo = $"width:{Model.Tamano}px;height:{Model.Tamano}px;font-size:{Model.Tamano * 0.36:0}px";
+}
+@if (!string.IsNullOrEmpty(Model.Url))
+{
+    <img class="logo-esal" src="@Model.Url" alt="Logo de @Model.Nombre" style="@estilo" loading="lazy" />
+}
+else
+{
+    <span class="logo-esal logo-esal-iniciales" style="@estilo" aria-hidden="true">@Model.Iniciales</span>
+}

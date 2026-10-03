@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
 using MunerApp.Application.Seguridad;
 using MunerApp.Domain.Constantes;
+using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Areas.Fundacion.Models;
 
@@ -46,9 +47,29 @@ public class PanelController : Controller
             Modulos = modulos.Select(m => new ModuloActivo(m.Codigo, m.Nombre, m.EsConfigurable)).ToList(),
             UsuariosActivos = await _db.Users.CountAsync(u => u.EsalId == esalId && u.Activo),
             PasarelaActiva = await _db.ConfigPasarelas.AnyAsync(c => c.Activa),
-            RedesConfiguradas = await _db.RedesSociales.CountAsync()
+            RedesConfiguradas = await _db.RedesSociales.CountAsync(),
+
+            // Sprint 2
+            Slug = esal.Slug,
+            PerfilCompleto = PorcentajePerfil(esal, await _db.FotosEsal.AnyAsync()),
+            DocumentosVisibles = await _db.DocumentosTransparencia.CountAsync(d => d.Visible),
+            DatosDonacionConfigurados = await _db.DatosDonacion.AnyAsync(),
+            DonacionesPendientes = esAdmin ? await _db.Donaciones.CountAsync(d => d.Estado == EstadoDonacion.Pendiente) : 0,
+            PostulacionesPendientes = esAdmin ? await _db.PostulacionesVoluntario.CountAsync(p => p.Estado == EstadoPostulacion.Pendiente) : 0
         };
 
         return View(modelo);
+    }
+
+    /// <summary>Qué tan completo está el perfil público (para animar a la fundación a terminarlo).</summary>
+    private static int PorcentajePerfil(Domain.Entities.Esal e, bool tieneFotos)
+    {
+        var campos = new[]
+        {
+            !string.IsNullOrWhiteSpace(e.DescripcionCorta), !string.IsNullOrWhiteSpace(e.Historia),
+            !string.IsNullOrWhiteSpace(e.Mision), !string.IsNullOrWhiteSpace(e.Vision),
+            !string.IsNullOrWhiteSpace(e.Ciudad), !string.IsNullOrWhiteSpace(e.LogoRuta), tieneFotos
+        };
+        return (int)Math.Round(100.0 * campos.Count(c => c) / campos.Length);
     }
 }

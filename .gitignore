@@ -15,3 +15,6 @@ TestResults/
 appsettings.*.local.json
 *.pfx
 .env
+
+# Archivos que suben los usuarios (Sprint 2): nunca van al repositorio
+**/App_Data/

@@ -1,0 +1,96 @@
+@model DonacionDetalleViewModel
+@{
+    ViewData["Title"] = "Donación " + Model.Codigo;
+    var (icono, clase, titulo, texto) = Model.Estado switch
+    {
+        EstadoDonacion.Confirmada => ("bi-check-circle-fill", "exito", "¡Donación confirmada!", $"{Model.NombreEsal} confirmó que recibió tu aporte. Gracias por ayudar."),
+        EstadoDonacion.Rechazada => ("bi-x-circle-fill", "error", "La fundación no pudo confirmar tu donación", "Revisa el motivo. Si crees que es un error, comunícate con la fundación."),
+        _ => ("bi-hourglass-split", "alerta", "Pendiente de confirmación", $"{Model.NombreEsal} está revisando que el dinero haya llegado a su cuenta. Te avisaremos cuando lo confirme.")
+    };
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <a class="small d-inline-flex align-items-center gap-1 mb-3" href="/mis-donaciones"><i class="bi bi-arrow-left" aria-hidden="true"></i>Mis donaciones</a>
+
+    <div class="mu-card overflow-hidden">
+        <div class="estado-donacion @clase">
+            <i class="bi @icono" aria-hidden="true"></i>
+            <div>
+                <h1 class="h4 mb-1">@titulo</h1>
+                <p class="mb-0">@texto</p>
+            </div>
+        </div>
+
+        <div class="p-4 p-md-5">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <partial name="_LogoEsal" model="new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 52)" />
+                <div class="flex-grow-1">
+                    <div class="small text-suave">Donación a</div>
+                    @if (Model.SlugEsal is not null)
+                    {
+                        <a class="fw-bold" href="/fundaciones/@Model.SlugEsal">@Model.NombreEsal</a>
+                    }
+                    else
+                    {
+                        <span class="fw-bold">@Model.NombreEsal</span>
+                    }
+                </div>
+                <div class="text-end">
+                    <div class="small text-suave">Valor</div>
+                    <div class="h3 fw-bold text-principal mb-0">@Formatos.Pesos(Model.Valor)</div>
+                </div>
+            </div>
+
+            @if (Model.Estado == EstadoDonacion.Rechazada && !string.IsNullOrEmpty(Model.MotivoRechazo))
+            {
+                <div class="alert alert-danger">
+                    <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+                    <div><strong>Motivo:</strong> @Model.MotivoRechazo</div>
+                </div>
+            }
+
+            <ol class="linea-tiempo mb-4">
+                <li class="hecho">
+                    <span class="fw-semibold">Reportaste la donación</span>
+                    <span class="small text-suave">@Formatos.FechaHora(Model.FechaReporte)</span>
+                </li>
+                <li class="@(Model.Estado == EstadoDonacion.Pendiente ? "actual" : "hecho")">
+                    <span class="fw-semibold">La fundación revisa el pago</span>
+                    <span class="small text-suave">@(Model.Estado == EstadoDonacion.Pendiente ? "En revisión" : "Revisado")</span>
+                </li>
+                <li class="@(Model.Estado == EstadoDonacion.Confirmada ? "hecho" : Model.Estado == EstadoDonacion.Rechazada ? "fallo" : "")">
+                    <span class="fw-semibold">@(Model.Estado == EstadoDonacion.Rechazada ? "Rechazada" : "Confirmada y comprobante disponible")</span>
+                    @if (Model.FechaRevision is DateTime revision)
+                    {
+                        <span class="small text-suave">@Formatos.FechaHora(revision)</span>
+                    }
+                </li>
+            </ol>
+
+            <dl class="row datos-detalle mb-4">
+                <dt class="col-sm-5">Código</dt><dd class="col-sm-7">@Model.Codigo</dd>
+                <dt class="col-sm-5">Fecha de la transferencia</dt><dd class="col-sm-7">@Formatos.Fecha(Model.FechaTransferencia)</dd>
+                <dt class="col-sm-5">Medio de pago</dt><dd class="col-sm-7">@Model.MedioPago</dd>
+                @if (!string.IsNullOrEmpty(Model.ReferenciaPago))
+                {
+                    <dt class="col-sm-5">Referencia</dt><dd class="col-sm-7">@Model.ReferenciaPago</dd>
+                }
+                @if (!string.IsNullOrEmpty(Model.Mensaje))
+                {
+                    <dt class="col-sm-5">Tu mensaje</dt><dd class="col-sm-7">@Model.Mensaje</dd>
+                }
+            </dl>
+
+            <div class="d-flex flex-column flex-sm-row gap-2">
+                @if (Model.Estado == EstadoDonacion.Confirmada)
+                {
+                    <a class="btn btn-primary" href="/mis-donaciones/@Model.Codigo/comprobante">
+                        <i class="bi bi-file-earmark-arrow-down me-2" aria-hidden="true"></i>Descargar comprobante (PDF)
+                    </a>
+                }
+                <a class="btn btn-suave" href="/mis-donaciones/@Model.Codigo/soporte" target="_blank" rel="noopener">
+                    <i class="bi @(Model.SoporteEsPdf ? "bi-file-earmark-pdf" : "bi-image") me-2" aria-hidden="true"></i>Ver mi soporte
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

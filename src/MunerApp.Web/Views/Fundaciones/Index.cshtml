@@ -1,0 +1,97 @@
+@model DirectorioViewModel
+@{
+    ViewData["Title"] = "Fundaciones";
+    ViewData["Nav"] = "Fundaciones";
+    var buscando = !string.IsNullOrEmpty(Model.Busqueda);
+}
+
+<section class="cabecera-pagina">
+    <div class="container">
+        <div class="row align-items-end gy-3">
+            <div class="col-12 col-lg-7">
+                <div class="sobretitulo mb-2">Directorio</div>
+                <h1 class="mb-2">Conoce a las fundaciones</h1>
+                <p class="text-suave mb-0">Cada una con su historia, sus documentos y las formas en que puedes apoyarla.</p>
+            </div>
+            <div class="col-12 col-lg-5">
+                <form method="get" action="/fundaciones" role="search" class="buscador">
+                    <label for="q" class="visually-hidden">Buscar fundación por nombre o ciudad</label>
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input id="q" name="q" type="search" class="form-control" value="@Model.Busqueda"
+                           placeholder="Busca por nombre o ciudad" maxlength="80" autocomplete="off" />
+                    <button type="submit" class="btn btn-primary">Buscar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container py-4 py-md-5">
+    @if (buscando)
+    {
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+            <span class="text-suave">@Model.Total @(Model.Total == 1 ? "resultado" : "resultados") para</span>
+            <span class="mu-badge">"@Model.Busqueda"</span>
+            <a href="/fundaciones" class="small ms-1">Ver todas</a>
+        </div>
+    }
+
+    @if (Model.Fundaciones.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi @(buscando ? "bi-search" : "bi-building")" aria-hidden="true"></i></div>
+            @if (buscando)
+            {
+                <h2 class="h5">No encontramos fundaciones con "@Model.Busqueda"</h2>
+                <p class="text-suave">Revisa cómo lo escribiste o busca con otra palabra.</p>
+                <a href="/fundaciones" class="btn btn-suave">Ver todas las fundaciones</a>
+            }
+            else
+            {
+                <h2 class="h5">Pronto verás aquí a las fundaciones</h2>
+                <p class="text-suave mb-0">Estamos acompañando a las primeras fundaciones a completar su perfil.</p>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var f in Model.Fundaciones)
+            {
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <a class="tarjeta-esal mu-card mu-card-hover h-100" href="/fundaciones/@f.Slug">
+                        <div class="tarjeta-esal-banda" aria-hidden="true"></div>
+                        <div class="tarjeta-esal-cuerpo">
+                            <partial name="_LogoEsal" model="new LogoEsalModel(f.Nombre, f.LogoUrl, 72)" />
+                            <h2 class="h5 mt-3 mb-1">@f.Nombre</h2>
+                            <div class="small text-suave mb-2">
+                                <span>@f.TipoEntidad</span>
+                                @if (!string.IsNullOrEmpty(f.Ciudad))
+                                {
+                                    <span> · <i class="bi bi-geo-alt" aria-hidden="true"></i> @f.Ciudad</span>
+                                }
+                            </div>
+                            <p class="texto-recortado text-suave mb-3">@(f.DescripcionCorta ?? "Conoce su labor y las formas en que puedes apoyarla.")</p>
+                            <span class="enlace-flecha">Ver perfil <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+
+        @if (Model.TotalPaginas > 1)
+        {
+            <nav class="mt-5" aria-label="Páginas de resultados">
+                <ul class="pagination justify-content-center">
+                    @for (var i = 1; i <= Model.TotalPaginas; i++)
+                    {
+                        <li class="page-item @(i == Model.Pagina ? "active" : "")">
+                            <a class="page-link" href="/fundaciones?pagina=@i@(buscando ? "&q=" + Uri.EscapeDataString(Model.Busqueda!) : "")"
+                               aria-current="@(i == Model.Pagina ? "page" : null)">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+</div>
