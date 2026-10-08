@@ -151,3 +151,72 @@ public class MascotasAdopcionViewModel : SeccionAdopcionViewModel
     /// <summary>Con las opciones a) o c) de vacunas se puede adjuntar el carné.</summary>
     public static bool PermiteCarne(VacunasGato? vacunas) => vacunas is VacunasGato.Completas or VacunasGato.Parciales;
 }
+
+/// <summary>
+/// Sección 3: hogar y compromisos, y envío de la solicitud (HU-032).
+/// Las preguntas que dependen de otra respuesta se validan en el controlador.
+/// </summary>
+public class HogarAdopcionViewModel : SeccionAdopcionViewModel
+{
+    // Datos de la fundación para mostrar
+    public decimal ValorAporte { get; set; }
+    public string MensajeToxoplasmosis { get; set; } = string.Empty;
+    public string? ImagenToxoplasmosisUrl { get; set; }
+
+    [Required(ErrorMessage = "Selecciona el tipo de vivienda.")]
+    [Display(Name = "¿En qué tipo de vivienda vives?")]
+    public TipoVivienda? TipoVivienda { get; set; }
+
+    [Required(ErrorMessage = "Indica si la vivienda es propia, arrendada o familiar.")]
+    [Display(Name = "La vivienda es")]
+    public TenenciaVivienda? TenenciaVivienda { get; set; }
+
+    [Display(Name = "¿El arrendador permite mascotas?")]
+    public bool? ArrendadorPermiteMascotas { get; set; }
+
+    [Required(ErrorMessage = "Indica cuántas personas viven en tu hogar.")]
+    [Range(1, 30, ErrorMessage = "Escribe un número entre 1 y 30, contándote a ti.")]
+    [Display(Name = "¿Cuántas personas viven en tu hogar, contándote a ti?")]
+    public int? Convivientes { get; set; }
+
+    [Required(ErrorMessage = "Indica si todas las personas del hogar están de acuerdo.")]
+    [Display(Name = "¿Todas están de acuerdo con la adopción?")]
+    public bool? ConvivientesDeAcuerdo { get; set; }
+
+    [Required(ErrorMessage = "Indica si hay niños en tu hogar.")]
+    [Display(Name = "¿Hay niños en tu hogar?")]
+    public bool? NinosEnCasa { get; set; }
+
+    /// <summary>Escenario 1: solo si hay niños en casa.</summary>
+    [Display(Name = "¿Los niños han interactuado con mascotas?")]
+    public bool? NinosInteractuanMascotas { get; set; }
+
+    /// <summary>Escenario 2: al responderla se muestra la información de toxoplasmosis.</summary>
+    [Required(ErrorMessage = "Responde esta pregunta.")]
+    [Display(Name = "¿Alguien en tu hogar está embarazada o planea estarlo?")]
+    public bool? EmbarazoEnHogar { get; set; }
+
+    [Required(ErrorMessage = "Responde esta pregunta.")]
+    [Display(Name = "¿Puedes cubrir su alimentación, arena, vacunas y controles veterinarios?")]
+    public bool? PuedeCubrirCostos { get; set; }
+
+    [Required(ErrorMessage = "Responde esta pregunta.")]
+    [Display(Name = "¿Aceptas que la fundación haga una visita de seguimiento a tu hogar?")]
+    public bool? AceptaVisita { get; set; }
+
+    // Escenario 3: aceptaciones obligatorias para enviar
+    public bool AceptaRequisito { get; set; }
+    public bool AceptaContrato { get; set; }
+    public bool AutorizaDatos { get; set; }
+}
+
+/// <summary>Una solicitud de adopción en "Mis adopciones".</summary>
+public class SolicitudAdopcionItem
+{
+    public string? Codigo { get; set; }
+    public string NombreEsal { get; set; } = string.Empty;
+    public string SlugEsal { get; set; } = string.Empty;
+    public string? LogoUrl { get; set; }
+    public EstadoSolicitudAdopcion Estado { get; set; }
+    public DateTime Fecha { get; set; }
+}

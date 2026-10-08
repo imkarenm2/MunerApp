@@ -1,17 +1,104 @@
-@model SeccionAdopcionViewModel
+@model HogarAdopcionViewModel
 @{
     ViewData["Title"] = "Solicitud de adopción · Hogar y compromisos";
+    var siNo = new[] { ("true", "Sí"), ("false", "No") };
+
+    string Oculto(bool visible) => visible ? "" : "d-none";
+    string? Valor(bool? b) => b?.ToString().ToLowerInvariant();
+
+    // Opciones en chips (ver _OpcionesRadio)
+    Task Radios(string nombre, string etiqueta, IEnumerable<(string, string)> opciones, string? actual)
+        => Html.RenderPartialAsync("_OpcionesRadio", (nombre, etiqueta, opciones, actual));
+
+    IEnumerable<(string, string)> De<T>(Func<T, string> texto) where T : struct, Enum
+        => Enum.GetValues<T>().Select(v => (v.ToString(), texto(v)));
+
+    // Aceptación obligatoria: casilla con su valor "false" para cuando no se marca
+    void Aceptacion(string nombre, bool marcado, string texto)
+    {
+        var error = ViewData.ModelState[nombre]?.Errors.FirstOrDefault()?.ErrorMessage;
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="@nombre" id="@nombre" value="true" @(marcado ? "checked" : "") />
+            <input type="hidden" name="@nombre" value="false" />
+            <label class="form-check-label" for="@nombre">@texto</label>
+            <span class="@(error is null ? "field-validation-valid" : "field-validation-error") d-block" data-valmsg-for="@nombre">@error</span>
+        </div>
+    }
 }
 <div class="container py-4 py-md-5" style="max-width: 760px">
     <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Adopción en")' />
 
     <h1 class="h2 mb-1">Solicitud de adopción</h1>
-    <p class="text-suave mb-4">Tu avance se guarda al terminar cada sección. Solo la fundación verá estos datos.</p>
+    <p class="text-suave mb-4">Última sección: al enviarla, la fundación recibirá tu solicitud completa.</p>
 
     <partial name="_PasosAdopcion" model="Model" />
 
-    <div class="mu-card p-4 p-md-5">
-        <h2 class="h5 mb-2">Tu hogar y compromisos</h2>
-        <p class="text-suave mb-0">Vivienda, convivientes, costos, visita de seguimiento y autorización de datos.</p>
-    </div>
+    <form asp-action="Hogar" asp-route-slug="@Model.Slug" method="post" novalidate class="mu-card p-4 p-md-5"
+          data-confirmar="La fundación revisará tu solicitud y te avisará por la plataforma. Después de enviarla no podrás modificarla."
+          data-confirmar-titulo="¿Enviar tu solicitud a @Model.NombreEsal?" data-confirmar-boton="Sí, enviar">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <h2 class="h5 mb-3">Tu hogar</h2>
+        @{
+            await Radios(nameof(Model.TipoVivienda), "¿En qué tipo de vivienda vives?", De<TipoVivienda>(Textos.De), Model.TipoVivienda?.ToString());
+            await Radios(nameof(Model.TenenciaVivienda), "La vivienda es", De<TenenciaVivienda>(Textos.De), Model.TenenciaVivienda?.ToString());
+        }
+        <div class="@Oculto(Model.TenenciaVivienda == TenenciaVivienda.Arrendada)" data-mostrar-si="TenenciaVivienda=Arrendada">
+            @{ await Radios(nameof(Model.ArrendadorPermiteMascotas), "¿El arrendador permite mascotas?", siNo, Valor(Model.ArrendadorPermiteMascotas)); }
+        </div>
+
+        <div class="mb-3" style="max-width: 320px">
+            <label asp-for="Convivientes" class="form-label"></label>
+            <input asp-for="Convivientes" class="form-control" type="number" inputmode="numeric" />
+            <span asp-validation-for="Convivientes"></span>
+        </div>
+        @{
+            await Radios(nameof(Model.ConvivientesDeAcuerdo), "¿Todas están de acuerdo con la adopción?", siNo, Valor(Model.ConvivientesDeAcuerdo));
+            await Radios(nameof(Model.NinosEnCasa), "¿Hay niños en tu hogar?", siNo, Valor(Model.NinosEnCasa));
+        }
+
+        @* HU-032 escenario 1: si hay niños, si han interactuado con mascotas *@
+        <div class="@Oculto(Model.NinosEnCasa == true)" data-mostrar-si="NinosEnCasa=true">
+            @{ await Radios(nameof(Model.NinosInteractuanMascotas), "¿Los niños han interactuado con mascotas?", siNo, Valor(Model.NinosInteractuanMascotas)); }
+        </div>
+
+        @{ await Radios(nameof(Model.EmbarazoEnHogar), "¿Alguien en tu hogar está embarazada o planea estarlo?", siNo, Valor(Model.EmbarazoEnHogar)); }
+
+        @* HU-032 escenario 2: al responder sobre embarazo se muestra la información de toxoplasmosis *@
+        <div class="bloque-condicional mb-4 @Oculto(Model.EmbarazoEnHogar is not null)" data-mostrar-si="EmbarazoEnHogar=true,false">
+            <h3 class="h6 fw-bold mb-2"><i class="bi bi-info-circle me-2 text-principal" aria-hidden="true"></i>Sobre la toxoplasmosis</h3>
+            @if (Model.ImagenToxoplasmosisUrl is not null)
+            {
+                <img src="@Model.ImagenToxoplasmosisUrl" alt="Información sobre la toxoplasmosis de @Model.NombreEsal" class="img-fluid rounded mb-3" loading="lazy" />
+            }
+            <p class="small mb-0 texto-largo">@Model.MensajeToxoplasmosis</p>
+        </div>
+
+        <h2 class="h5 mt-4 mb-3">Tus compromisos</h2>
+        @{
+            await Radios(nameof(Model.PuedeCubrirCostos), "¿Puedes cubrir su alimentación, arena, vacunas y controles veterinarios?", siNo, Valor(Model.PuedeCubrirCostos));
+            await Radios(nameof(Model.AceptaVisita), "¿Aceptas que la fundación haga una visita de seguimiento a tu hogar?", siNo, Valor(Model.AceptaVisita));
+        }
+
+        @* HU-032 escenario 3: aceptaciones obligatorias para enviar *@
+        <div class="bloque-condicional mt-2">
+            @{
+                Aceptacion(nameof(Model.AceptaRequisito), Model.AceptaRequisito,
+                    $"Acepto el requisito de la adopción: aportar {Formatos.Pesos(Model.ValorAporte)} para la esterilización y la vacuna, y llevar un huacal para transportarlo.");
+                Aceptacion(nameof(Model.AceptaContrato), Model.AceptaContrato,
+                    "Acepto firmar el contrato de adopción y presentar mi documento de identidad en la cita presencial.");
+                Aceptacion(nameof(Model.AutorizaDatos), Model.AutorizaDatos,
+                    $"Autorizo a {Model.NombreEsal} a tratar mis datos personales para evaluar esta solicitud y hacer el seguimiento de la adopción (Ley 1581 de 2012).");
+            }
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-apoyar btn-lg" data-cargando="Enviando...">Enviar solicitud</button>
+            <a class="btn btn-link" href="/fundaciones/@Model.Slug/adoptar/formulario/mascotas">Volver a mascotas</a>
+        </div>
+    </form>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -25,13 +25,16 @@ public class AdopcionesController : Controller
     private readonly IAlmacenamientoArchivos _archivos;
     private readonly IModuloService _modulos;
     private readonly IEsalActual _esalActual;
+    private readonly INotificacionService _notificaciones;
 
-    public AdopcionesController(MunerAppDbContext db, IAlmacenamientoArchivos archivos, IModuloService modulos, IEsalActual esalActual)
+    public AdopcionesController(MunerAppDbContext db, IAlmacenamientoArchivos archivos, IModuloService modulos, IEsalActual esalActual,
+        INotificacionService notificaciones)
     {
         _db = db;
         _archivos = archivos;
         _modulos = modulos;
         _esalActual = esalActual;
+        _notificaciones = notificaciones;
     }
 
     private string UsuarioId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -289,7 +292,112 @@ public class AdopcionesController : Controller
     {
         var (esal, s, salida) = await AbrirSeccionAsync(slug, 3);
         if (salida is not null) return salida;
-        return View(PrepararSeccion(new SeccionAdopcionViewModel(), esal!, s!, 3));
+
+        var model = new HogarAdopcionViewModel
+        {
+            TipoVivienda = s!.TipoVivienda,
+            TenenciaVivienda = s.TenenciaVivienda,
+            ArrendadorPermiteMascotas = s.ArrendadorPermiteMascotas,
+            Convivientes = s.Convivientes,
+            ConvivientesDeAcuerdo = s.ConvivientesDeAcuerdo,
+            NinosEnCasa = s.NinosEnCasa,
+            NinosInteractuanMascotas = s.NinosInteractuanMascotas,
+            EmbarazoEnHogar = s.EmbarazoEnHogar,
+            PuedeCubrirCostos = s.PuedeCubrirCostos,
+            AceptaVisita = s.AceptaVisita
+        };
+        return View(await PrepararHogarAsync(model, esal!, s));
+    }
+
+    /// <summary>Guarda la sección 3 y envía la solicitud a la fundación (escenario 3).</summary>
+    [HttpPost("fundaciones/{slug}/adoptar/formulario/hogar")]
+    public async Task<IActionResult> Hogar(string slug, HogarAdopcionViewModel model)
+    {
+        var (esal, s, salida) = await AbrirSeccionAsync(slug, 3);
+        if (salida is not null) return salida;
+
+        var arrendada = model.TenenciaVivienda == TenenciaVivienda.Arrendada;
+        if (arrendada && model.ArrendadorPermiteMascotas is null)
+            ModelState.AddModelError(nameof(model.ArrendadorPermiteMascotas), "Indica si el arrendador permite mascotas.");
+
+        // Escenario 1: si hay niños, si han interactuado con mascotas
+        if (model.NinosEnCasa == true && model.NinosInteractuanMascotas is null)
+            ModelState.AddModelError(nameof(model.NinosInteractuanMascotas), "Indica si los niños han interactuado con mascotas.");
+
+        // Escenario 3: requisito, contrato y autorización de datos son obligatorios para enviar
+        if (!model.AceptaRequisito)
+            ModelState.AddModelError(nameof(model.AceptaRequisito), "Para enviar la solicitud debes aceptar el requisito de la adopción.");
+        if (!model.AceptaContrato)
+            ModelState.AddModelError(nameof(model.AceptaContrato), "Para enviar la solicitud debes aceptar la firma del contrato de adopción.");
+        if (!model.AutorizaDatos)
+            ModelState.AddModelError(nameof(model.AutorizaDatos), "Para enviar la solicitud debes autorizar el tratamiento de tus datos personales.");
+
+        if (!ModelState.IsValid) return View(await PrepararHogarAsync(model, esal!, s!));
+
+        s!.TipoVivienda = model.TipoVivienda;
+        s.TenenciaVivienda = model.TenenciaVivienda;
+        s.ArrendadorPermiteMascotas = arrendada ? model.ArrendadorPermiteMascotas : null;
+        s.Convivientes = model.Convivientes;
+        s.ConvivientesDeAcuerdo = model.ConvivientesDeAcuerdo;
+        s.NinosEnCasa = model.NinosEnCasa;
+        s.NinosInteractuanMascotas = model.NinosEnCasa == true ? model.NinosInteractuanMascotas : null;
+        s.EmbarazoEnHogar = model.EmbarazoEnHogar;
+        s.PuedeCubrirCostos = model.PuedeCubrirCostos;
+        s.AceptaVisita = model.AceptaVisita;
+        s.AceptaRequisito = true;
+        s.AceptaContrato = true;
+        s.AutorizaDatos = true;
+        s.FechaAutorizacionDatos = DateTime.UtcNow;
+        s.SeccionesCompletadas = SeccionAdopcionViewModel.TotalSecciones;
+
+        // La solicitud pasa a "Recibida" con su código único
+        s.Estado = EstadoSolicitudAdopcion.Recibida;
+        s.FechaEnvio = DateTime.UtcNow;
+        s.FechaActualizacion = DateTime.UtcNow;
+        s.Codigo = $"ADO-{DateTime.UtcNow:yyyy}-{s.Id:D6}";
+
+        await _notificaciones.AgregarAAdministradoresAsync(esal!.Id,
+            "Nueva solicitud de adopción",
+            $"{s.NombreCompleto} envió la solicitud de adopción {s.Codigo}.",
+            "/Fundacion/Adopciones", "bi-house-heart");
+        await _db.SaveChangesAsync();
+
+        TempData["Mensaje"] = $"¡Listo! Enviaste tu solicitud de adopción {s.Codigo} a {esal.Nombre}. Quedó recibida y te avisaremos cuando la revisen.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // ---------- Mis adopciones: las solicitudes enviadas por la persona ----------
+
+    [HttpGet("mis-adopciones")]
+    public async Task<IActionResult> Index()
+    {
+        var solicitudes = await _db.SolicitudesAdopcion.IgnoreQueryFilters().AsNoTracking()
+            .Where(s => s.UsuarioId == UsuarioId && s.Estado != EstadoSolicitudAdopcion.Borrador)
+            .OrderByDescending(s => s.FechaEnvio)
+            .Select(s => new { s.Codigo, s.Esal!.Nombre, s.Esal.Slug, s.Esal.LogoRuta, s.Estado, s.FechaEnvio })
+            .ToListAsync();
+
+        return View(solicitudes.Select(s => new SolicitudAdopcionItem
+        {
+            Codigo = s.Codigo,
+            NombreEsal = s.Nombre,
+            SlugEsal = s.Slug ?? "",
+            LogoUrl = UrlArchivo(s.LogoRuta),
+            Estado = s.Estado,
+            Fecha = s.FechaEnvio ?? DateTime.UtcNow
+        }).ToList());
+    }
+
+    /// <summary>Datos de la fundación para la sección 3: aporte e información de toxoplasmosis (escenario 2).</summary>
+    private async Task<HogarAdopcionViewModel> PrepararHogarAsync(HogarAdopcionViewModel model, Esal esal, SolicitudAdopcion borrador)
+    {
+        var config = await _db.ConfigAdopciones.IgnoreQueryFilters().AsNoTracking().FirstOrDefaultAsync(c => c.EsalId == esal.Id);
+        model.ValorAporte = config?.ValorAporte ?? ConfigAdopcion.ValorAportePredeterminado;
+        model.MensajeToxoplasmosis = string.IsNullOrWhiteSpace(config?.MensajeToxoplasmosis)
+            ? ConfigAdopcion.MensajeToxoplasmosisPredeterminado
+            : config.MensajeToxoplasmosis;
+        model.ImagenToxoplasmosisUrl = UrlArchivo(config?.ImagenToxoplasmosisRuta);
+        return PrepararSeccion(model, esal, borrador, 3);
     }
 
     /// <summary>
@@ -302,6 +410,13 @@ public class AdopcionesController : Controller
         if (esal is null) return (null, null, ModuloNoDisponible());
 
         var borrador = await BuscarBorradorAsync(esal.Id);
+        if (borrador is null && await _db.SolicitudesAdopcion.IgnoreQueryFilters()
+                .AnyAsync(s => s.EsalId == esal.Id && s.UsuarioId == UsuarioId && SolicitudAdopcion.EstadosEnProceso.Contains(s.Estado)))
+        {
+            // Ya envió su solicitud: no hay formulario que diligenciar
+            TempData["Mensaje"] = $"Ya enviaste tu solicitud de adopción a {esal.Nombre}. Aquí puedes ver en qué va.";
+            return (esal, null, RedirectToAction(nameof(Index)));
+        }
         if (borrador is null)
         {
             TempData["Error"] = "Antes de diligenciar el formulario debes leer y aceptar las recomendaciones.";

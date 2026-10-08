@@ -1,0 +1,34 @@
+@model List<SolicitudAdopcionItem>
+@{
+    ViewData["Title"] = "Mis adopciones";
+}
+<div class="container py-4 py-md-5" style="max-width: 860px">
+    <h1 class="h2 mb-1">Mis adopciones</h1>
+    <p class="text-suave mb-4">Las solicitudes de adopción que has enviado y en qué van.</p>
+
+    @if (Model.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo acento mb-3"><i class="bi bi-house-heart" aria-hidden="true"></i></div>
+            <h2 class="h5">Todavía no has enviado solicitudes</h2>
+            <p class="text-suave">Entra al perfil de una fundación y elige "Adoptar".</p>
+            <a class="btn btn-primary" href="/fundaciones">Explorar fundaciones</a>
+        </div>
+    }
+    else
+    {
+        <div class="d-grid gap-2">
+            @foreach (var s in Model)
+            {
+                <a class="fila-lista mu-card mu-card-hover" href="/fundaciones/@s.SlugEsal">
+                    <partial name="_LogoEsal" model="new LogoEsalModel(s.NombreEsal, s.LogoUrl, 44)" />
+                    <span class="flex-grow-1 min-w-0">
+                        <span class="d-block fw-semibold text-body text-truncate">@s.NombreEsal</span>
+                        <span class="d-block small text-suave">@s.Codigo · @Formatos.FechaCorta(s.Fecha)</span>
+                    </span>
+                    <span class="mu-badge alerta">@Textos.De(s.Estado)</span>
+                </a>
+            }
+        </div>
+    }
+</div>
