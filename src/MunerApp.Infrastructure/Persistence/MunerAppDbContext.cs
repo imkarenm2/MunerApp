@@ -330,6 +330,9 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.ToTable("ConfigAdopcion");
             e.HasKey(x => x.EsalId);
             e.Property(x => x.Recomendaciones).HasMaxLength(3000).IsRequired();
+            e.Property(x => x.ValorAporte).HasPrecision(14, 2).HasDefaultValue(ConfigAdopcion.ValorAportePredeterminado);
+            e.Property(x => x.MensajeToxoplasmosis).HasMaxLength(1500);
+            e.Property(x => x.ImagenToxoplasmosisRuta).HasMaxLength(300);
             e.HasOne(x => x.Esal).WithOne().HasForeignKey<ConfigAdopcion>(x => x.EsalId);
         });
 
@@ -357,6 +360,11 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.Property(x => x.CarneVacunasRuta).HasMaxLength(300);
             e.Property(x => x.PerroSociabilidad).HasConversion<string>().HasMaxLength(10);
             e.Property(x => x.QuePasoMascota).HasMaxLength(500);
+            // Sección 3: hogar y compromisos (HU-032)
+            e.Property(x => x.TipoVivienda).HasConversion<string>().HasMaxLength(15);
+            e.Property(x => x.TenenciaVivienda).HasConversion<string>().HasMaxLength(15);
+            e.Property(x => x.Codigo).HasMaxLength(20);
+            e.HasIndex(x => x.Codigo).IsUnique(); // EF agrega el filtro "Codigo IS NOT NULL"
             e.HasIndex(x => new { x.EsalId, x.Estado });
             // Una persona solo tiene un borrador por fundación: si vuelve, continúa el mismo
             e.HasIndex(x => new { x.EsalId, x.UsuarioId }).IsUnique().HasFilter("[Estado] = N'Borrador'");

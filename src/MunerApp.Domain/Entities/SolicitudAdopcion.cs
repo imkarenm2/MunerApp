@@ -65,6 +65,43 @@ public class SolicitudAdopcion : IPerteneceAEsal
     /// <summary>Si tuvo mascotas: qué ocurrió con ellas (HU-031, escenario 3).</summary>
     public string? QuePasoMascota { get; set; }
 
+    // ---- Sección 3: hogar y compromisos (HU-032) ----
+
+    public TipoVivienda? TipoVivienda { get; set; }
+    public TenenciaVivienda? TenenciaVivienda { get; set; }
+
+    /// <summary>Solo si la vivienda es arrendada.</summary>
+    public bool? ArrendadorPermiteMascotas { get; set; }
+
+    /// <summary>Personas que viven en el hogar, incluido el solicitante.</summary>
+    public int? Convivientes { get; set; }
+    public bool? ConvivientesDeAcuerdo { get; set; }
+
+    public bool? NinosEnCasa { get; set; }
+
+    /// <summary>Solo si hay niños en casa (HU-032, escenario 1).</summary>
+    public bool? NinosInteractuanMascotas { get; set; }
+
+    /// <summary>¿Alguien en el hogar está embarazada o planea estarlo? Muestra la información de toxoplasmosis (escenario 2).</summary>
+    public bool? EmbarazoEnHogar { get; set; }
+
+    public bool? PuedeCubrirCostos { get; set; }
+    public bool? AceptaVisita { get; set; }
+
+    // Aceptaciones obligatorias para enviar la solicitud (escenario 3)
+    public bool AceptaRequisito { get; set; }
+    public bool AceptaContrato { get; set; }
+    public bool AutorizaDatos { get; set; }
+
+    /// <summary>Momento de la autorización de tratamiento de datos personales (Ley 1581 de 2012).</summary>
+    public DateTime? FechaAutorizacionDatos { get; set; }
+
+    // ---- Envío ----
+
+    /// <summary>Código que ve el solicitante, por ejemplo ADO-2026-000012. Se asigna al enviar.</summary>
+    public string? Codigo { get; set; }
+    public DateTime? FechaEnvio { get; set; }
+
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
     public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
 

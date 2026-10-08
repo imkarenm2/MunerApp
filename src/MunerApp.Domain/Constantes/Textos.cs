@@ -155,4 +155,21 @@ public static class Textos
         SociabilidadPerro.NoSabe => "No sé, no ha convivido con gatos",
         _ => s.ToString()
     };
+
+    public static string De(TipoVivienda t) => t switch
+    {
+        TipoVivienda.Casa => "Casa",
+        TipoVivienda.Apartamento => "Apartamento",
+        TipoVivienda.Finca => "Finca",
+        TipoVivienda.Habitacion => "Habitación",
+        _ => t.ToString()
+    };
+
+    public static string De(TenenciaVivienda t) => t switch
+    {
+        TenenciaVivienda.Propia => "Propia",
+        TenenciaVivienda.Arrendada => "Arrendada",
+        TenenciaVivienda.Familiar => "Familiar",
+        _ => t.ToString()
+    };
 }
