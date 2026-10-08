@@ -27,6 +27,21 @@ public class Beneficiario : IPerteneceAEsal
     public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
     public string? RegistradoPorId { get; set; }
 
+    // ---- Apadrinamiento (HU-020): lo único que se muestra al público ----
+
+    /// <summary>Si es true aparece en la opción "Apadrinar" del perfil de la fundación.</summary>
+    public bool Apadrinable { get; set; }
+
+    /// <summary>Historia corta para el público. Nunca se mezcla con datos internos ni clínicos.</summary>
+    public string? HistoriaPublica { get; set; }
+
+    /// <summary>Valor mensual sugerido, en pesos.</summary>
+    public decimal? AporteSugerido { get; set; }
+
+    /// <summary>Foto pública (archivo público, distinta de la foto interna de la hoja de vida).</summary>
+    public string? FotoPublicaRuta { get; set; }
+    public DateTime? FechaApadrinable { get; set; }
+
     public Esal? Esal { get; set; }
     public AdoptanteBeneficiario? Adoptante { get; set; }
     public ICollection<HistorialEstadoBeneficiario> HistorialEstados { get; set; } = new List<HistorialEstadoBeneficiario>();

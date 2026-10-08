@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
+using MunerApp.Application.Seguridad;
 using MunerApp.Domain.Constantes;
 using MunerApp.Domain.Entities;
 using MunerApp.Domain.Enums;
@@ -82,6 +83,7 @@ public class BeneficiariosController : Controller
                 Color = b.Color,
                 Estado = b.Estado,
                 TieneFoto = b.FotoRuta != null,
+                Apadrinable = b.Apadrinable,
                 FaltaAdoptante = esAdmin && b.Estado == EstadoBeneficiario.Adoptado && b.Adoptante == null
             }).ToListAsync();
 
@@ -181,6 +183,12 @@ public class BeneficiariosController : Controller
             FechaRegistro = b.FechaRegistro,
             RegistradoPor = registrador,
             PuedeGestionar = esAdmin,
+            PuedePublicar = esAdmin && User.HasClaim(MunerAppClaims.Perfil, Perfiles.Principal),
+            Apadrinable = b.Apadrinable,
+            HistoriaPublica = b.HistoriaPublica,
+            AporteSugerido = b.AporteSugerido,
+            TieneFotoPublica = b.FotoPublicaRuta is not null,
+            SlugEsal = await _db.Esales.AsNoTracking().Where(e => e.Id == b.EsalId).Select(e => e.Slug).FirstOrDefaultAsync(),
             PuedeVerClinica = verClinica,
             EventosClinicos = verClinica ? await _db.EventosClinicos.CountAsync(e => e.BeneficiarioId == id) : 0,
             FaltaAdoptante = esAdmin && b.Estado == EstadoBeneficiario.Adoptado && b.Adoptante is null,
@@ -300,6 +308,10 @@ public class BeneficiariosController : Controller
 
         var nuevo = model.Estado.Value;
         b.Estado = nuevo;
+
+        // Un beneficiario adoptado o fallecido ya no se ofrece para apadrinar (HU-020)
+        var retiradoDeApadrinamiento = b.Apadrinable && !PuedeApadrinarse(nuevo);
+        if (retiradoDeApadrinamiento) await RetirarDeApadrinamientoAsync(b);
         _db.HistorialEstadosBeneficiario.Add(new HistorialEstadoBeneficiario
         {
             EsalId = b.EsalId,
@@ -312,11 +324,11 @@ public class BeneficiariosController : Controller
 
         if (nuevo == EstadoBeneficiario.Adoptado && !await _db.AdoptantesBeneficiario.AnyAsync(a => a.BeneficiarioId == id))
         {
-            TempData["Mensaje"] = $"{b.Nombre} ahora está \"Adoptado\". Registra los datos del adoptante para el seguimiento.";
+            TempData["Mensaje"] = $"{b.Nombre} ahora está \"Adoptado\". Registra los datos del adoptante para el seguimiento.{(retiradoDeApadrinamiento ? " También dejó de ofrecerse para apadrinar." : "")}";
             return RedirectToAction(nameof(Adoptante), new { id });
         }
 
-        TempData["Mensaje"] = $"El estado de {b.Nombre} cambió a \"{Textos.De(nuevo)}\".";
+        TempData["Mensaje"] = $"El estado de {b.Nombre} cambió a \"{Textos.De(nuevo)}\".{(retiradoDeApadrinamiento ? " También dejó de ofrecerse para apadrinar." : "")}";
         return RedirectToAction(nameof(Detalle), new { id });
     }
 
@@ -397,6 +409,141 @@ public class BeneficiariosController : Controller
 
         TempData["Mensaje"] = $"Guardaste los datos del adoptante de {b.Nombre}.";
         return RedirectToAction(nameof(Detalle), new { id });
+    }
+
+    // ---------- HU-020: apadrinamiento (lo que ve el público) ----------
+
+    [HttpGet]
+    [Authorize(Policy = Politicas.AdminEsalPrincipal)]
+    public async Task<IActionResult> Apadrinamiento(int id)
+    {
+        var b = await _db.Beneficiarios.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        if (b is null) return NotFound();
+        if (!PuedeApadrinarse(b.Estado))
+        {
+            TempData["Error"] = $"{b.Nombre} está en estado \"{Textos.De(b.Estado)}\" y no puede ofrecerse para apadrinar.";
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
+
+        return View(await FormularioApadrinamientoAsync(b, new ApadrinamientoFormViewModel
+        {
+            HistoriaPublica = b.HistoriaPublica ?? "",
+            AporteSugerido = b.AporteSugerido is decimal aporte ? ((long)aporte).ToString("N0", new System.Globalization.CultureInfo("es-CO")) : ""
+        }));
+    }
+
+    // Escenario 1: marcar como apadrinable con foto, historia corta y aporte sugerido
+    [HttpPost]
+    [Authorize(Policy = Politicas.AdminEsalPrincipal)]
+    [RequestSizeLimit(ValidadorArchivos.LimitePeticionBytes)]
+    public async Task<IActionResult> Apadrinamiento(int id, ApadrinamientoFormViewModel model)
+    {
+        var b = await _db.Beneficiarios.FirstOrDefaultAsync(x => x.Id == id);
+        if (b is null) return NotFound();
+        if (!PuedeApadrinarse(b.Estado))
+        {
+            TempData["Error"] = $"{b.Nombre} está en estado \"{Textos.De(b.Estado)}\" y no puede ofrecerse para apadrinar.";
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
+
+        var aporte = Formatos.LeerPesos(model.AporteSugerido);
+        if (!string.IsNullOrWhiteSpace(model.AporteSugerido))
+        {
+            if (aporte is null) ModelState.AddModelError(nameof(model.AporteSugerido), "Escribe el valor solo con números, por ejemplo 30.000.");
+            else if (aporte < 5_000) ModelState.AddModelError(nameof(model.AporteSugerido), "El aporte sugerido mínimo es $5.000.");
+            else if (aporte > 5_000_000) ModelState.AddModelError(nameof(model.AporteSugerido), "El aporte sugerido no puede superar $5.000.000.");
+        }
+
+        ArchivoValidado? foto = null;
+        if (model.Foto is { Length: > 0 })
+        {
+            foto = await ValidadorArchivos.ValidarAsync(model.Foto, TipoArchivo.Imagen);
+            if (!foto.Valido) ModelState.AddModelError(nameof(model.Foto), foto.Error!);
+        }
+        else if (b.FotoPublicaRuta is null && !(model.UsarFotoInterna && b.FotoRuta is not null))
+        {
+            ModelState.AddModelError(nameof(model.Foto), "Agrega la foto que verá el público" + (b.FotoRuta is not null ? " o marca la opción de usar la foto de la hoja de vida." : "."));
+        }
+
+        if (!ModelState.IsValid) return View(await FormularioApadrinamientoAsync(b, model));
+
+        string? fotoAnterior = null;
+        if (foto is { Valido: true })
+        {
+            fotoAnterior = b.FotoPublicaRuta;
+            await using var stream = model.Foto!.OpenReadStream();
+            b.FotoPublicaRuta = await _archivos.GuardarAsync(stream, $"esal/{b.EsalId}/apadrinables", foto.Extension, publico: true);
+        }
+        else if (b.FotoPublicaRuta is null && model.UsarFotoInterna && b.FotoRuta is not null)
+        {
+            // Copia de la foto interna al almacenamiento público (la interna sigue siendo privada)
+            await using var origen = await _archivos.AbrirAsync(b.FotoRuta);
+            if (origen is null)
+            {
+                ModelState.AddModelError(nameof(model.Foto), "No se pudo leer la foto de la hoja de vida. Sube una nueva.");
+                return View(await FormularioApadrinamientoAsync(b, model));
+            }
+            b.FotoPublicaRuta = await _archivos.GuardarAsync(origen, $"esal/{b.EsalId}/apadrinables", Path.GetExtension(b.FotoRuta), publico: true);
+        }
+
+        var yaEraApadrinable = b.Apadrinable;
+        b.Apadrinable = true;
+        b.HistoriaPublica = model.HistoriaPublica.Trim();
+        b.AporteSugerido = aporte;
+        b.FechaApadrinable ??= DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        if (fotoAnterior is not null) await _archivos.EliminarAsync(fotoAnterior);
+
+        TempData["Mensaje"] = yaEraApadrinable
+            ? $"Actualizaste la información pública de {b.Nombre}."
+            : $"{b.Nombre} ya aparece en la opción \"Apadrinar\" del perfil de la fundación.";
+        return RedirectToAction(nameof(Detalle), new { id });
+    }
+
+    // Escenario 3: retirar del apadrinamiento
+    [HttpPost]
+    [Authorize(Policy = Politicas.AdminEsalPrincipal)]
+    public async Task<IActionResult> RetirarApadrinamiento(int id)
+    {
+        var b = await _db.Beneficiarios.FirstOrDefaultAsync(x => x.Id == id);
+        if (b is null) return NotFound();
+        if (!b.Apadrinable)
+        {
+            TempData["Error"] = $"{b.Nombre} no estaba ofrecido para apadrinar.";
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
+
+        await RetirarDeApadrinamientoAsync(b);
+        await _db.SaveChangesAsync();
+
+        TempData["Mensaje"] = $"{b.Nombre} dejó de mostrarse al público.";
+        return RedirectToAction(nameof(Detalle), new { id });
+    }
+
+    private static bool PuedeApadrinarse(EstadoBeneficiario estado)
+        => estado is not (EstadoBeneficiario.Adoptado or EstadoBeneficiario.Fallecido);
+
+    /// <summary>Deja de mostrarse al público; el texto y el aporte se conservan por si se vuelve a ofrecer.</summary>
+    private async Task RetirarDeApadrinamientoAsync(Beneficiario b)
+    {
+        b.Apadrinable = false;
+        b.FechaApadrinable = null;
+        if (b.FotoPublicaRuta is not null)
+        {
+            await _archivos.EliminarAsync(b.FotoPublicaRuta); // la copia pública ya no debe poder abrirse
+            b.FotoPublicaRuta = null;
+        }
+    }
+
+    private async Task<ApadrinamientoFormViewModel> FormularioApadrinamientoAsync(Beneficiario b, ApadrinamientoFormViewModel model)
+    {
+        model.BeneficiarioId = b.Id;
+        model.NombreBeneficiario = b.Nombre;
+        model.YaApadrinable = b.Apadrinable;
+        model.TieneFotoInterna = b.FotoRuta is not null;
+        model.FotoPublicaUrl = b.FotoPublicaRuta is null ? null : _archivos.UrlPublica(b.FotoPublicaRuta);
+        model.SlugEsal = await _db.Esales.AsNoTracking().Where(e => e.Id == b.EsalId).Select(e => e.Slug).FirstOrDefaultAsync();
+        return model;
     }
 
     // ---------- Apoyo ----------

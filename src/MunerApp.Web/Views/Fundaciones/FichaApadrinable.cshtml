@@ -1,0 +1,35 @@
+@model ApadrinableFichaViewModel
+@{
+    var b = Model.Beneficiario;
+    ViewData["Title"] = "Apadrinar a " + b.Nombre;
+    ViewData["Nav"] = "Fundaciones";
+}
+<div class="container py-4 py-md-5" style="max-width: 960px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Volver al perfil de")' />
+
+    <a href="/fundaciones/@Model.Slug/apadrinar" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Todos los beneficiarios</a>
+
+    <div class="row g-4 mt-1">
+        <div class="col-12 col-md-6">
+            @if (b.FotoUrl is not null)
+            {
+                <img class="ficha-apadrinable-foto" src="@b.FotoUrl" alt="Foto de @b.Nombre" />
+            }
+            else
+            {
+                <div class="ficha-apadrinable-foto beneficiario-sin-foto" aria-hidden="true"><i class="bi bi-camera"></i></div>
+            }
+        </div>
+        <div class="col-12 col-md-6">
+            <span class="mu-badge acento mb-2"><i class="bi bi-balloon-heart" aria-hidden="true"></i>Busca padrinos</span>
+            <h1 class="h2 mb-1">@b.Nombre</h1>
+            <p class="text-suave">@b.Edad · @b.Sexo · @b.Color</p>
+            <p class="texto-largo">@b.Historia</p>
+
+            <div class="mu-card p-4 mt-4">
+                <div class="small text-suave">Aporte sugerido</div>
+                <div class="h3 fw-bold text-principal mb-0">@Formatos.Pesos(b.AporteSugerido) <span class="h6 fw-normal text-suave">al mes</span></div>
+            </div>
+        </div>
+    </div>
+</div>

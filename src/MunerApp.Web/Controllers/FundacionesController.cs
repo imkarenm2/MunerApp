@@ -98,6 +98,8 @@ public class FundacionesController : Controller
 
         var tieneDatos = await _db.DatosDonacion.IgnoreQueryFilters().AnyAsync(d => d.EsalId == esal.Id);
         var activos = (await _modulos.ObtenerActivosAsync(esal.Id)).Select(m => m.Codigo).ToHashSet();
+        var hayApadrinables = activos.Contains(CodigosModulo.Beneficiarios)
+            && await _db.Beneficiarios.IgnoreQueryFilters().AnyAsync(b => b.EsalId == esal.Id && b.Apadrinable);
 
         var modelo = new PerfilPublicoViewModel
         {
@@ -122,7 +124,7 @@ public class FundacionesController : Controller
                 d.Extension, d.FechaPublicacion, d.TamanoBytes)).ToList(),
             TieneDatosDonacion = tieneDatos,
             TieneModulosApoyo = activos.Overlaps(new[] { CodigosModulo.Beneficiarios, CodigosModulo.Adopcion, CodigosModulo.Tienda }),
-            FormasAyuda = ConstruirFormasAyuda(esal, activos)
+            FormasAyuda = ConstruirFormasAyuda(esal, activos, hayApadrinables)
         };
 
         return View(modelo);
@@ -156,8 +158,70 @@ public class FundacionesController : Controller
         });
     }
 
+    // ---------- HU-020: apadrinamiento (solo se muestra la información pública) ----------
+
+    [HttpGet("{slug}/apadrinar")]
+    public async Task<IActionResult> Apadrinar(string slug)
+    {
+        var esal = await BuscarActivaAsync(slug);
+        if (esal is null || !await _modulos.EstaActivoAsync(esal.Id, CodigosModulo.Beneficiarios)) return NoDisponible();
+
+        // Se leen solo los campos públicos: nunca la hoja de vida interna ni la historia clínica
+        var lista = await _db.Beneficiarios.IgnoreQueryFilters().AsNoTracking()
+            .Where(b => b.EsalId == esal.Id && b.Apadrinable)
+            .OrderBy(b => b.Nombre)
+            .Select(b => new { b.Id, b.Nombre, b.FechaNacimiento, b.Sexo, b.Color, b.FotoPublicaRuta, b.HistoriaPublica, b.AporteSugerido })
+            .ToListAsync();
+
+        return View(new ApadrinablesViewModel
+        {
+            Slug = esal.Slug!,
+            Nombre = esal.Nombre,
+            LogoUrl = UrlArchivo(esal.LogoRuta),
+            Beneficiarios = lista.Select(b => TarjetaApadrinable(b.Id, b.Nombre, b.FechaNacimiento, b.Sexo, b.Color, b.FotoPublicaRuta, b.HistoriaPublica, b.AporteSugerido)).ToList()
+        });
+    }
+
+    [HttpGet("{slug}/apadrinar/{id:int}")]
+    public async Task<IActionResult> FichaApadrinable(string slug, int id)
+    {
+        var esal = await BuscarActivaAsync(slug);
+        if (esal is null || !await _modulos.EstaActivoAsync(esal.Id, CodigosModulo.Beneficiarios)) return NoDisponible();
+
+        var b = await _db.Beneficiarios.IgnoreQueryFilters().AsNoTracking()
+            .Where(x => x.Id == id && x.EsalId == esal.Id && x.Apadrinable)
+            .Select(x => new { x.Id, x.Nombre, x.FechaNacimiento, x.Sexo, x.Color, x.FotoPublicaRuta, x.HistoriaPublica, x.AporteSugerido })
+            .FirstOrDefaultAsync();
+        if (b is null)
+        {
+            Response.StatusCode = StatusCodes.Status404NotFound;
+            return View("ApadrinableNoDisponible", new ApadrinablesViewModel { Slug = esal.Slug!, Nombre = esal.Nombre, LogoUrl = UrlArchivo(esal.LogoRuta) });
+        }
+
+        return View(new ApadrinableFichaViewModel
+        {
+            Slug = esal.Slug!,
+            NombreEsal = esal.Nombre,
+            LogoUrl = UrlArchivo(esal.LogoRuta),
+            Beneficiario = TarjetaApadrinable(b.Id, b.Nombre, b.FechaNacimiento, b.Sexo, b.Color, b.FotoPublicaRuta, b.HistoriaPublica, b.AporteSugerido)
+        });
+    }
+
+    private ApadrinableTarjeta TarjetaApadrinable(int id, string nombre, DateTime nacimiento, SexoBeneficiario sexo, string color,
+        string? fotoRuta, string? historia, decimal? aporte) => new()
+    {
+        Id = id,
+        Nombre = nombre,
+        Edad = Servicios.Formatos.Edad(nacimiento),
+        Sexo = Textos.De(sexo),
+        Color = color,
+        FotoUrl = UrlArchivo(fotoRuta),
+        Historia = historia ?? "",
+        AporteSugerido = aporte ?? 0
+    };
+
     /// <summary>HU-016: las opciones dependen de los módulos activos de la fundación.</summary>
-    private List<FormaAyuda> ConstruirFormasAyuda(Esal esal, ISet<string> activos)
+    private List<FormaAyuda> ConstruirFormasAyuda(Esal esal, ISet<string> activos, bool hayApadrinables)
     {
         var slug = esal.Slug!;
         var formas = new List<FormaAyuda>
@@ -176,7 +240,7 @@ public class FundacionesController : Controller
         if (activos.Contains(CodigosModulo.Beneficiarios))
             formas.Add(new(CodigosModulo.Beneficiarios, "Apadrinar",
                 "Acompaña a un beneficiario con un aporte periódico y sigue sus novedades.",
-                "bi-balloon-heart", "", null, true, false));
+                "bi-balloon-heart", "", $"/fundaciones/{slug}/apadrinar", false, hayApadrinables));
 
         if (activos.Contains(CodigosModulo.Adopcion))
             formas.Add(new(CodigosModulo.Adopcion, "Adoptar",

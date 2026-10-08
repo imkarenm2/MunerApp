@@ -1,0 +1,48 @@
+@model ApadrinablesViewModel
+@{
+    ViewData["Title"] = "Apadrinar · " + Model.Nombre;
+    ViewData["Nav"] = "Fundaciones";
+}
+<div class="container py-4 py-md-5">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.Nombre, Model.LogoUrl, 48), Model.Slug, "Volver al perfil de")' />
+
+    <h1 class="h2 mb-2">Apadrina a un beneficiario de @Model.Nombre</h1>
+    <p class="text-suave mb-4">Con un aporte periódico acompañas el cuidado de uno de ellos. Elige a quién quieres apoyar.</p>
+
+    @if (Model.Beneficiarios.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo alerta mb-3"><i class="bi bi-balloon-heart" aria-hidden="true"></i></div>
+            <h2 class="h5">Por ahora no hay beneficiarios para apadrinar</h2>
+            <p class="text-suave">La fundación aún no ha publicado a quién se puede apadrinar. Vuelve pronto o apóyala de otra forma.</p>
+            <a class="btn btn-outline-primary" href="/fundaciones/@Model.Slug#como-ayudar">Ver otras formas de ayudar</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var b in Model.Beneficiarios)
+            {
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <a class="mu-card mu-card-hover tarjeta-apadrinable text-decoration-none text-body" href="/fundaciones/@Model.Slug/apadrinar/@b.Id">
+                        @if (b.FotoUrl is not null)
+                        {
+                            <img class="apadrinable-foto" src="@b.FotoUrl" alt="Foto de @b.Nombre" loading="lazy" />
+                        }
+                        else
+                        {
+                            <span class="apadrinable-foto beneficiario-sin-foto" aria-hidden="true"><i class="bi bi-camera"></i></span>
+                        }
+                        <span class="d-block p-4">
+                            <span class="d-block h5 mb-1">@b.Nombre</span>
+                            <span class="d-block small text-suave mb-2">@b.Edad · @b.Sexo · @b.Color</span>
+                            <span class="d-block texto-recortado mb-3">@b.Historia</span>
+                            <span class="d-block small text-suave">Aporte sugerido</span>
+                            <span class="d-block fw-bold text-principal">@Formatos.Pesos(b.AporteSugerido) <span class="fw-normal small text-suave">al mes</span></span>
+                        </span>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+</div>

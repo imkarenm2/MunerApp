@@ -58,6 +58,9 @@ public class BeneficiarioItem
 
     /// <summary>true si está "Adoptado" y todavía no se guardaron los datos del adoptante.</summary>
     public bool FaltaAdoptante { get; set; }
+
+    /// <summary>Aparece en la opción "Apadrinar" del perfil público (HU-020).</summary>
+    public bool Apadrinable { get; set; }
 }
 
 public class BeneficiariosIndexViewModel
@@ -99,6 +102,13 @@ public class AdoptanteItem
 public class BeneficiarioDetalleViewModel : BeneficiarioItem
 {
     public bool PuedeGestionar { get; set; }
+
+    /// <summary>Administrador principal: decide qué se publica de cada beneficiario (HU-020).</summary>
+    public bool PuedePublicar { get; set; }
+    public string? HistoriaPublica { get; set; }
+    public decimal? AporteSugerido { get; set; }
+    public bool TieneFotoPublica { get; set; }
+    public string? SlugEsal { get; set; }
 
     /// <summary>Administradores y voluntarios de salud (HU-019).</summary>
     public bool PuedeVerClinica { get; set; }
@@ -218,4 +228,33 @@ public class HistoriaClinicaViewModel
     public DateTime FechaNacimiento { get; set; }
     public bool TieneFoto { get; set; }
     public IReadOnlyList<EventoClinicoItem> Eventos { get; set; } = Array.Empty<EventoClinicoItem>();
+}
+
+// ---------------- HU-020: apadrinamiento ----------------
+
+public class ApadrinamientoFormViewModel
+{
+    // Para mostrar (no se envían)
+    public int BeneficiarioId { get; set; }
+    public string NombreBeneficiario { get; set; } = string.Empty;
+    public bool YaApadrinable { get; set; }
+    public string? FotoPublicaUrl { get; set; }
+    public bool TieneFotoInterna { get; set; }
+    public string? SlugEsal { get; set; }
+
+    [Required(ErrorMessage = "Escribe la historia que verá el público.")]
+    [StringLength(600, MinimumLength = 20, ErrorMessage = "La historia debe tener entre {2} y {1} caracteres.")]
+    [Display(Name = "Historia corta (la verá el público)")]
+    public string HistoriaPublica { get; set; } = string.Empty;
+
+    /// <summary>Se recibe como texto para aceptar "30.000" o "$ 30,000" (pesos sin decimales).</summary>
+    [Required(ErrorMessage = "Ingresa el aporte mensual sugerido.")]
+    [Display(Name = "Aporte mensual sugerido")]
+    public string AporteSugerido { get; set; } = string.Empty;
+
+    [Display(Name = "Foto pública")]
+    public IFormFile? Foto { get; set; }
+
+    [Display(Name = "Usar la foto de la hoja de vida")]
+    public bool UsarFotoInterna { get; set; }
 }
