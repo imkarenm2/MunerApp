@@ -33,5 +33,13 @@ public class Donacion : IPerteneceAEsal
     public DateTime? FechaRevision { get; set; }
     public string? RevisadoPorId { get; set; }
 
+    /// <summary>Si es un aporte de apadrinamiento (HU-021), el apadrinamiento al que pertenece.</summary>
+    public int? ApadrinamientoId { get; set; }
+
+    /// <summary>Si la donación es para una causa de recaudación (HU-041), la causa. Al confirmarse suma a su recaudado.</summary>
+    public int? CausaId { get; set; }
+
     public Esal? Esal { get; set; }
+    public Apadrinamiento? Apadrinamiento { get; set; }
+    public Causa? Causa { get; set; }
 }

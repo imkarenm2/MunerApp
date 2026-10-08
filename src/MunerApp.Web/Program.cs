@@ -21,6 +21,7 @@ builder.Services.AddControllersWithViews(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IEsalActual, EsalActual>();
 builder.Services.AddScoped<InvitacionService>();
+builder.Services.AddScoped<CausasPublicas>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // ---- Identity (documento de diseño, sección 9) ----
@@ -63,6 +64,8 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(Politicas.AdminEsalPrincipal, p => p
         .RequireRole(Roles.AdministradorESAL)
         .RequireClaim(MunerAppClaims.Perfil, Perfiles.Principal));
+
+    options.AddPolicy(Politicas.AccesoClinico, p => p.RequireAuthenticatedUser().RequireAssertion(ctx => Politicas.TieneAccesoClinico(ctx.User)));
 });
 
 // Login con Gmail (HU-003): se activa cuando se configuran las credenciales de Google

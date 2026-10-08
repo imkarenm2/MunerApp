@@ -81,6 +81,9 @@ public class PerfilPublicoViewModel
     public IReadOnlyList<RedPublica> Redes { get; set; } = Array.Empty<RedPublica>();
     public IReadOnlyList<DocumentoPublico> Documentos { get; set; } = Array.Empty<DocumentoPublico>();
     public IReadOnlyList<FormaAyuda> FormasAyuda { get; set; } = Array.Empty<FormaAyuda>();
+
+    /// <summary>Causas de recaudación de la fundación (HU-041 / HU-042).</summary>
+    public CausasPublicasViewModel Causas { get; set; } = new();
     public bool TieneDatosDonacion { get; set; }
 
     /// <summary>true si la fundación tiene algún módulo configurable de apoyo activo.</summary>
@@ -103,4 +106,37 @@ public class DonarViewModel
     public string? Numero { get; set; }
     public string? Instrucciones { get; set; }
     public bool PagosEnLineaActivos { get; set; }
+}
+
+// ---------------- HU-020: apadrinamiento (solo información pública) ----------------
+
+public class ApadrinableTarjeta
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; } = string.Empty;
+    public string Edad { get; set; } = string.Empty;
+    public string Sexo { get; set; } = string.Empty;
+    public string Color { get; set; } = string.Empty;
+    public string? FotoUrl { get; set; }
+    public string Historia { get; set; } = string.Empty;
+    public decimal AporteSugerido { get; set; }
+}
+
+public class ApadrinablesViewModel
+{
+    public string Slug { get; set; } = string.Empty;
+    public string Nombre { get; set; } = string.Empty;
+    public string? LogoUrl { get; set; }
+    public IReadOnlyList<ApadrinableTarjeta> Beneficiarios { get; set; } = Array.Empty<ApadrinableTarjeta>();
+}
+
+public class ApadrinableFichaViewModel
+{
+    public string Slug { get; set; } = string.Empty;
+    public string NombreEsal { get; set; } = string.Empty;
+    public string? LogoUrl { get; set; }
+    public ApadrinableTarjeta Beneficiario { get; set; } = new();
+
+    /// <summary>Si quien mira ya es su padrino activo (HU-021), el apadrinamiento para abrirlo.</summary>
+    public int? ApadrinamientoPropioId { get; set; }
 }

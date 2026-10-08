@@ -75,6 +75,7 @@
         <ul class="nav flex-nowrap overflow-auto">
             @if (tieneQuienes) { <li class="nav-item"><a class="nav-link" href="#quienes-somos">Quiénes somos</a></li> }
             @if (Model.Fotos.Count > 0) { <li class="nav-item"><a class="nav-link" href="#galeria">Galería</a></li> }
+            @if (Model.Causas.Abiertas.Count + Model.Causas.Cerradas.Count > 0) { <li class="nav-item"><a class="nav-link" href="#causas">Causas</a></li> }
             <li class="nav-item"><a class="nav-link" href="#transparencia">Transparencia</a></li>
             <li class="nav-item"><a class="nav-link" href="#como-ayudar">Cómo ayudar</a></li>
             <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
@@ -142,6 +143,23 @@
                             <button type="button" class="galeria-item" data-galeria="@Model.Fotos[i]" aria-label="Ver foto @(i + 1) de @Model.Fotos.Count">
                                 <img src="@Model.Fotos[i]" alt="Foto @(i + 1) de @Model.Nombre" loading="lazy" />
                             </button>
+                        }
+                    </div>
+                </section>
+            }
+
+            @* ---------- Causas de recaudación (HU-041 / HU-042) ---------- *@
+            @if (Model.Causas.Abiertas.Count + Model.Causas.Cerradas.Count > 0)
+            {
+                <section id="causas" class="perfil-seccion">
+                    <h2 class="h3 mb-1">Causas</h2>
+                    <p class="text-suave mb-3">Campañas para reunir dinero para una necesidad concreta.</p>
+                    <div class="row g-3">
+                        @foreach (var c in Model.Causas.Abiertas.Concat(Model.Causas.Cerradas))
+                        {
+                            <div class="col-12 col-md-6">
+                                <partial name="_TarjetaCausa" model="c" />
+                            </div>
                         }
                     </div>
                 </section>
@@ -220,6 +238,10 @@
                                         @if (f.Codigo == CodigosModulo.Donaciones)
                                         {
                                             <text>Ver cómo donar</text>
+                                        }
+                                        else if (f.Codigo == CodigosModulo.Beneficiarios)
+                                        {
+                                            <text>Conocer a los apadrinables</text>
                                         }
                                         else if (!autenticado)
                                         {

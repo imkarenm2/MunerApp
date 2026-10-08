@@ -64,4 +64,45 @@ public static class Textos
         EstadoPostulacion.Rechazada => "Rechazada",
         _ => e.ToString()
     };
+
+    public static string De(SexoBeneficiario s) => s switch
+    {
+        SexoBeneficiario.Macho => "Macho",
+        SexoBeneficiario.Hembra => "Hembra",
+        _ => s.ToString()
+    };
+
+    public static string De(EstadoBeneficiario e) => e switch
+    {
+        EstadoBeneficiario.EnLaFundacion => "En la fundación",
+        EstadoBeneficiario.EnTratamiento => "En tratamiento",
+        EstadoBeneficiario.Adoptable => "Adoptable",
+        EstadoBeneficiario.Adoptado => "Adoptado",
+        EstadoBeneficiario.Fallecido => "Fallecido",
+        _ => e.ToString()
+    };
+
+    public static string De(TipoEventoClinico t) => t switch
+    {
+        TipoEventoClinico.Vacuna => "Vacuna",
+        TipoEventoClinico.Tratamiento => "Tratamiento",
+        TipoEventoClinico.Control => "Control",
+        TipoEventoClinico.Otro => "Otro",
+        _ => t.ToString()
+    };
+
+    public static string De(EstadoApadrinamiento e) => e switch
+    {
+        EstadoApadrinamiento.Activo => "Activo",
+        EstadoApadrinamiento.Cancelado => "Cancelado",
+        _ => e.ToString()
+    };
+
+    public static string De(EstadoCausa e) => e switch
+    {
+        EstadoCausa.Activa => "Activa",
+        EstadoCausa.Pausada => "En pausa",
+        EstadoCausa.Cerrada => "Cerrada",
+        _ => e.ToString()
+    };
 }

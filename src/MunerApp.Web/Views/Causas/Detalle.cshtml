@@ -1,0 +1,110 @@
+@model CausaDetalleViewModel
+@{
+    ViewData["Title"] = Model.Titulo;
+    ViewData["Nav"] = "Causas";
+    ViewData["Descripcion"] = $"{Model.Titulo}: {Formatos.Pesos(Model.Recaudado)} recaudados de {Formatos.Pesos(Model.Meta)}.";
+    var llegoALaMeta = Model.Recaudado >= Model.Meta;
+}
+<div class="container py-4 py-md-5" style="max-width: 1040px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.SlugEsal, "Causa de")' />
+
+    <h1 class="h2 mb-3">@Model.Titulo</h1>
+
+    <div class="row g-4 g-lg-5">
+        <div class="col-12 col-lg-7">
+            @if (Model.Fotos.Count > 0)
+            {
+                <button type="button" class="galeria-item d-block w-100 mb-2" data-galeria="@Model.Fotos[0]" style="aspect-ratio: 16 / 10" aria-label="Ver la foto principal en grande">
+                    <img src="@Model.Fotos[0]" alt="Foto de la causa @Model.Titulo" />
+                </button>
+                @if (Model.Fotos.Count > 1)
+                {
+                    <div class="galeria mb-3">
+                        @for (var i = 1; i < Model.Fotos.Count; i++)
+                        {
+                            <button type="button" class="galeria-item" data-galeria="@Model.Fotos[i]" aria-label="Ver foto @(i + 1) de @Model.Fotos.Count">
+                                <img src="@Model.Fotos[i]" alt="Foto @(i + 1) de la causa @Model.Titulo" loading="lazy" />
+                            </button>
+                        }
+                    </div>
+                }
+            }
+            <h2 class="h5 mt-4 mb-2">Sobre esta causa</h2>
+            <div class="texto-largo">@Model.Descripcion</div>
+            <p class="small text-suave mt-3">Publicada el @Formatos.Fecha(Formatos.Local(Model.FechaPublicacion))</p>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <div class="mu-card p-4 sticky-lg-top" style="top: 90px">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    @if (Model.Cerrada)
+                    {
+                        <span class="mu-badge"><i class="bi bi-flag" aria-hidden="true"></i>Cerrada</span>
+                    }
+                    else if (Model.Pausada)
+                    {
+                        <span class="mu-badge alerta"><i class="bi bi-pause-circle" aria-hidden="true"></i>En pausa</span>
+                    }
+                    else
+                    {
+                        <span class="mu-badge exito"><i class="bi bi-broadcast" aria-hidden="true"></i>Activa</span>
+                    }
+                    <span class="small text-suave">@(Model.Cerrada ? "Terminó el " + Formatos.Fecha(Model.FechaLimite) : Formatos.DiasRestantes(Model.DiasRestantes))</span>
+                </div>
+
+                <div class="display-6 fw-bold text-principal">@Formatos.Pesos(Model.Recaudado)</div>
+                <div class="text-suave mb-3">recaudados de @Formatos.Pesos(Model.Meta)</div>
+                <div class="mu-progreso @(Model.Cerrada ? "cerrada" : "") mb-2" role="progressbar" aria-valuenow="@Model.Porcentaje" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso de la causa">
+                    <span style="width: @(Model.Porcentaje)%"></span>
+                </div>
+                <div class="d-flex justify-content-between small text-suave mb-4">
+                    <span>@Model.Porcentaje % de la meta</span>
+                    <span>Fecha límite: @Formatos.Fecha(Model.FechaLimite)</span>
+                </div>
+
+                @if (Model.RecibeDonaciones)
+                {
+                    <a class="btn btn-apoyar btn-lg w-100" href="/fundaciones/@Model.SlugEsal/donar"><i class="bi bi-heart me-2" aria-hidden="true"></i>Donar a esta causa</a>
+                    <p class="small text-suave mt-3 mb-0">
+                        <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+                        Por ahora la fundación recibe donaciones por transferencia a su cuenta oficial. El pago en línea (tarjeta, PSE y Nequi) que suma a esta barra llegará pronto.
+                    </p>
+                }
+                else if (Model.Cerrada)
+                {
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-flag" aria-hidden="true"></i>
+                        <div>@(llegoALaMeta ? "Esta causa alcanzó su meta." : "Esta causa terminó su plazo.") Ya no recibe donaciones. ¡Gracias a quienes aportaron!</div>
+                    </div>
+                    @if (Model.RendicionUrl is not null)
+                    {
+                        <a class="btn btn-outline-primary w-100" href="@Model.RendicionUrl" target="_blank" rel="noopener"><i class="bi bi-file-earmark-text me-2" aria-hidden="true"></i>Ver la rendición de cuentas</a>
+                    }
+                    else
+                    {
+                        <p class="small text-suave mb-0">La fundación aún no ha publicado la rendición de cuentas de esta causa.</p>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-pause-circle" aria-hidden="true"></i>
+                        <div>La fundación pausó esta causa: por ahora no recibe donaciones. Vuelve pronto.</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.Fotos.Count > 0)
+{
+    <div class="modal fade" id="visorFoto" tabindex="-1" aria-label="Foto de la causa" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content bg-transparent border-0">
+                <button type="button" class="btn-close btn-close-white ms-auto mb-2" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <img class="img-fluid rounded-4 mx-auto" alt="Foto ampliada de la causa @Model.Titulo" data-visor-img />
+            </div>
+        </div>
+    </div>
+}

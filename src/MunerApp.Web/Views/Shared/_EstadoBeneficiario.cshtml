@@ -1,0 +1,19 @@
+@model EstadoBeneficiario
+@switch (Model)
+{
+    case EstadoBeneficiario.EnTratamiento:
+        <span class="mu-badge alerta"><i class="bi bi-bandaid" aria-hidden="true"></i>@Textos.De(Model)</span>
+        break;
+    case EstadoBeneficiario.Adoptable:
+        <span class="mu-badge acento"><i class="bi bi-house-heart" aria-hidden="true"></i>@Textos.De(Model)</span>
+        break;
+    case EstadoBeneficiario.Adoptado:
+        <span class="mu-badge exito"><i class="bi bi-heart-fill" aria-hidden="true"></i>@Textos.De(Model)</span>
+        break;
+    case EstadoBeneficiario.Fallecido:
+        <span class="mu-badge"><i class="bi bi-flower1" aria-hidden="true"></i>@Textos.De(Model)</span>
+        break;
+    default:
+        <span class="mu-badge"><i class="bi bi-house-door" aria-hidden="true"></i>@Textos.De(Model)</span>
+        break;
+}

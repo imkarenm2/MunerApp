@@ -1,0 +1,241 @@
+@model BeneficiarioDetalleViewModel
+@{
+    ViewData["Title"] = Model.Nombre;
+    ViewData["Seccion"] = "Beneficiarios";
+    var otrosEstados = Enum.GetValues<EstadoBeneficiario>().Where(e => e != Model.Estado).ToList();
+}
+<div class="container py-4 py-md-5" style="max-width: 1040px">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Beneficiarios</a>
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-2 mb-4">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <h1 class="h2 mb-0">@Model.Nombre</h1>
+            <partial name="_EstadoBeneficiario" model="Model.Estado" />
+        </div>
+        @if (Model.PuedeGestionar)
+        {
+            <a class="btn btn-suave btn-sm" asp-action="Editar" asp-route-id="@Model.Id"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar datos</a>
+        }
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    @if (Model.FaltaAdoptante)
+    {
+        <div class="alert alert-warning" role="alert">
+            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+            <div class="flex-grow-1">
+                <strong>Faltan los datos del adoptante.</strong> Regístralos para poder hacer el seguimiento posterior.
+                <a class="fw-semibold ms-1" asp-action="Adoptante" asp-route-id="@Model.Id">Registrar adoptante</a>
+            </div>
+        </div>
+    }
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-5">
+            <div class="mu-card overflow-hidden mb-4">
+                @if (Model.TieneFoto)
+                {
+                    <img class="beneficiario-foto-grande" src="@Url.Action("Foto", new { id = Model.Id })" alt="Foto de @Model.Nombre" />
+                }
+                else
+                {
+                    <div class="beneficiario-foto-grande beneficiario-sin-foto" aria-hidden="true"><i class="bi bi-camera"></i></div>
+                }
+                <div class="p-4">
+                    <dl class="row datos-detalle mb-0">
+                        <dt class="col-5">Edad</dt><dd class="col-7">@Formatos.Edad(Model.FechaNacimiento)</dd>
+                        <dt class="col-5">Sexo</dt><dd class="col-7">@Textos.De(Model.Sexo)</dd>
+                        <dt class="col-5">Color</dt><dd class="col-7">@Model.Color</dd>
+                        <dt class="col-5">Rescatado el</dt><dd class="col-7">@Formatos.Fecha(Model.FechaRescate)</dd>
+                        <dt class="col-5">Registrado</dt><dd class="col-7">@Formatos.FechaCorta(Model.FechaRegistro)@(Model.RegistradoPor is null ? "" : " por " + Model.RegistradoPor)</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-7">
+            @if (Model.PuedeVerClinica)
+            {
+                <a class="mu-card mu-card-hover p-4 mb-4 d-flex align-items-center gap-3 text-decoration-none text-body" asp-controller="HistoriaClinica" asp-action="Index" asp-route-id="@Model.Id">
+                    <span class="icono-circulo flex-shrink-0"><i class="bi bi-journal-medical" aria-hidden="true"></i></span>
+                    <span class="flex-grow-1">
+                        <span class="fw-bold d-block">Historia clínica</span>
+                        <span class="small text-suave">@(Model.EventosClinicos == 0 ? "Sin eventos registrados" : Model.EventosClinicos + (Model.EventosClinicos == 1 ? " evento registrado" : " eventos registrados")) · vacunas, tratamientos y controles</span>
+                    </span>
+                    <i class="bi bi-chevron-right text-suave" aria-hidden="true"></i>
+                </a>
+            }
+
+            @if (Model.PuedeGestionar)
+            {
+                var puedeApadrinarse = Model.Estado is not (EstadoBeneficiario.Adoptado or EstadoBeneficiario.Fallecido);
+                <div class="mu-card p-4 mb-4">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                        <h2 class="h6 fw-bold mb-0"><i class="bi bi-balloon-heart me-1 text-acento" aria-hidden="true"></i>Apadrinamiento</h2>
+                        @if (Model.Apadrinable)
+                        {
+                            <span class="mu-badge acento"><i class="bi bi-eye" aria-hidden="true"></i>Visible al público</span>
+                        }
+                        else
+                        {
+                            <span class="mu-badge"><i class="bi bi-eye-slash" aria-hidden="true"></i>No se ofrece</span>
+                        }
+                    </div>
+                    @if (Model.Apadrinable)
+                    {
+                        <p class="texto-largo mb-2">@Model.HistoriaPublica</p>
+                        <p class="small text-suave mb-3">Aporte sugerido: <strong class="text-body">@(Model.AporteSugerido is decimal aporte ? Formatos.Pesos(aporte) : "—")</strong> al mes</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            @if (Model.SlugEsal is not null)
+                            {
+                                <a class="btn btn-sm btn-outline-primary" href="/fundaciones/@Model.SlugEsal/apadrinar/@Model.Id" target="_blank" rel="noopener"><i class="bi bi-eye me-1" aria-hidden="true"></i>Ver como lo ve el público</a>
+                            }
+                            @if (Model.PuedePublicar)
+                            {
+                                <a class="btn btn-sm btn-suave" asp-action="Apadrinamiento" asp-route-id="@Model.Id"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar</a>
+                                <form asp-action="RetirarApadrinamiento" asp-route-id="@Model.Id" method="post"
+                                      data-confirmar="Dejará de mostrarse en el perfil de la fundación. Sus padrinos actuales serán notificados."
+                                      data-confirmar-titulo="¿Retirar a @Model.Nombre del apadrinamiento?" data-confirmar-boton="Sí, retirar" data-confirmar-tipo="peligro">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Retirar</button>
+                                </form>
+                            }
+                        </div>
+                    }
+                    else if (!puedeApadrinarse)
+                    {
+                        <p class="small text-suave mb-0">Un beneficiario en estado "@Textos.De(Model.Estado)" no se ofrece para apadrinar.</p>
+                    }
+                    else if (Model.PuedePublicar)
+                    {
+                        <p class="small text-suave">Ofrécelo en la opción "Apadrinar" del perfil, con una foto, una historia corta y un aporte sugerido. Nunca se publica su historia clínica.</p>
+                        <a class="btn btn-sm btn-primary" asp-action="Apadrinamiento" asp-route-id="@Model.Id"><i class="bi bi-balloon-heart me-1" aria-hidden="true"></i>Ofrecer para apadrinar</a>
+                    }
+                    else
+                    {
+                        <p class="small text-suave mb-0">Solo el administrador principal puede decidir qué se publica.</p>
+                    }
+                </div>
+
+            <div class="mu-card p-4 mb-4">
+                <h2 class="h6 fw-bold mb-3">Cambiar estado</h2>
+                <form asp-action="CambiarEstado" asp-route-id="@Model.Id" method="post" id="form-estado"
+                      data-confirmar="Quedará registrado en el historial con la fecha de hoy."
+                      data-confirmar-titulo="¿Cambiar el estado de @Model.Nombre?" data-confirmar-boton="Sí, cambiar estado">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12 col-sm-5">
+                            <label for="Estado" class="form-label">Nuevo estado</label>
+                            <select id="Estado" name="Estado" class="form-select" required>
+                                <option value="">Selecciona…</option>
+                                @foreach (var e in otrosEstados)
+                                {
+                                    <option value="@e">@Textos.De(e)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-7">
+                            <label for="Nota" class="form-label">Nota (opcional)</label>
+                            <input id="Nota" name="Nota" class="form-control" maxlength="300" placeholder="Ej.: inicia tratamiento por rinotraqueítis" autocomplete="off" />
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary" data-cargando="Guardando...">Cambiar estado</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            }
+
+            @if (Model.PuedeGestionar && Model.Estado == EstadoBeneficiario.Adoptado)
+            {
+                <div class="mu-card p-4 mb-4">
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                        <h2 class="h6 fw-bold mb-0">Adoptante</h2>
+                        <a class="btn btn-suave btn-sm" asp-action="Adoptante" asp-route-id="@Model.Id">
+                            <i class="bi bi-pencil me-1" aria-hidden="true"></i>@(Model.Adoptante is null ? "Registrar" : "Editar")
+                        </a>
+                    </div>
+                    @if (Model.Adoptante is { } a)
+                    {
+                        <dl class="row datos-detalle mb-0">
+                            <dt class="col-sm-4">Nombre</dt><dd class="col-sm-8">@a.Nombre</dd>
+                            <dt class="col-sm-4">Cédula</dt><dd class="col-sm-8">@a.Documento</dd>
+                            <dt class="col-sm-4">Celular</dt><dd class="col-sm-8">@a.Telefono</dd>
+                            @if (!string.IsNullOrEmpty(a.Correo))
+                            {
+                                <dt class="col-sm-4">Correo</dt><dd class="col-sm-8 text-break">@a.Correo</dd>
+                            }
+                            <dt class="col-sm-4">Dirección</dt><dd class="col-sm-8">@a.Direccion, @a.Ciudad</dd>
+                            <dt class="col-sm-4">Adoptado el</dt><dd class="col-sm-8">@Formatos.Fecha(a.FechaAdopcion)</dd>
+                            @if (!string.IsNullOrEmpty(a.Observaciones))
+                            {
+                                <dt class="col-sm-4">Observaciones</dt><dd class="col-sm-8 texto-largo">@a.Observaciones</dd>
+                            }
+                        </dl>
+                    }
+                    else
+                    {
+                        <p class="text-suave mb-0">Todavía no se han registrado los datos de quien adoptó a @Model.Nombre.</p>
+                    }
+                </div>
+            }
+
+            @if (Model.PuedeGestionar)
+            {
+                var activos = Model.Padrinos.Where(p => p.Activo).ToList();
+                <div class="mu-card p-4 mb-4">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                        <h2 class="h6 fw-bold mb-0"><i class="bi bi-people me-1 text-acento" aria-hidden="true"></i>Padrinos</h2>
+                        @if (activos.Count > 0)
+                        {
+                            <span class="small text-suave">@activos.Count @(activos.Count == 1 ? "activo" : "activos") · @Formatos.Pesos(activos.Sum(p => p.ValorMensual)) al mes</span>
+                        }
+                    </div>
+                    @if (Model.Padrinos.Count == 0)
+                    {
+                        <p class="small text-suave mb-0">Todavía no tiene padrinos.</p>
+                    }
+                    else
+                    {
+                        <div class="d-grid gap-2">
+                            @foreach (var p in Model.Padrinos)
+                            {
+                                <div class="documento-item mu-card @(p.Activo ? "" : "documento-oculto")">
+                                    <span class="flex-grow-1 min-w-0">
+                                        <span class="d-block fw-semibold text-truncate">@p.Nombre</span>
+                                        <span class="d-block small text-suave text-truncate">@p.Correo · desde @Formatos.FechaCorta(p.FechaInicio)</span>
+                                    </span>
+                                    <span class="text-end">
+                                        <span class="d-block fw-bold">@Formatos.Pesos(p.ValorMensual)<span class="small fw-normal text-suave"> /mes</span></span>
+                                        <span class="d-block small text-suave">Confirmado: @Formatos.Pesos(p.TotalConfirmado)</span>
+                                        @if (!p.Activo)
+                                        {
+                                            <span class="mu-badge">Cancelado</span>
+                                        }
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="mu-card p-4">
+                <h2 class="h6 fw-bold mb-3">Historial de estados</h2>
+                <ul class="linea-tiempo">
+                    @for (var i = 0; i < Model.Historial.Count; i++)
+                    {
+                        var h = Model.Historial[i];
+                        <li class="@(i == 0 ? "actual" : "hecho")">
+                            <span class="fw-semibold">@Textos.De(h.Estado)</span>
+                            <span class="small text-suave">@Formatos.FechaHora(h.Fecha)@(h.Responsable is null ? "" : " · " + h.Responsable)</span>
+                            @if (!string.IsNullOrEmpty(h.Nota))
+                            {
+                                <span class="small">@h.Nota</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
