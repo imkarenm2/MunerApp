@@ -59,6 +59,16 @@ public static class Formatos
         return (meses / 12, meses % 12);
     }
 
+    /// <summary>Acepta "50000", "50.000", "$ 50.000" o "50,000" (pesos sin decimales). Devuelve null si no es un valor válido.</summary>
+    public static decimal? LeerPesos(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto)) return null;
+        var limpio = texto.Replace("$", "").Replace("COP", "", StringComparison.OrdinalIgnoreCase).Trim();
+        if (limpio.Any(c => !char.IsDigit(c) && c is not '.' and not ',' and not ' ')) return null;
+        var digitos = new string(limpio.Where(char.IsDigit).ToArray());
+        return digitos.Length is > 0 and <= 12 ? decimal.Parse(digitos) : null;
+    }
+
     /// <summary>Enlace de WhatsApp para un número colombiano.</summary>
     public static string? WhatsApp(string? telefono)
     {

@@ -107,6 +107,10 @@
                                 <span class="small text-suave d-block">@Formatos.Edad(b.FechaNacimiento) · @Textos.De(b.Sexo)</span>
                                 <span class="d-flex flex-wrap gap-1 mt-2">
                                     <partial name="_EstadoBeneficiario" model="b.Estado" />
+                                    @if (b.Apadrinable)
+                                    {
+                                        <span class="mu-badge acento"><i class="bi bi-balloon-heart" aria-hidden="true"></i>Apadrinable</span>
+                                    }
                                     @if (b.FaltaAdoptante)
                                     {
                                         <span class="mu-badge alerta"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>Falta adoptante</span>

@@ -991,3 +991,10 @@ details.rechazo summary::-webkit-details-marker { display: none; }
 .evento-foto { display: block; aspect-ratio: 1; border-radius: var(--mu-radio-sm); overflow: hidden; background: #EDEAE5; }
 .evento-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
 .evento-foto:hover img { transform: scale(1.05); }
+
+/* ---------- Apadrinamiento público (HU-020) ---------- */
+.tarjeta-apadrinable { display: block; overflow: hidden; height: 100%; }
+.apadrinable-foto { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #EDEAE5; }
+.apadrinable-foto.beneficiario-sin-foto { font-size: 2.5rem; }
+.ficha-apadrinable-foto { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--mu-radio); background: #EDEAE5; box-shadow: var(--mu-sombra); }
+.ficha-apadrinable-foto.beneficiario-sin-foto { font-size: 4rem; }

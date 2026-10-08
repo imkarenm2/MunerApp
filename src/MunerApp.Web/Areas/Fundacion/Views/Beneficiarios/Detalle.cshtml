@@ -69,6 +69,54 @@
 
             @if (Model.PuedeGestionar)
             {
+                var puedeApadrinarse = Model.Estado is not (EstadoBeneficiario.Adoptado or EstadoBeneficiario.Fallecido);
+                <div class="mu-card p-4 mb-4">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                        <h2 class="h6 fw-bold mb-0"><i class="bi bi-balloon-heart me-1 text-acento" aria-hidden="true"></i>Apadrinamiento</h2>
+                        @if (Model.Apadrinable)
+                        {
+                            <span class="mu-badge acento"><i class="bi bi-eye" aria-hidden="true"></i>Visible al público</span>
+                        }
+                        else
+                        {
+                            <span class="mu-badge"><i class="bi bi-eye-slash" aria-hidden="true"></i>No se ofrece</span>
+                        }
+                    </div>
+                    @if (Model.Apadrinable)
+                    {
+                        <p class="texto-largo mb-2">@Model.HistoriaPublica</p>
+                        <p class="small text-suave mb-3">Aporte sugerido: <strong class="text-body">@(Model.AporteSugerido is decimal aporte ? Formatos.Pesos(aporte) : "—")</strong> al mes</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            @if (Model.SlugEsal is not null)
+                            {
+                                <a class="btn btn-sm btn-outline-primary" href="/fundaciones/@Model.SlugEsal/apadrinar/@Model.Id" target="_blank" rel="noopener"><i class="bi bi-eye me-1" aria-hidden="true"></i>Ver como lo ve el público</a>
+                            }
+                            @if (Model.PuedePublicar)
+                            {
+                                <a class="btn btn-sm btn-suave" asp-action="Apadrinamiento" asp-route-id="@Model.Id"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar</a>
+                                <form asp-action="RetirarApadrinamiento" asp-route-id="@Model.Id" method="post"
+                                      data-confirmar="Dejará de mostrarse en el perfil de la fundación. Sus padrinos actuales serán notificados."
+                                      data-confirmar-titulo="¿Retirar a @Model.Nombre del apadrinamiento?" data-confirmar-boton="Sí, retirar" data-confirmar-tipo="peligro">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Retirar</button>
+                                </form>
+                            }
+                        </div>
+                    }
+                    else if (!puedeApadrinarse)
+                    {
+                        <p class="small text-suave mb-0">Un beneficiario en estado "@Textos.De(Model.Estado)" no se ofrece para apadrinar.</p>
+                    }
+                    else if (Model.PuedePublicar)
+                    {
+                        <p class="small text-suave">Ofrécelo en la opción "Apadrinar" del perfil, con una foto, una historia corta y un aporte sugerido. Nunca se publica su historia clínica.</p>
+                        <a class="btn btn-sm btn-primary" asp-action="Apadrinamiento" asp-route-id="@Model.Id"><i class="bi bi-balloon-heart me-1" aria-hidden="true"></i>Ofrecer para apadrinar</a>
+                    }
+                    else
+                    {
+                        <p class="small text-suave mb-0">Solo el administrador principal puede decidir qué se publica.</p>
+                    }
+                </div>
+
             <div class="mu-card p-4 mb-4">
                 <h2 class="h6 fw-bold mb-3">Cambiar estado</h2>
                 <form asp-action="CambiarEstado" asp-route-id="@Model.Id" method="post" id="form-estado"
