@@ -338,6 +338,17 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.ToTable("SolicitudAdopcion");
             e.Property(x => x.UsuarioId).HasMaxLength(450).IsRequired();
             e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            // Sección 1: datos personales (HU-030)
+            e.Property(x => x.NombreCompleto).HasMaxLength(150);
+            e.Property(x => x.Cedula).HasMaxLength(10);
+            e.Property(x => x.Celular).HasMaxLength(10);
+            e.Property(x => x.Ciudad).HasMaxLength(100);
+            e.Property(x => x.Direccion).HasMaxLength(200);
+            e.Property(x => x.Ocupacion).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.DetalleOcupacion).HasMaxLength(150);
+            e.Property(x => x.ReferenciaNombre).HasMaxLength(150);
+            e.Property(x => x.ReferenciaCelular).HasMaxLength(10);
+            e.Property(x => x.ReferenciaRelacion).HasMaxLength(60);
             e.HasIndex(x => new { x.EsalId, x.Estado });
             // Una persona solo tiene un borrador por fundación: si vuelve, continúa el mismo
             e.HasIndex(x => new { x.EsalId, x.UsuarioId }).IsUnique().HasFilter("[Estado] = N'Borrador'");

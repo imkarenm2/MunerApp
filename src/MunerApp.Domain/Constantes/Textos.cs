@@ -112,4 +112,15 @@ public static class Textos
         EstadoSolicitudAdopcion.Recibida => "Recibida",
         _ => e.ToString()
     };
+
+    public static string De(OcupacionAdoptante o) => o switch
+    {
+        OcupacionAdoptante.Empleado => "Empleado",
+        OcupacionAdoptante.Independiente => "Independiente",
+        OcupacionAdoptante.Estudiante => "Estudiante",
+        OcupacionAdoptante.Pensionado => "Pensionado",
+        OcupacionAdoptante.Hogar => "Labores del hogar",
+        OcupacionAdoptante.Desempleado => "Sin empleo actualmente",
+        _ => o.ToString()
+    };
 }
