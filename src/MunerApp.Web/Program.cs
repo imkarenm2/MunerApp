@@ -63,6 +63,8 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(Politicas.AdminEsalPrincipal, p => p
         .RequireRole(Roles.AdministradorESAL)
         .RequireClaim(MunerAppClaims.Perfil, Perfiles.Principal));
+
+    options.AddPolicy(Politicas.AccesoClinico, p => p.RequireAuthenticatedUser().RequireAssertion(ctx => Politicas.TieneAccesoClinico(ctx.User)));
 });
 
 // Login con Gmail (HU-003): se activa cuando se configuran las credenciales de Google

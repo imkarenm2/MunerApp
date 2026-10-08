@@ -88,8 +88,9 @@ document.addEventListener('change', function (e) {
     // Revisar el tamaño antes de enviar (máximo 5 MB), para no esperar una subida que el servidor va a rechazar
     const MAX_MB = 5;
     const elegido = input.files[0];
-    if (elegido && elegido.size > MAX_MB * 1024 * 1024) {
-        const mb = (elegido.size / 1024 / 1024).toFixed(1).replace('.', ',');
+    const muyPesado = Array.from(input.files).find(function (f) { return f.size > MAX_MB * 1024 * 1024; });
+    if (muyPesado) {
+        const mb = (muyPesado.size / 1024 / 1024).toFixed(1).replace('.', ',');
         input.value = '';
         const zonaError = input.parentElement.querySelector('[data-nombre-archivo]');
         if (zonaError) {
@@ -113,7 +114,10 @@ document.addEventListener('change', function (e) {
     if (nombre) nombre.classList.remove('text-danger');
     const zona = contenedor.querySelector('.zona-archivo');
     const archivo = input.files[0];
-    if (nombre) nombre.textContent = archivo ? archivo.name : 'Selecciona el archivo';
+    // Con varios archivos (fotos de la historia clínica) se muestra la cantidad
+    const varios = input.multiple && input.files.length > 1;
+    if (nombre) nombre.textContent = varios ? input.files.length + ' fotos seleccionadas'
+        : (archivo ? archivo.name : (input.multiple ? 'Selecciona hasta 5 fotos' : 'Selecciona el archivo'));
     if (zona) zona.classList.toggle('con-archivo', !!archivo);
 
     if (archivo && input.getAttribute('data-vista-previa') === 'logo' && archivo.type.startsWith('image/')) {

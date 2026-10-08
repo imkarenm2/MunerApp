@@ -99,6 +99,10 @@ public class AdoptanteItem
 public class BeneficiarioDetalleViewModel : BeneficiarioItem
 {
     public bool PuedeGestionar { get; set; }
+
+    /// <summary>Administradores y voluntarios de salud (HU-019).</summary>
+    public bool PuedeVerClinica { get; set; }
+    public int EventosClinicos { get; set; }
     public DateTime FechaRescate { get; set; }
     public DateTime FechaRegistro { get; set; }
     public string? RegistradoPor { get; set; }
@@ -161,4 +165,57 @@ public class AdoptanteFormViewModel
     [StringLength(500, ErrorMessage = "Máximo {1} caracteres.")]
     [Display(Name = "Observaciones (opcional)")]
     public string? Observaciones { get; set; }
+}
+
+// ---------------- HU-019: historia clínica ----------------
+
+public class EventoClinicoFormViewModel
+{
+    // Para mostrar (no se envían)
+    public int BeneficiarioId { get; set; }
+    public string NombreBeneficiario { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Selecciona el tipo de evento.")]
+    [Display(Name = "Tipo de evento")]
+    public TipoEventoClinico? Tipo { get; set; }
+
+    [Required(ErrorMessage = "Ingresa la fecha del evento.")]
+    [DataType(DataType.Date)]
+    [Display(Name = "Fecha")]
+    public DateTime? Fecha { get; set; }
+
+    [Required(ErrorMessage = "Describe el evento.")]
+    [StringLength(1000, MinimumLength = 5, ErrorMessage = "La descripción debe tener entre {2} y {1} caracteres.")]
+    [Display(Name = "Descripción")]
+    public string Descripcion { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Ingresa quién atendió o aplicó.")]
+    [StringLength(150, ErrorMessage = "Máximo {1} caracteres.")]
+    [Display(Name = "Responsable")]
+    public string Responsable { get; set; } = string.Empty;
+
+    [Display(Name = "Fotos (opcional)")]
+    public List<IFormFile>? Fotos { get; set; }
+}
+
+public class EventoClinicoItem
+{
+    public int Id { get; set; }
+    public TipoEventoClinico Tipo { get; set; }
+    public DateTime Fecha { get; set; }
+    public string Descripcion { get; set; } = string.Empty;
+    public string Responsable { get; set; } = string.Empty;
+    public string? RegistradoPor { get; set; }
+    public DateTime FechaRegistro { get; set; }
+    public IReadOnlyList<int> FotoIds { get; set; } = Array.Empty<int>();
+}
+
+public class HistoriaClinicaViewModel
+{
+    public int BeneficiarioId { get; set; }
+    public string Nombre { get; set; } = string.Empty;
+    public EstadoBeneficiario Estado { get; set; }
+    public DateTime FechaNacimiento { get; set; }
+    public bool TieneFoto { get; set; }
+    public IReadOnlyList<EventoClinicoItem> Eventos { get; set; } = Array.Empty<EventoClinicoItem>();
 }

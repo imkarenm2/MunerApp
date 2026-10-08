@@ -9,6 +9,7 @@ using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Areas.Fundacion.Models;
 using MunerApp.Web.Filtros;
+using MunerApp.Web.Seguridad;
 using MunerApp.Web.Servicios;
 using MunerApp.Web.Validacion;
 
@@ -150,6 +151,7 @@ public class BeneficiariosController : Controller
     public async Task<IActionResult> Detalle(int id)
     {
         var esAdmin = User.IsInRole(Roles.AdministradorESAL);
+        var verClinica = Politicas.TieneAccesoClinico(User);
         var b = await _db.Beneficiarios.AsNoTracking()
             .Include(x => x.Adoptante)
             .FirstOrDefaultAsync(x => x.Id == id);
@@ -179,6 +181,8 @@ public class BeneficiariosController : Controller
             FechaRegistro = b.FechaRegistro,
             RegistradoPor = registrador,
             PuedeGestionar = esAdmin,
+            PuedeVerClinica = verClinica,
+            EventosClinicos = verClinica ? await _db.EventosClinicos.CountAsync(e => e.BeneficiarioId == id) : 0,
             FaltaAdoptante = esAdmin && b.Estado == EstadoBeneficiario.Adoptado && b.Adoptante is null,
             Historial = historial,
             // Los datos personales del adoptante son solo para los administradores
