@@ -1,0 +1,107 @@
+@model CausasIndexViewModel
+@{
+    ViewData["Title"] = "Causas de recaudación";
+    ViewData["Seccion"] = "Causas";
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Causas de recaudación</h1>
+            <p class="text-suave mb-0">Campañas con meta, fecha límite y barra de progreso para reunir dinero para una necesidad concreta.</p>
+        </div>
+        @if (Model.PuedeGestionar)
+        {
+            <a class="btn btn-primary" asp-action="Crear"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nueva causa</a>
+        }
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    @if (!Model.PuedeGestionar)
+    {
+        <div class="alert alert-info small">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+            <div>Solo el administrador principal puede publicar, editar o pausar causas.</div>
+        </div>
+    }
+
+    @if (Model.Causas.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-bullseye" aria-hidden="true"></i></div>
+            <h2 class="h5">Aún no han publicado causas</h2>
+            <p class="text-suave">Una causa tiene una meta en pesos, una fecha límite, una descripción y fotos. Se muestra en el perfil de la fundación.</p>
+            @if (Model.PuedeGestionar)
+            {
+                <a class="btn btn-primary" asp-action="Crear">Publicar la primera</a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var c in Model.Causas)
+            {
+                <div class="col-12 col-lg-6">
+                    <div class="mu-card causa-admin @(c.Cerrada ? "documento-oculto" : "")">
+                        @if (c.FotoUrl is not null)
+                        {
+                            <img class="causa-admin-foto" src="@c.FotoUrl" alt="" loading="lazy" />
+                        }
+                        <div class="p-4 flex-grow-1 d-flex flex-column">
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                @if (c.Cerrada)
+                                {
+                                    <span class="mu-badge"><i class="bi bi-flag" aria-hidden="true"></i>Cerrada</span>
+                                }
+                                else if (c.Estado == EstadoCausa.Pausada)
+                                {
+                                    <span class="mu-badge alerta"><i class="bi bi-pause-circle" aria-hidden="true"></i>En pausa</span>
+                                }
+                                else
+                                {
+                                    <span class="mu-badge exito"><i class="bi bi-broadcast" aria-hidden="true"></i>Activa</span>
+                                }
+                                <span class="small text-suave">@(c.Cerrada ? "Terminó el " + Formatos.Fecha(c.FechaLimite) : Formatos.DiasRestantes(c.DiasRestantes))</span>
+                            </div>
+                            <h2 class="h5 mb-2">@c.Titulo</h2>
+                            <div class="mu-progreso mb-2" role="progressbar" aria-valuenow="@c.Porcentaje" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso de la causa">
+                                <span style="width: @(c.Porcentaje)%"></span>
+                            </div>
+                            <div class="d-flex justify-content-between small mb-3">
+                                <span><strong>@Formatos.Pesos(c.Recaudado)</strong> recaudados</span>
+                                <span class="text-suave">@c.Porcentaje % de @Formatos.Pesos(c.Meta)</span>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mt-auto">
+                                @if (Model.Slug is not null)
+                                {
+                                    <a class="btn btn-sm btn-outline-primary" href="/fundaciones/@Model.Slug/causas/@c.Id" target="_blank" rel="noopener"><i class="bi bi-eye me-1" aria-hidden="true"></i>Ver pública</a>
+                                }
+                                @if (Model.PuedeGestionar && !c.Cerrada)
+                                {
+                                    <a class="btn btn-sm btn-suave" asp-action="Editar" asp-route-id="@c.Id"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar</a>
+                                    @if (c.Estado == EstadoCausa.Activa)
+                                    {
+                                        <form asp-action="Pausar" asp-route-id="@c.Id" method="post"
+                                              data-confirmar="Se seguirá viendo en el perfil, pero no recibirá donaciones hasta que la reanudes."
+                                              data-confirmar-titulo="¿Pausar &quot;@c.Titulo&quot;?" data-confirmar-boton="Sí, pausar">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pause-circle me-1" aria-hidden="true"></i>Pausar</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Reanudar" asp-route-id="@c.Id" method="post"
+                                              data-confirmar="Volverá a recibir donaciones."
+                                              data-confirmar-titulo="¿Reanudar &quot;@c.Titulo&quot;?" data-confirmar-boton="Sí, reanudar">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-play-circle me-1" aria-hidden="true"></i>Reanudar</button>
+                                        </form>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

@@ -81,6 +81,9 @@ public class PerfilPublicoViewModel
     public IReadOnlyList<RedPublica> Redes { get; set; } = Array.Empty<RedPublica>();
     public IReadOnlyList<DocumentoPublico> Documentos { get; set; } = Array.Empty<DocumentoPublico>();
     public IReadOnlyList<FormaAyuda> FormasAyuda { get; set; } = Array.Empty<FormaAyuda>();
+
+    /// <summary>Causas de recaudación de la fundación (HU-041 / HU-042).</summary>
+    public CausasPublicasViewModel Causas { get; set; } = new();
     public bool TieneDatosDonacion { get; set; }
 
     /// <summary>true si la fundación tiene algún módulo configurable de apoyo activo.</summary>

@@ -1,0 +1,66 @@
+@model CausaFormViewModel
+@{
+    var manana = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
+    var maximo = DateTime.Today.AddYears(2).ToString("yyyy-MM-dd");
+    var editando = Model.Id is not null;
+    var cupo = 5 - Model.FotosActuales.Count;
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+<div class="row g-3">
+    <div class="col-12">
+        <label asp-for="Titulo" class="form-label"></label>
+        <input asp-for="Titulo" class="form-control" maxlength="120" placeholder="Ej.: Cirugía de emergencia para Michi" autocomplete="off" />
+        <span asp-validation-for="Titulo"></span>
+    </div>
+    <div class="col-12 col-sm-6">
+        <label asp-for="Meta" class="form-label"></label>
+        <div class="input-icono">
+            <i class="bi bi-currency-dollar" aria-hidden="true"></i>
+            <input asp-for="Meta" class="form-control" inputmode="numeric" placeholder="2.500.000" autocomplete="off" data-moneda />
+        </div>
+        <span asp-validation-for="Meta"></span>
+        @if (editando && Model.Recaudado > 0)
+        {
+            <div class="form-text">Ya se recaudaron @Formatos.Pesos(Model.Recaudado): la meta debe ser mayor.</div>
+        }
+    </div>
+    <div class="col-12 col-sm-6">
+        <label asp-for="FechaLimite" class="form-label"></label>
+        <input asp-for="FechaLimite" type="date" class="form-control" min="@manana" max="@maximo" />
+        <span asp-validation-for="FechaLimite"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Descripcion" class="form-label"></label>
+        <textarea asp-for="Descripcion" class="form-control" rows="7" maxlength="3000"
+                  placeholder="Cuenta qué necesidad hay, para qué se usará el dinero y por qué es urgente."></textarea>
+        <span asp-validation-for="Descripcion"></span>
+    </div>
+    <div class="col-12">
+        <label class="form-label" for="Fotos">Fotos (@(editando ? "hasta 5 en total" : "al menos 1, máximo 5"))</label>
+        @if (editando && Model.FotosActuales.Count > 0)
+        {
+            <div class="evento-fotos mb-3">
+                @foreach (var f in Model.FotosActuales)
+                {
+                    <div class="evento-foto position-relative">
+                        <img src="@f.Url" alt="Foto de la causa" />
+                        @if (Model.FotosActuales.Count > 1)
+                        {
+                            <button type="submit" form="quitar-foto-@f.Id" class="btn btn-sm btn-light galeria-eliminar" aria-label="Quitar esta foto"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        @if (cupo > 0)
+        {
+            <label class="zona-archivo" for="Fotos">
+                <i class="bi bi-images" aria-hidden="true"></i>
+                <span class="fw-semibold" data-nombre-archivo>@(editando ? $"Agregar fotos (caben {cupo} más)" : "Selecciona las fotos de la causa")</span>
+                <span class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Imagen) Serán públicas.</span>
+            </label>
+            <input asp-for="Fotos" type="file" multiple class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Imagen)" data-archivo />
+        }
+        <span asp-validation-for="Fotos"></span>
+    </div>
+</div>

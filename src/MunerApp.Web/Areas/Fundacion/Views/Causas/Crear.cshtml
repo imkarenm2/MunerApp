@@ -1,0 +1,24 @@
+@model CausaFormViewModel
+@{
+    ViewData["Title"] = "Nueva causa";
+    ViewData["Seccion"] = "Causas";
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Causas</a>
+    <h1 class="h2 mt-2 mb-1">Nueva causa de recaudación</h1>
+    <p class="text-suave mb-4">Al publicarla aparece en el perfil de la fundación con su barra de progreso en 0 %.</p>
+
+    <form asp-action="Crear" method="post" enctype="multipart/form-data" novalidate class="mu-card p-4 p-md-5"
+          data-confirmar="Cualquier persona podrá ver la causa en el perfil de la fundación."
+          data-confirmar-titulo="¿Publicar la causa?" data-confirmar-boton="Sí, publicar">
+        <partial name="_Formulario" model="Model" />
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-primary" data-cargando="Publicando...">Publicar causa</button>
+            <a asp-action="Index" class="btn btn-link">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

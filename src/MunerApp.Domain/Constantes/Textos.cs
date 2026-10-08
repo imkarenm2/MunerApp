@@ -97,4 +97,12 @@ public static class Textos
         EstadoApadrinamiento.Cancelado => "Cancelado",
         _ => e.ToString()
     };
+
+    public static string De(EstadoCausa e) => e switch
+    {
+        EstadoCausa.Activa => "Activa",
+        EstadoCausa.Pausada => "En pausa",
+        EstadoCausa.Cerrada => "Cerrada",
+        _ => e.ToString()
+    };
 }
