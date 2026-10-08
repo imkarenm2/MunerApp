@@ -1,3 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+using MunerApp.Domain.Enums;
+using MunerApp.Web.Validacion;
+
 namespace MunerApp.Web.Models.Publico;
 
 /// <summary>HU-029: recomendaciones y responsabilidades antes del formulario de adopción.</summary>
@@ -19,10 +23,82 @@ public class RecomendacionesAdopcionViewModel
     public bool Acepto { get; set; }
 }
 
-/// <summary>Formulario de adopción por secciones (HU-030 a HU-032).</summary>
-public class FormularioAdopcionViewModel
+/// <summary>Datos comunes de cada sección del formulario de adopción (HU-030 a HU-032).</summary>
+public class SeccionAdopcionViewModel
 {
+    public const int TotalSecciones = 3;
+
     public string Slug { get; set; } = string.Empty;
     public string NombreEsal { get; set; } = string.Empty;
     public string? LogoUrl { get; set; }
+
+    /// <summary>Sección que se está mostrando (1 a 3).</summary>
+    public int Seccion { get; set; }
+
+    /// <summary>Secciones ya guardadas: se puede volver a ellas desde los pasos.</summary>
+    public int SeccionesCompletadas { get; set; }
+}
+
+/// <summary>Sección 1: datos personales y de contacto (HU-030).</summary>
+public class DatosPersonalesAdopcionViewModel : SeccionAdopcionViewModel
+{
+    /// <summary>Correo de la cuenta: la fundación lo usa para contactar a la persona.</summary>
+    public string Correo { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Ingresa tu nombre completo.")]
+    [StringLength(150, MinimumLength = 5, ErrorMessage = "Escribe tu nombre y apellidos.")]
+    [Display(Name = "Nombre completo")]
+    public string NombreCompleto { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Ingresa tu número de cédula.")]
+    [RegularExpression(ValidadorPersonas.PatronCedula, ErrorMessage = ValidadorPersonas.ErrorCedula)]
+    [StringLength(14, ErrorMessage = ValidadorPersonas.ErrorCedula)]
+    [Display(Name = "Cédula de ciudadanía")]
+    public string Cedula { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Ingresa tu edad.")]
+    [Range(18, 100, ErrorMessage = "Para adoptar debes ser mayor de edad (18 años o más).")]
+    [Display(Name = "Edad")]
+    public int? Edad { get; set; }
+
+    [Required(ErrorMessage = "Ingresa tu número de celular.")]
+    [RegularExpression(ValidadorPersonas.PatronCelular, ErrorMessage = ValidadorPersonas.ErrorCelular)]
+    [Display(Name = "Celular")]
+    public string Celular { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Ingresa la ciudad o municipio donde vives.")]
+    [StringLength(100)]
+    [Display(Name = "Ciudad o municipio")]
+    public string Ciudad { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Ingresa tu dirección.")]
+    [StringLength(200, MinimumLength = 5, ErrorMessage = "Escribe la dirección completa, con barrio si aplica.")]
+    [Display(Name = "Dirección")]
+    public string Direccion { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Selecciona tu ocupación.")]
+    [Display(Name = "Ocupación")]
+    public OcupacionAdoptante? Ocupacion { get; set; }
+
+    /// <summary>Obligatorio si la ocupación es Independiente (escenario 2): se valida en el servidor.</summary>
+    [StringLength(150, ErrorMessage = "Máximo {1} caracteres.")]
+    [Display(Name = "¿A qué te dedicas?")]
+    public string? DetalleOcupacion { get; set; }
+
+    [Required(ErrorMessage = "Ingresa el nombre de tu referencia personal.")]
+    [StringLength(150, MinimumLength = 5, ErrorMessage = "Escribe el nombre y apellido de tu referencia.")]
+    [Display(Name = "Nombre de la referencia")]
+    public string ReferenciaNombre { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Ingresa el celular de tu referencia.")]
+    [RegularExpression(ValidadorPersonas.PatronCelular, ErrorMessage = ValidadorPersonas.ErrorCelular)]
+    [Display(Name = "Celular de la referencia")]
+    public string ReferenciaCelular { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Indica qué relación tienes con tu referencia.")]
+    [StringLength(60)]
+    [Display(Name = "Relación")]
+    public string ReferenciaRelacion { get; set; } = string.Empty;
+
+    public static readonly string[] Relaciones = { "Familiar", "Amigo(a)", "Compañero(a) de trabajo", "Vecino(a)", "Otra" };
 }

@@ -1,0 +1,17 @@
+@model SeccionAdopcionViewModel
+@{
+    ViewData["Title"] = "Solicitud de adopción · Mascotas";
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Adopción en")' />
+
+    <h1 class="h2 mb-1">Solicitud de adopción</h1>
+    <p class="text-suave mb-4">Tu avance se guarda al terminar cada sección. Solo la fundación verá estos datos.</p>
+
+    <partial name="_PasosAdopcion" model="Model" />
+
+    <div class="mu-card p-4 p-md-5">
+        <h2 class="h5 mb-2">Tu experiencia con mascotas</h2>
+        <p class="text-suave mb-0">Si tienes o tuviste mascotas y cómo las cuidas.</p>
+    </div>
+</div>

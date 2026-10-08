@@ -3,17 +3,20 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
+using MunerApp.Application.Seguridad;
 using MunerApp.Domain.Constantes;
 using MunerApp.Domain.Entities;
 using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Models.Publico;
+using MunerApp.Web.Validacion;
 
 namespace MunerApp.Web.Controllers;
 
 /// <summary>
 /// Solicitud de adopción en línea. HU-029: la persona lee y acepta las recomendaciones
-/// y responsabilidades; solo entonces se habilita el formulario (HU-030 a HU-032).
+/// y responsabilidades; solo entonces se habilita el formulario por secciones (HU-030 a HU-032),
+/// que guarda el avance en cada una.
 /// </summary>
 [Authorize]
 public class AdopcionesController : Controller
@@ -78,27 +81,137 @@ public class AdopcionesController : Controller
 
     // ---------- HU-030 a HU-032: formulario por secciones ----------
 
+    /// <summary>Lleva a la persona a la sección donde quedó su solicitud.</summary>
     [HttpGet("fundaciones/{slug}/adoptar/formulario")]
     public async Task<IActionResult> Formulario(string slug)
     {
-        var esal = await BuscarConAdopcionAsync(slug);
-        if (esal is null) return ModuloNoDisponible();
+        var (_, borrador, salida) = await AbrirSeccionAsync(slug, 1);
+        if (salida is not null) return salida;
 
-        // Escenario 2 de HU-029: no se entra al formulario por URL sin haber aceptado
-        // (el borrador solo se crea al aceptar las recomendaciones)
+        return borrador!.SeccionesCompletadas switch
+        {
+            0 => RedirectToAction(nameof(Datos), new { slug }),
+            _ => RedirectToAction(nameof(Mascotas), new { slug })
+        };
+    }
+
+    // ---------- HU-030: sección 1, datos personales y de contacto ----------
+
+    [HttpGet("fundaciones/{slug}/adoptar/formulario/datos")]
+    public async Task<IActionResult> Datos(string slug)
+    {
+        var (esal, s, salida) = await AbrirSeccionAsync(slug, 1);
+        if (salida is not null) return salida;
+
+        var model = new DatosPersonalesAdopcionViewModel
+        {
+            NombreCompleto = s!.NombreCompleto ?? User.FindFirstValue(MunerAppClaims.NombreCompleto) ?? "",
+            Cedula = s.Cedula ?? "",
+            Edad = s.Edad,
+            Celular = s.Celular ?? "",
+            Ciudad = s.Ciudad ?? "",
+            Direccion = s.Direccion ?? "",
+            Ocupacion = s.Ocupacion,
+            DetalleOcupacion = s.DetalleOcupacion,
+            ReferenciaNombre = s.ReferenciaNombre ?? "",
+            ReferenciaCelular = s.ReferenciaCelular ?? "",
+            ReferenciaRelacion = s.ReferenciaRelacion ?? ""
+        };
+        return View(PrepararSeccion(model, esal!, s, 1));
+    }
+
+    [HttpPost("fundaciones/{slug}/adoptar/formulario/datos")]
+    public async Task<IActionResult> Datos(string slug, DatosPersonalesAdopcionViewModel model)
+    {
+        var (esal, s, salida) = await AbrirSeccionAsync(slug, 1);
+        if (salida is not null) return salida;
+
+        // Escenario 3: cédula y celulares con formato válido (la edad mínima la valida el modelo)
+        var cedula = ValidadorPersonas.Cedula(model.Cedula);
+        if (!string.IsNullOrWhiteSpace(model.Cedula) && cedula is null)
+            ModelState.AddModelError(nameof(model.Cedula), ValidadorPersonas.ErrorCedula);
+
+        var celular = ValidadorPersonas.Celular(model.Celular);
+        if (!string.IsNullOrWhiteSpace(model.Celular) && celular is null)
+            ModelState.AddModelError(nameof(model.Celular), ValidadorPersonas.ErrorCelular);
+
+        var celularReferencia = ValidadorPersonas.Celular(model.ReferenciaCelular);
+        if (!string.IsNullOrWhiteSpace(model.ReferenciaCelular) && celularReferencia is null)
+            ModelState.AddModelError(nameof(model.ReferenciaCelular), ValidadorPersonas.ErrorCelular);
+        else if (celularReferencia is not null && celularReferencia == celular)
+            ModelState.AddModelError(nameof(model.ReferenciaCelular), "La referencia debe ser otra persona: escribe un celular diferente al tuyo.");
+
+        if (!string.IsNullOrEmpty(model.ReferenciaRelacion) && !DatosPersonalesAdopcionViewModel.Relaciones.Contains(model.ReferenciaRelacion))
+            ModelState.AddModelError(nameof(model.ReferenciaRelacion), "Selecciona una relación de la lista.");
+
+        // Escenario 2: si es independiente, debe indicar a qué se dedica
+        if (model.Ocupacion == OcupacionAdoptante.Independiente && string.IsNullOrWhiteSpace(model.DetalleOcupacion))
+            ModelState.AddModelError(nameof(model.DetalleOcupacion), "Cuéntanos a qué te dedicas como independiente.");
+
+        if (!ModelState.IsValid) return View(PrepararSeccion(model, esal!, s!, 1));
+
+        // Escenario 1: se guarda el avance y se pasa a la sección de mascotas
+        s!.NombreCompleto = model.NombreCompleto.Trim();
+        s.Cedula = cedula;
+        s.Edad = model.Edad;
+        s.Celular = celular;
+        s.Ciudad = model.Ciudad.Trim();
+        s.Direccion = model.Direccion.Trim();
+        s.Ocupacion = model.Ocupacion;
+        s.DetalleOcupacion = model.Ocupacion == OcupacionAdoptante.Independiente ? model.DetalleOcupacion!.Trim() : null;
+        s.ReferenciaNombre = model.ReferenciaNombre.Trim();
+        s.ReferenciaCelular = celularReferencia;
+        s.ReferenciaRelacion = model.ReferenciaRelacion;
+        s.SeccionesCompletadas = Math.Max(s.SeccionesCompletadas, 1);
+        s.FechaActualizacion = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        TempData["Mensaje"] = "Guardamos tus datos personales. Sigue con la sección de mascotas.";
+        return RedirectToAction(nameof(Mascotas), new { slug });
+    }
+
+    // ---------- HU-031: sección 2, mascotas ----------
+
+    [HttpGet("fundaciones/{slug}/adoptar/formulario/mascotas")]
+    public async Task<IActionResult> Mascotas(string slug)
+    {
+        var (esal, s, salida) = await AbrirSeccionAsync(slug, 2);
+        if (salida is not null) return salida;
+        return View(PrepararSeccion(new SeccionAdopcionViewModel(), esal!, s!, 2));
+    }
+
+    /// <summary>
+    /// Valida que se pueda abrir la sección: fundación con adopción activa, borrador creado al aceptar
+    /// las recomendaciones (escenario 2 de HU-029) y secciones anteriores guardadas (no se saltan secciones).
+    /// </summary>
+    private async Task<(Esal? Esal, SolicitudAdopcion? Borrador, IActionResult? Salida)> AbrirSeccionAsync(string slug, int seccion)
+    {
+        var esal = await BuscarConAdopcionAsync(slug);
+        if (esal is null) return (null, null, ModuloNoDisponible());
+
         var borrador = await BuscarBorradorAsync(esal.Id);
         if (borrador is null)
         {
             TempData["Error"] = "Antes de diligenciar el formulario debes leer y aceptar las recomendaciones.";
-            return RedirectToAction(nameof(Recomendaciones), new { slug });
+            return (esal, null, RedirectToAction(nameof(Recomendaciones), new { slug }));
         }
 
-        return View(new FormularioAdopcionViewModel
-        {
-            Slug = esal.Slug!,
-            NombreEsal = esal.Nombre,
-            LogoUrl = UrlArchivo(esal.LogoRuta)
-        });
+        if (seccion > borrador.SeccionesCompletadas + 1)
+            return (esal, borrador, RedirectToAction(nameof(Formulario), new { slug }));
+
+        return (esal, borrador, null);
+    }
+
+    private T PrepararSeccion<T>(T model, Esal esal, SolicitudAdopcion borrador, int seccion) where T : SeccionAdopcionViewModel
+    {
+        model.Slug = esal.Slug!;
+        model.NombreEsal = esal.Nombre;
+        model.LogoUrl = UrlArchivo(esal.LogoRuta);
+        model.Seccion = seccion;
+        model.SeccionesCompletadas = borrador.SeccionesCompletadas;
+        if (model is DatosPersonalesAdopcionViewModel datos)
+            datos.Correo = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name ?? "";
+        return model;
     }
 
     /// <summary>Fundación activa con el módulo de adopción activo, o null.</summary>

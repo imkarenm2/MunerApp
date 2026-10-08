@@ -1,0 +1,112 @@
+@model DatosPersonalesAdopcionViewModel
+@{
+    ViewData["Title"] = "Solicitud de adopción · Datos personales";
+    var ocupaciones = Enum.GetValues<OcupacionAdoptante>();
+    var independiente = Model.Ocupacion == OcupacionAdoptante.Independiente;
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Adopción en")' />
+
+    <h1 class="h2 mb-1">Solicitud de adopción</h1>
+    <p class="text-suave mb-4">Tu avance se guarda al terminar cada sección. Solo la fundación verá estos datos.</p>
+
+    <partial name="_PasosAdopcion" model="Model" />
+
+    <form asp-action="Datos" asp-route-slug="@Model.Slug" method="post" novalidate class="mu-card p-4 p-md-5">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <h2 class="h5 mb-3">Tus datos personales y de contacto</h2>
+        <div class="row g-3">
+            <div class="col-12">
+                <label asp-for="NombreCompleto" class="form-label"></label>
+                <input asp-for="NombreCompleto" class="form-control" maxlength="150" autocomplete="name" />
+                <span asp-validation-for="NombreCompleto"></span>
+            </div>
+            <div class="col-12 col-sm-7">
+                <label asp-for="Cedula" class="form-label"></label>
+                <input asp-for="Cedula" class="form-control" inputmode="numeric" maxlength="14" placeholder="1070123456" autocomplete="off" />
+                <span asp-validation-for="Cedula"></span>
+            </div>
+            <div class="col-12 col-sm-5">
+                <label asp-for="Edad" class="form-label"></label>
+                <input asp-for="Edad" class="form-control" type="number" inputmode="numeric" />
+                <span asp-validation-for="Edad"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="Celular" class="form-label"></label>
+                <div class="input-icono">
+                    <i class="bi bi-phone" aria-hidden="true"></i>
+                    <input asp-for="Celular" class="form-control" inputmode="tel" maxlength="16" placeholder="3001234567" autocomplete="tel" />
+                </div>
+                <span asp-validation-for="Celular"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label class="form-label" for="correoCuenta">Correo</label>
+                <input id="correoCuenta" class="form-control" value="@Model.Correo" readonly aria-describedby="ayudaCorreo" />
+                <div class="form-text" id="ayudaCorreo">Es el correo de tu cuenta.</div>
+            </div>
+            <div class="col-12 col-sm-5">
+                <label asp-for="Ciudad" class="form-label"></label>
+                <input asp-for="Ciudad" class="form-control" maxlength="100" placeholder="Facatativá" autocomplete="address-level2" />
+                <span asp-validation-for="Ciudad"></span>
+            </div>
+            <div class="col-12 col-sm-7">
+                <label asp-for="Direccion" class="form-label"></label>
+                <input asp-for="Direccion" class="form-control" maxlength="200" placeholder="Calle 5 # 3-20, barrio Centro" autocomplete="street-address" />
+                <span asp-validation-for="Direccion"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="Ocupacion" class="form-label"></label>
+                <select asp-for="Ocupacion" class="form-select">
+                    <option value="">Selecciona…</option>
+                    @foreach (var o in ocupaciones)
+                    {
+                        <option value="@o" selected="@(Model.Ocupacion == o)">@Textos.De(o)</option>
+                    }
+                </select>
+                <span asp-validation-for="Ocupacion"></span>
+            </div>
+            @* HU-030 escenario 2: si es independiente, a qué se dedica *@
+            <div class="col-12 col-sm-6 @(independiente ? "" : "d-none")" data-mostrar-si="Ocupacion=Independiente">
+                <label asp-for="DetalleOcupacion" class="form-label"></label>
+                <input asp-for="DetalleOcupacion" class="form-control" maxlength="150" placeholder="Ej.: diseño gráfico, venta de comidas" />
+                <span asp-validation-for="DetalleOcupacion"></span>
+            </div>
+        </div>
+
+        <h2 class="h6 fw-bold mt-4 mb-1"><i class="bi bi-person-lines-fill me-2 text-principal" aria-hidden="true"></i>Referencia personal</h2>
+        <p class="small text-suave mb-3">Una persona que te conozca y a quien la fundación pueda llamar. No puede ser tu mismo número.</p>
+        <div class="row g-3">
+            <div class="col-12 col-sm-6">
+                <label asp-for="ReferenciaNombre" class="form-label"></label>
+                <input asp-for="ReferenciaNombre" class="form-control" maxlength="150" autocomplete="off" />
+                <span asp-validation-for="ReferenciaNombre"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="ReferenciaCelular" class="form-label"></label>
+                <input asp-for="ReferenciaCelular" class="form-control" inputmode="tel" maxlength="16" placeholder="3101234567" autocomplete="off" />
+                <span asp-validation-for="ReferenciaCelular"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="ReferenciaRelacion" class="form-label"></label>
+                <select asp-for="ReferenciaRelacion" class="form-select">
+                    <option value="">Selecciona…</option>
+                    @foreach (var r in DatosPersonalesAdopcionViewModel.Relaciones)
+                    {
+                        <option value="@r" selected="@(Model.ReferenciaRelacion == r)">@r</option>
+                    }
+                </select>
+                <span asp-validation-for="ReferenciaRelacion"></span>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-apoyar btn-lg" data-cargando="Guardando...">Guardar y continuar</button>
+            <a class="btn btn-link" href="/fundaciones/@Model.Slug">Terminar después</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
