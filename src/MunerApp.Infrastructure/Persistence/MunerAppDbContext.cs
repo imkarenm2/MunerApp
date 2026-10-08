@@ -224,6 +224,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.Property(x => x.Programa).HasMaxLength(150);
             e.Property(x => x.SoporteAcademicoRuta).HasMaxLength(300);
             e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.MotivoRechazo).HasMaxLength(300);
+            e.Property(x => x.RevisadoPorId).HasMaxLength(450);
             e.HasIndex(x => new { x.EsalId, x.UsuarioId, x.Estado });
             e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
