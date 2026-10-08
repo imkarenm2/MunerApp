@@ -36,6 +36,29 @@ public static class Formatos
         return FechaCorta(utc);
     }
 
+    /// <summary>"2 años y 3 meses", "8 meses", "Menos de 1 mes" (a partir de la fecha de nacimiento aproximada).</summary>
+    public static string Edad(DateTime nacimiento)
+    {
+        var hoy = DateTime.Today;
+        var meses = (hoy.Year - nacimiento.Year) * 12 + hoy.Month - nacimiento.Month;
+        if (hoy.Day < nacimiento.Day) meses--;
+        if (meses < 1) return "Menos de 1 mes";
+        var anios = meses / 12;
+        var resto = meses % 12;
+        var a = anios == 1 ? "1 año" : $"{anios} años";
+        var m = resto == 1 ? "1 mes" : $"{resto} meses";
+        if (anios == 0) return m;
+        return resto == 0 ? a : $"{a} y {m}";
+    }
+
+    /// <summary>Años y meses de una fecha de nacimiento aproximada (para llenar el formulario al editar).</summary>
+    public static (int Anios, int Meses) AniosYMeses(DateTime nacimiento)
+    {
+        var hoy = DateTime.Today;
+        var meses = Math.Max(0, (hoy.Year - nacimiento.Year) * 12 + hoy.Month - nacimiento.Month - (hoy.Day < nacimiento.Day ? 1 : 0));
+        return (meses / 12, meses % 12);
+    }
+
     /// <summary>Enlace de WhatsApp para un número colombiano.</summary>
     public static string? WhatsApp(string? telefono)
     {

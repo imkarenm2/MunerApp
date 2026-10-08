@@ -33,6 +33,11 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<Notificacion> Notificaciones => Set<Notificacion>();
     public DbSet<PostulacionVoluntario> PostulacionesVoluntario => Set<PostulacionVoluntario>();
 
+    // Sprint 3
+    public DbSet<Beneficiario> Beneficiarios => Set<Beneficiario>();
+    public DbSet<HistorialEstadoBeneficiario> HistorialEstadosBeneficiario => Set<HistorialEstadoBeneficiario>();
+    public DbSet<AdoptanteBeneficiario> AdoptantesBeneficiario => Set<AdoptanteBeneficiario>();
+
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
     // Superadministrador, tareas internas (seed, migraciones) y usuarios sin ESAL no se filtran:
@@ -203,6 +208,49 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        // ---------------- Sprint 3 ----------------
+
+        builder.Entity<Beneficiario>(e =>
+        {
+            e.ToTable("Beneficiario");
+            e.Property(x => x.Nombre).HasMaxLength(100).IsRequired();
+            e.Property(x => x.FechaNacimiento).HasColumnType("date");
+            e.Property(x => x.FechaRescate).HasColumnType("date");
+            e.Property(x => x.Sexo).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Color).HasMaxLength(60).IsRequired();
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.FotoRuta).HasMaxLength(300);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.Estado });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<HistorialEstadoBeneficiario>(e =>
+        {
+            e.ToTable("HistorialEstadoBeneficiario");
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.CambiadoPorId).HasMaxLength(450);
+            e.Property(x => x.Nota).HasMaxLength(300);
+            e.HasIndex(x => x.BeneficiarioId);
+            e.HasOne(x => x.Beneficiario).WithMany(x => x.HistorialEstados).HasForeignKey(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AdoptanteBeneficiario>(e =>
+        {
+            e.ToTable("AdoptanteBeneficiario");
+            e.HasKey(x => x.BeneficiarioId);
+            e.Property(x => x.Nombre).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Documento).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Telefono).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Correo).HasMaxLength(150);
+            e.Property(x => x.Ciudad).HasMaxLength(100).IsRequired();
+            e.Property(x => x.Direccion).HasMaxLength(200).IsRequired();
+            e.Property(x => x.FechaAdopcion).HasColumnType("date");
+            e.Property(x => x.Observaciones).HasMaxLength(500);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.HasOne(x => x.Beneficiario).WithOne(x => x.Adoptante).HasForeignKey<AdoptanteBeneficiario>(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
@@ -213,6 +261,9 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<DatosDonacion>(builder);
         AplicarFiltroEsal<Donacion>(builder);
         AplicarFiltroEsal<PostulacionVoluntario>(builder);
+        AplicarFiltroEsal<Beneficiario>(builder);
+        AplicarFiltroEsal<HistorialEstadoBeneficiario>(builder);
+        AplicarFiltroEsal<AdoptanteBeneficiario>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal
