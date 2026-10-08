@@ -55,6 +55,18 @@
         </div>
 
         <div class="col-12 col-lg-7">
+            @if (Model.PuedeVerClinica)
+            {
+                <a class="mu-card mu-card-hover p-4 mb-4 d-flex align-items-center gap-3 text-decoration-none text-body" asp-controller="HistoriaClinica" asp-action="Index" asp-route-id="@Model.Id">
+                    <span class="icono-circulo flex-shrink-0"><i class="bi bi-journal-medical" aria-hidden="true"></i></span>
+                    <span class="flex-grow-1">
+                        <span class="fw-bold d-block">Historia clínica</span>
+                        <span class="small text-suave">@(Model.EventosClinicos == 0 ? "Sin eventos registrados" : Model.EventosClinicos + (Model.EventosClinicos == 1 ? " evento registrado" : " eventos registrados")) · vacunas, tratamientos y controles</span>
+                    </span>
+                    <i class="bi bi-chevron-right text-suave" aria-hidden="true"></i>
+                </a>
+            }
+
             @if (Model.PuedeGestionar)
             {
             <div class="mu-card p-4 mb-4">

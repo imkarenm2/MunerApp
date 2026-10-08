@@ -81,4 +81,13 @@ public static class Textos
         EstadoBeneficiario.Fallecido => "Fallecido",
         _ => e.ToString()
     };
+
+    public static string De(TipoEventoClinico t) => t switch
+    {
+        TipoEventoClinico.Vacuna => "Vacuna",
+        TipoEventoClinico.Tratamiento => "Tratamiento",
+        TipoEventoClinico.Control => "Control",
+        TipoEventoClinico.Otro => "Otro",
+        _ => t.ToString()
+    };
 }

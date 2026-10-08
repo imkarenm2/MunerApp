@@ -37,6 +37,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<Beneficiario> Beneficiarios => Set<Beneficiario>();
     public DbSet<HistorialEstadoBeneficiario> HistorialEstadosBeneficiario => Set<HistorialEstadoBeneficiario>();
     public DbSet<AdoptanteBeneficiario> AdoptantesBeneficiario => Set<AdoptanteBeneficiario>();
+    public DbSet<EventoClinico> EventosClinicos => Set<EventoClinico>();
+    public DbSet<FotoEventoClinico> FotosEventoClinico => Set<FotoEventoClinico>();
 
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
@@ -251,6 +253,25 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne(x => x.Beneficiario).WithOne(x => x.Adoptante).HasForeignKey<AdoptanteBeneficiario>(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Cascade);
         });
 
+        builder.Entity<EventoClinico>(e =>
+        {
+            e.ToTable("EventoClinico");
+            e.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Fecha).HasColumnType("date");
+            e.Property(x => x.Descripcion).HasMaxLength(1000).IsRequired();
+            e.Property(x => x.Responsable).HasMaxLength(150).IsRequired();
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.BeneficiarioId, x.Fecha });
+            e.HasOne(x => x.Beneficiario).WithMany().HasForeignKey(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<FotoEventoClinico>(e =>
+        {
+            e.ToTable("FotoEventoClinico");
+            e.Property(x => x.Ruta).HasMaxLength(300).IsRequired();
+            e.HasOne(x => x.Evento).WithMany(x => x.Fotos).HasForeignKey(x => x.EventoClinicoId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
@@ -264,6 +285,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<Beneficiario>(builder);
         AplicarFiltroEsal<HistorialEstadoBeneficiario>(builder);
         AplicarFiltroEsal<AdoptanteBeneficiario>(builder);
+        AplicarFiltroEsal<EventoClinico>(builder);
+        AplicarFiltroEsal<FotoEventoClinico>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal
