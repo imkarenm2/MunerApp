@@ -5,6 +5,7 @@ using MunerApp.Application.Interfaces;
 using MunerApp.Domain.Common;
 using MunerApp.Domain.Constantes;
 using MunerApp.Domain.Entities;
+using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Identity;
 
 namespace MunerApp.Infrastructure.Persistence;
@@ -46,6 +47,7 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     // Sprint 5
     public DbSet<ConfigAdopcion> ConfigAdopciones => Set<ConfigAdopcion>();
     public DbSet<SolicitudAdopcion> SolicitudesAdopcion => Set<SolicitudAdopcion>();
+    public DbSet<EventoPasarela> EventosPasarela => Set<EventoPasarela>();
 
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
@@ -190,6 +192,12 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasIndex(x => x.ApadrinamientoId);
             e.HasOne(x => x.Causa).WithMany().HasForeignKey(x => x.CausaId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.CausaId);
+            // Donación en línea con Wompi (HU-043, HU-044)
+            e.Property(x => x.Origen).HasConversion<string>().HasMaxLength(10).HasDefaultValue(OrigenDonacion.Manual);
+            e.Property(x => x.ReferenciaPasarela).HasMaxLength(60);
+            e.Property(x => x.TransaccionPasarelaId).HasMaxLength(60);
+            e.HasIndex(x => x.ReferenciaPasarela).IsUnique(); // EF agrega el filtro "IS NOT NULL"
+            e.HasIndex(x => x.TransaccionPasarelaId).IsUnique();
         });
 
         builder.Entity<Notificacion>(e =>
@@ -324,6 +332,24 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         });
 
         // ---------------- Sprint 5 ----------------
+
+        // Registro de avisos de Wompi (HU-044). Sin filtro por ESAL: lo escribe un endpoint anónimo
+        // y solo se consulta filtrando explícitamente por la fundación.
+        builder.Entity<EventoPasarela>(e =>
+        {
+            e.ToTable("EventoPasarela");
+            e.Property(x => x.Evento).HasMaxLength(60);
+            e.Property(x => x.TransaccionId).HasMaxLength(60);
+            e.Property(x => x.Referencia).HasMaxLength(60);
+            e.Property(x => x.EstadoTransaccion).HasMaxLength(20);
+            e.Property(x => x.Resultado).HasConversion<string>().HasMaxLength(25);
+            e.Property(x => x.Detalle).HasMaxLength(300);
+            e.Property(x => x.Cuerpo).IsRequired();
+            e.HasIndex(x => new { x.EsalId, x.FechaRecepcion });
+            e.HasIndex(x => x.TransaccionId);
+            e.HasOne<Esal>().WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Donacion>().WithMany().HasForeignKey(x => x.DonacionId).OnDelete(DeleteBehavior.Restrict);
+        });
 
         builder.Entity<ConfigAdopcion>(e =>
         {

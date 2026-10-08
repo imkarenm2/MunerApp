@@ -39,6 +39,17 @@ public class Donacion : IPerteneceAEsal
     /// <summary>Si la donación es para una causa de recaudación (HU-041), la causa. Al confirmarse suma a su recaudado.</summary>
     public int? CausaId { get; set; }
 
+    // ---- Donación en línea con Wompi (HU-043, HU-044) ----
+
+    /// <summary>Manual (con soporte) o Wompi (pagada en línea; no tiene soporte).</summary>
+    public OrigenDonacion Origen { get; set; } = OrigenDonacion.Manual;
+
+    /// <summary>Referencia única que la plataforma genera y firma para el checkout de Wompi (HU-043).</summary>
+    public string? ReferenciaPasarela { get; set; }
+
+    /// <summary>Id de la transacción en Wompi, que llega en su aviso (HU-044). Evita procesarla dos veces.</summary>
+    public string? TransaccionPasarelaId { get; set; }
+
     public Esal? Esal { get; set; }
     public Apadrinamiento? Apadrinamiento { get; set; }
     public Causa? Causa { get; set; }
