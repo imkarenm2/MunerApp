@@ -25,8 +25,16 @@
                     <span class="flex-grow-1 min-w-0">
                         <span class="d-block fw-semibold text-body text-truncate">@s.NombreEsal</span>
                         <span class="d-block small text-suave">@s.Codigo · @Formatos.FechaCorta(s.Fecha)</span>
+                        @if (s.Estado == EstadoSolicitudAdopcion.AprobadaParaCita)
+                        {
+                            <span class="d-block small mt-1">La fundación te asignará la cita presencial para conocer a los gatos.</span>
+                        }
+                        @if (!string.IsNullOrEmpty(s.MotivoRechazo))
+                        {
+                            <span class="d-block small mt-1">Motivo: @s.MotivoRechazo</span>
+                        }
                     </span>
-                    <span class="mu-badge alerta">@Textos.De(s.Estado)</span>
+                    <partial name="_EstadoSolicitudAdopcion" model="s.Estado" />
                 </a>
             }
         </div>

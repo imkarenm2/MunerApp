@@ -363,18 +363,18 @@ public class AdopcionesController : Controller
         await _db.SaveChangesAsync();
 
         TempData["Mensaje"] = $"¡Listo! Enviaste tu solicitud de adopción {s.Codigo} a {esal.Nombre}. Quedó recibida y te avisaremos cuando la revisen.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(MisAdopciones));
     }
 
     // ---------- Mis adopciones: las solicitudes enviadas por la persona ----------
 
     [HttpGet("mis-adopciones")]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> MisAdopciones()
     {
         var solicitudes = await _db.SolicitudesAdopcion.IgnoreQueryFilters().AsNoTracking()
             .Where(s => s.UsuarioId == UsuarioId && s.Estado != EstadoSolicitudAdopcion.Borrador)
             .OrderByDescending(s => s.FechaEnvio)
-            .Select(s => new { s.Codigo, s.Esal!.Nombre, s.Esal.Slug, s.Esal.LogoRuta, s.Estado, s.FechaEnvio })
+            .Select(s => new { s.Codigo, s.Esal!.Nombre, s.Esal.Slug, s.Esal.LogoRuta, s.Estado, s.FechaEnvio, s.MotivoRechazo })
             .ToListAsync();
 
         return View(solicitudes.Select(s => new SolicitudAdopcionItem
@@ -384,7 +384,8 @@ public class AdopcionesController : Controller
             SlugEsal = s.Slug ?? "",
             LogoUrl = UrlArchivo(s.LogoRuta),
             Estado = s.Estado,
-            Fecha = s.FechaEnvio ?? DateTime.UtcNow
+            Fecha = s.FechaEnvio ?? DateTime.UtcNow,
+            MotivoRechazo = s.MotivoRechazo
         }).ToList());
     }
 
@@ -415,7 +416,7 @@ public class AdopcionesController : Controller
         {
             // Ya envió su solicitud: no hay formulario que diligenciar
             TempData["Mensaje"] = $"Ya enviaste tu solicitud de adopción a {esal.Nombre}. Aquí puedes ver en qué va.";
-            return (esal, null, RedirectToAction(nameof(Index)));
+            return (esal, null, RedirectToAction(nameof(MisAdopciones)));
         }
         if (borrador is null)
         {

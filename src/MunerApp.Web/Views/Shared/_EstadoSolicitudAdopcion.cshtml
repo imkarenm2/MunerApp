@@ -1,0 +1,13 @@
+@model EstadoSolicitudAdopcion
+@switch (Model)
+{
+    case EstadoSolicitudAdopcion.AprobadaParaCita:
+        <span class="mu-badge exito"><i class="bi bi-house-check" aria-hidden="true"></i>@Textos.De(Model)</span>
+        break;
+    case EstadoSolicitudAdopcion.Rechazada:
+        <span class="mu-badge error"><i class="bi bi-x-circle" aria-hidden="true"></i>@Textos.De(Model)</span>
+        break;
+    default:
+        <span class="mu-badge alerta"><i class="bi bi-hourglass-split" aria-hidden="true"></i>@Textos.De(Model)</span>
+        break;
+}

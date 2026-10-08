@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using MunerApp.Domain.Entities;
+using MunerApp.Domain.Enums;
 
 namespace MunerApp.Web.Areas.Fundacion.Models;
 
@@ -32,4 +34,32 @@ public class ConfigAdopcionViewModel
     public DateTime? FechaActualizacion { get; set; }
     public string? Slug { get; set; }
     public string? ImagenToxoplasmosisUrl { get; set; }
+}
+
+/// <summary>HU-033: panel de solicitudes de adopción por estado.</summary>
+public class SolicitudesAdopcionViewModel
+{
+    public EstadoSolicitudAdopcion Estado { get; set; }
+    public Dictionary<EstadoSolicitudAdopcion, int> Conteos { get; set; } = new();
+    public List<SolicitudAdopcionEsalItem> Solicitudes { get; set; } = new();
+    public bool PuedeConfigurar { get; set; }
+}
+
+public class SolicitudAdopcionEsalItem
+{
+    public int Id { get; set; }
+    public string Codigo { get; set; } = string.Empty;
+    public string Nombre { get; set; } = string.Empty;
+    public string Ciudad { get; set; } = string.Empty;
+    public DateTime FechaEnvio { get; set; }
+    public EstadoSolicitudAdopcion Estado { get; set; }
+}
+
+/// <summary>HU-033 escenario 1: detalle completo de una solicitud.</summary>
+public class SolicitudAdopcionDetalleViewModel
+{
+    public SolicitudAdopcion Solicitud { get; set; } = null!;
+    public string Correo { get; set; } = string.Empty;
+    public string? RevisadoPor { get; set; }
+    public bool CarneEsPdf { get; set; }
 }

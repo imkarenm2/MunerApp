@@ -1,0 +1,86 @@
+@model SolicitudesAdopcionViewModel
+@{
+    ViewData["Title"] = "Solicitudes de adopción";
+    ViewData["Seccion"] = "Adopciones";
+    int Conteo(EstadoSolicitudAdopcion e) => Model.Conteos.TryGetValue(e, out var c) ? c : 0;
+    var pestanas = new[]
+    {
+        (Estado: EstadoSolicitudAdopcion.Recibida, Texto: "Por revisar", Icono: "bi-hourglass-split"),
+        (Estado: EstadoSolicitudAdopcion.AprobadaParaCita, Texto: "Aprobadas para cita", Icono: "bi-house-check"),
+        (Estado: EstadoSolicitudAdopcion.Rechazada, Texto: "Rechazadas", Icono: "bi-x-circle")
+    };
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Solicitudes de adopción</h1>
+            <p class="text-suave mb-0">Revisa cada solicitud y aprueba a quienes cumplen para agendarles la cita presencial.</p>
+        </div>
+        @if (Model.PuedeConfigurar)
+        {
+            <a class="btn btn-outline-primary" asp-action="Configuracion"><i class="bi bi-gear me-1" aria-hidden="true"></i>Configuración</a>
+        }
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    <ul class="nav nav-tabs pestanas mb-3" role="tablist">
+        @foreach (var p in pestanas)
+        {
+            <li class="nav-item">
+                <a class="nav-link @(Model.Estado == p.Estado ? "active" : "")" asp-action="Index" asp-route-estado="@p.Estado"
+                   aria-current="@(Model.Estado == p.Estado ? "page" : null)">
+                    <i class="bi @p.Icono me-1" aria-hidden="true"></i>@p.Texto
+                    <span class="badge rounded-pill @(p.Estado == EstadoSolicitudAdopcion.Recibida && Conteo(p.Estado) > 0 ? "text-bg-warning" : "text-bg-light") ms-1">@Conteo(p.Estado)</span>
+                </a>
+            </li>
+        }
+    </ul>
+
+    @if (Model.Solicitudes.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo @(Model.Estado == EstadoSolicitudAdopcion.Recibida ? "exito" : "") mb-3">
+                <i class="bi @(Model.Estado == EstadoSolicitudAdopcion.Recibida ? "bi-check2-all" : "bi-inbox")" aria-hidden="true"></i>
+            </div>
+            <h2 class="h5">@(Model.Estado == EstadoSolicitudAdopcion.Recibida ? "¡Todo al día! No hay solicitudes por revisar." : "No hay solicitudes en esta lista.")</h2>
+        </div>
+    }
+    else
+    {
+        <div class="mu-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="table tabla-mu align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Solicitante</th>
+                            <th scope="col">Código</th>
+                            <th scope="col">Enviada</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col" class="text-end"><span class="visually-hidden">Acciones</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model.Solicitudes)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@s.Nombre</div>
+                                    <div class="small text-suave">@s.Ciudad</div>
+                                </td>
+                                <td class="small">@s.Codigo</td>
+                                <td class="small">@Formatos.FechaCorta(s.FechaEnvio)<div class="text-suave">@Formatos.Hace(s.FechaEnvio)</div></td>
+                                <td><partial name="_EstadoSolicitudAdopcion" model="s.Estado" /></td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm @(s.Estado == EstadoSolicitudAdopcion.Recibida ? "btn-primary" : "btn-suave")" asp-action="Detalle" asp-route-id="@s.Id">
+                                        @(s.Estado == EstadoSolicitudAdopcion.Recibida ? "Revisar" : "Ver")
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

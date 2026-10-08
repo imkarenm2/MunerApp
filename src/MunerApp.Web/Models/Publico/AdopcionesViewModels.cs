@@ -219,4 +219,5 @@ public class SolicitudAdopcionItem
     public string? LogoUrl { get; set; }
     public EstadoSolicitudAdopcion Estado { get; set; }
     public DateTime Fecha { get; set; }
+    public string? MotivoRechazo { get; set; }
 }
