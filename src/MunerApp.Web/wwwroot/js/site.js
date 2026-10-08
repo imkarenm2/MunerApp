@@ -232,3 +232,28 @@ document.querySelectorAll('[data-contador][maxlength]').forEach(function (campo)
     numero.addEventListener('input', filtrar);
     aplicar();
 })();
+
+// Preguntas condicionales (formulario de adopción, HU-030 a HU-032):
+// <div data-mostrar-si="Campo=Valor1,Valor2"> se muestra solo si el campo "Campo" (select, radio o checkbox)
+// tiene uno de esos valores. El servidor valida igual: esto solo evita mostrar preguntas que no aplican.
+(function () {
+    function valoresDe(nombre) {
+        return Array.from(document.getElementsByName(nombre))
+            .filter(function (c) { return (c.type !== 'radio' && c.type !== 'checkbox') || c.checked; })
+            .map(function (c) { return c.value; });
+    }
+
+    function actualizar() {
+        document.querySelectorAll('[data-mostrar-si]').forEach(function (bloque) {
+            var regla = bloque.getAttribute('data-mostrar-si').split('=');
+            var esperados = (regla[1] || '').split(',');
+            var visible = valoresDe(regla[0]).some(function (v) { return esperados.indexOf(v) >= 0; });
+            bloque.classList.toggle('d-none', !visible);
+        });
+    }
+
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.name) actualizar();
+    });
+    document.addEventListener('DOMContentLoaded', actualizar);
+})();

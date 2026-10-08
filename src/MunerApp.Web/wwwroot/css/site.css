@@ -1006,3 +1006,25 @@ details.rechazo summary::-webkit-details-marker { display: none; }
 .tarjeta-causa-foto { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #EDEAE5; }
 .tarjeta-causa.cerrada .tarjeta-causa-foto { filter: grayscale(.85); }
 .mu-progreso.cerrada > span { background: #A9A39A; }
+
+/* ---------- Sprint 5: formulario de adopción por secciones (HU-030 a HU-032) ---------- */
+.pasos-adopcion { list-style: none; padding: 0; margin: 0 0 1.5rem; display: flex; gap: .5rem; counter-reset: paso; }
+.pasos-adopcion li { flex: 1; min-width: 0; }
+.pasos-adopcion .paso {
+    display: flex; align-items: center; gap: .5rem; padding: .6rem .75rem; height: 100%;
+    border-radius: var(--mu-radio-sm); border: 1px solid var(--mu-borde); background: var(--mu-superficie);
+    color: var(--mu-texto-suave); font-size: .875rem; font-weight: 600; text-decoration: none;
+}
+.pasos-adopcion .paso-icono {
+    flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--mu-fondo); border: 1px solid var(--mu-borde); font-size: .8rem;
+}
+.pasos-adopcion .paso.actual { border-color: var(--mu-principal); color: var(--mu-principal); background: var(--mu-principal-suave); }
+.pasos-adopcion .paso.actual .paso-icono { background: var(--mu-principal); border-color: var(--mu-principal); color: #fff; }
+.pasos-adopcion .paso.completo .paso-icono { background: var(--mu-exito-suave); border-color: var(--mu-exito); color: var(--mu-exito); }
+.pasos-adopcion a.paso:hover { border-color: var(--mu-principal); color: var(--mu-principal); }
+@media (max-width: 575.98px) {
+    .pasos-adopcion .paso-texto { display: none; }
+    .pasos-adopcion .paso.actual .paso-texto { display: inline; }
+    .pasos-adopcion li:has(.paso.actual) { flex: 3; }
+}
