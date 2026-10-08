@@ -4,6 +4,7 @@
 @{
     var esalId = EsalActual.EsalId;
     var moduloBeneficiarios = esalId is not null && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Beneficiarios);
+    var moduloAdopcion = esalId is not null && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Adopcion);
     var slug = esalId is null ? null : Db.Esales.Where(e => e.Id == esalId).Select(e => e.Slug).FirstOrDefault();
     var seccion = ViewData["Seccion"] as string ?? "";
     var principal = User.IsInRole(Roles.AdministradorESAL) && User.HasClaim(MunerAppClaims.Perfil, Perfiles.Principal);
@@ -34,6 +35,10 @@
     {
         <a class="nav-link @Activa("Donaciones")" asp-area="Fundacion" asp-controller="Donaciones" asp-action="Index"><i class="bi bi-cash-coin me-1" aria-hidden="true"></i>Donaciones</a>
         <a class="nav-link @Activa("Causas")" asp-area="Fundacion" asp-controller="Causas" asp-action="Index"><i class="bi bi-bullseye me-1" aria-hidden="true"></i>Causas</a>
+        @if (moduloAdopcion && principal)
+        {
+            <a class="nav-link @Activa("Adopciones")" asp-area="Fundacion" asp-controller="Adopciones" asp-action="Recomendaciones"><i class="bi bi-house-heart me-1" aria-hidden="true"></i>Adopción</a>
+        }
         <a class="nav-link @Activa("Postulaciones")" asp-area="Fundacion" asp-controller="Postulaciones" asp-action="Index"><i class="bi bi-person-raised-hand me-1" aria-hidden="true"></i>Voluntarios</a>
         <a class="nav-link @Activa("Usuarios")" asp-area="Fundacion" asp-controller="Usuarios" asp-action="Index"><i class="bi bi-people me-1" aria-hidden="true"></i>Equipo</a>
     }

@@ -141,6 +141,20 @@ Al arrancar, las fundaciones que ya existían reciben su dirección pública (`s
 
 Las páginas públicas (`/fundaciones/...`), "Mis donaciones" y "Mis postulaciones" consultan con `IgnoreQueryFilters()` y **siempre** filtran explícitamente por la fundación consultada o por el usuario autenticado. Así un administrador de una fundación también ve completo el perfil de otra, y un donante ve sus donaciones a varias fundaciones.
 
+## Sprint 5: estado del código
+
+| HU | Historia | Dónde está |
+|---|---|---|
+| 029 | Recomendaciones y responsabilidades antes de adoptar | `Controllers/AdopcionesController.cs` → `Recomendaciones` (`/fundaciones/{slug}/adoptar`) · configuración de la fundación en `Areas/Fundacion/Controllers/AdopcionesController.cs` |
+
+### Solicitud de adopción
+
+- La solicitud (`SolicitudAdopcion`) nace en estado **Borrador** cuando la persona acepta las recomendaciones. Una persona solo tiene un borrador por fundación: si vuelve, continúa el mismo.
+- El formulario (`/fundaciones/{slug}/adoptar/formulario`) solo se abre si existe ese borrador, así no se puede entrar por URL sin aceptar.
+- Las recomendaciones se leen sin cuenta; para aceptarlas se pide iniciar sesión. Las cuentas de una fundación no pueden solicitar adopciones.
+- Cada fundación edita sus recomendaciones en **Panel → Adopción** (una por línea). Mientras no las guarde, se muestran las predeterminadas (`ConfigAdopcion.RecomendacionesPredeterminadas`).
+- Requiere el módulo **Adopción** activo en la fundación.
+
 ## Cómo se protege un módulo
 
 ```csharp

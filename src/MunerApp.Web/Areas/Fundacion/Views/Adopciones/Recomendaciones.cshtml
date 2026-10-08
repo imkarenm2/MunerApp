@@ -1,0 +1,59 @@
+@model ConfigRecomendacionesViewModel
+@{
+    ViewData["Title"] = "Recomendaciones de adopción";
+    ViewData["Seccion"] = "Adopciones";
+    var vistaPrevia = MunerApp.Domain.Entities.ConfigAdopcion.ComoLista(Model.Recomendaciones);
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Recomendaciones de adopción</h1>
+            <p class="text-suave mb-0">Lo que una persona debe leer y aceptar antes de diligenciar el formulario de adopción.</p>
+        </div>
+        @if (Model.Slug is not null)
+        {
+            <a class="btn btn-outline-primary" href="/fundaciones/@Model.Slug/adoptar" target="_blank" rel="noopener"><i class="bi bi-eye me-1" aria-hidden="true"></i>Ver como adoptante</a>
+        }
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            <form asp-action="Recomendaciones" method="post" novalidate class="mu-card p-4">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <label asp-for="Recomendaciones" class="form-label"></label>
+                <textarea asp-for="Recomendaciones" class="form-control" rows="12" maxlength="3000" aria-describedby="ayudaRecomendaciones"></textarea>
+                <div class="form-text" id="ayudaRecomendaciones">Escribe una recomendación por línea. Cada línea se muestra como un punto de la lista.</div>
+                <span asp-validation-for="Recomendaciones"></span>
+                <button type="submit" class="btn btn-primary mt-4" data-cargando="Guardando...">Guardar recomendaciones</button>
+            </form>
+        </div>
+        <div class="col-12 col-lg-5">
+            <div class="mu-card p-4">
+                <h2 class="h6 fw-bold mb-3">Así las ven las personas interesadas</h2>
+                <ul class="lista-check small mb-0">
+                    @foreach (var r in vistaPrevia)
+                    {
+                        <li>@r</li>
+                    }
+                </ul>
+                @if (!Model.Personalizadas)
+                {
+                    <div class="alert alert-info small mt-3 mb-0">
+                        <i class="bi bi-info-circle" aria-hidden="true"></i>
+                        <div>Estas son las recomendaciones predeterminadas. Ajústenlas a las condiciones de su fundación y guárdenlas.</div>
+                    </div>
+                }
+                else if (Model.FechaActualizacion is DateTime f)
+                {
+                    <p class="small text-suave mt-3 mb-0"><i class="bi bi-clock-history me-1" aria-hidden="true"></i>Actualizado: @Formatos.FechaHora(f)</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
