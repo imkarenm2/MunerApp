@@ -969,3 +969,19 @@ details.rechazo summary::-webkit-details-marker { display: none; }
     font-weight: 600;
     padding: .55rem 0;
 }
+
+/* ---------- Beneficiarios (Sprint 3) ---------- */
+.beneficiario-tarjeta { display: flex; gap: 1rem; align-items: center; padding: 1rem; height: 100%; }
+.beneficiario-foto {
+    width: 84px;
+    height: 84px;
+    flex-shrink: 0;
+    border-radius: var(--mu-radio-sm);
+    object-fit: cover;
+    background: #EDEAE5;
+}
+.beneficiario-sin-foto { display: flex; align-items: center; justify-content: center; color: #A9A39A; font-size: 1.8rem; }
+.beneficiario-datos { min-width: 0; flex: 1; }
+.beneficiario-foto-mini { width: 64px; height: 64px; border-radius: var(--mu-radio-sm); object-fit: cover; }
+.beneficiario-foto-grande { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #EDEAE5; }
+.beneficiario-foto-grande.beneficiario-sin-foto { font-size: 3rem; }

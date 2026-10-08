@@ -1,0 +1,57 @@
+@model BeneficiariosIndexViewModel
+@{
+    ViewData["Title"] = "Beneficiarios";
+    ViewData["Seccion"] = "Beneficiarios";
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Beneficiarios</h1>
+            <p class="text-suave mb-0">La hoja de vida de cada uno de los que cuida la fundación. Esta información es interna.</p>
+        </div>
+        <a class="btn btn-primary" asp-action="Crear"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Registrar beneficiario</a>
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    @if (Model.Beneficiarios.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-balloon-heart" aria-hidden="true"></i></div>
+            <h2 class="h5">Aún no han registrado beneficiarios</h2>
+            <p class="text-suave">Empiecen por crear la hoja de vida del primero: nombre, edad, sexo, color, fecha de rescate y una foto.</p>
+            <a class="btn btn-primary" asp-action="Crear">Registrar el primero</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var b in Model.Beneficiarios)
+            {
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <a class="mu-card mu-card-hover beneficiario-tarjeta text-decoration-none text-body" asp-action="Detalle" asp-route-id="@b.Id">
+                        @if (b.TieneFoto)
+                        {
+                            <img class="beneficiario-foto" src="@Url.Action("Foto", new { id = b.Id })" alt="Foto de @b.Nombre" loading="lazy" />
+                        }
+                        else
+                        {
+                            <span class="beneficiario-foto beneficiario-sin-foto" aria-hidden="true"><i class="bi bi-camera"></i></span>
+                        }
+                        <span class="beneficiario-datos">
+                            <span class="fw-bold d-block text-truncate">@b.Nombre</span>
+                            <span class="small text-suave d-block">@Formatos.Edad(b.FechaNacimiento) · @Textos.De(b.Sexo)</span>
+                            <span class="d-flex flex-wrap gap-1 mt-2">
+                                <partial name="_EstadoBeneficiario" model="b.Estado" />
+                                @if (b.FaltaAdoptante)
+                                {
+                                    <span class="mu-badge alerta"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>Falta adoptante</span>
+                                }
+                            </span>
+                        </span>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+</div>

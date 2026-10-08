@@ -1,0 +1,22 @@
+@model BeneficiarioFormViewModel
+@{
+    ViewData["Title"] = "Editar a " + Model.Nombre;
+    ViewData["Seccion"] = "Beneficiarios";
+}
+<div class="container py-4 py-md-5" style="max-width: 720px">
+    <a asp-action="Detalle" asp-route-id="@Model.Id" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Hoja de vida</a>
+    <h1 class="h2 mt-2 mb-1">Editar datos</h1>
+    <p class="text-suave mb-4">Para cambiar el estado usen la hoja de vida: allí queda registrado con su fecha.</p>
+
+    <form asp-action="Editar" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" novalidate class="mu-card p-4 p-md-5">
+        <partial name="_Formulario" model="Model" />
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-primary" data-cargando="Guardando...">Guardar cambios</button>
+            <a asp-action="Detalle" asp-route-id="@Model.Id" class="btn btn-link">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
