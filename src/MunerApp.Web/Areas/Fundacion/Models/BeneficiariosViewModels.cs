@@ -63,6 +63,23 @@ public class BeneficiarioItem
 public class BeneficiariosIndexViewModel
 {
     public IReadOnlyList<BeneficiarioItem> Beneficiarios { get; set; } = Array.Empty<BeneficiarioItem>();
+
+    // Filtros (HU-018)
+    public EstadoBeneficiario? Estado { get; set; }
+    public string? Busqueda { get; set; }
+
+    /// <summary>Cantidad de beneficiarios por estado, sin importar los filtros.</summary>
+    public IReadOnlyDictionary<EstadoBeneficiario, int> Conteos { get; set; } = new Dictionary<EstadoBeneficiario, int>();
+
+    public int Total { get; set; }
+    public int Pagina { get; set; } = 1;
+    public int TotalPaginas { get; set; } = 1;
+
+    /// <summary>true para administradores (registrar y editar); los voluntarios solo consultan.</summary>
+    public bool PuedeGestionar { get; set; }
+
+    public int TotalGeneral => Conteos.Values.Sum();
+    public bool HayFiltros => Estado is not null || !string.IsNullOrEmpty(Busqueda);
 }
 
 public record CambioEstadoItem(EstadoBeneficiario Estado, DateTime Fecha, string? Nota, string? Responsable);
@@ -81,6 +98,7 @@ public class AdoptanteItem
 
 public class BeneficiarioDetalleViewModel : BeneficiarioItem
 {
+    public bool PuedeGestionar { get; set; }
     public DateTime FechaRescate { get; set; }
     public DateTime FechaRegistro { get; set; }
     public string? RegistradoPor { get; set; }
