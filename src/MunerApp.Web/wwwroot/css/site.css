@@ -998,3 +998,11 @@ details.rechazo summary::-webkit-details-marker { display: none; }
 .apadrinable-foto.beneficiario-sin-foto { font-size: 2.5rem; }
 .ficha-apadrinable-foto { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--mu-radio); background: #EDEAE5; box-shadow: var(--mu-sombra); }
 .ficha-apadrinable-foto.beneficiario-sin-foto { font-size: 4rem; }
+
+/* ---------- Causas de recaudación (HU-041 / HU-042) ---------- */
+.causa-admin { display: flex; flex-direction: column; overflow: hidden; height: 100%; }
+.causa-admin-foto { width: 100%; aspect-ratio: 16 / 7; object-fit: cover; background: #EDEAE5; }
+.tarjeta-causa { display: block; overflow: hidden; height: 100%; }
+.tarjeta-causa-foto { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #EDEAE5; }
+.tarjeta-causa.cerrada .tarjeta-causa-foto { filter: grayscale(.85); }
+.mu-progreso.cerrada > span { background: #A9A39A; }

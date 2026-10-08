@@ -6,6 +6,7 @@ using MunerApp.Domain.Entities;
 using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Models.Publico;
+using MunerApp.Web.Servicios;
 
 namespace MunerApp.Web.Controllers;
 
@@ -23,12 +24,14 @@ public class FundacionesController : Controller
     private readonly MunerAppDbContext _db;
     private readonly IAlmacenamientoArchivos _archivos;
     private readonly IModuloService _modulos;
+    private readonly CausasPublicas _causas;
 
-    public FundacionesController(MunerAppDbContext db, IAlmacenamientoArchivos archivos, IModuloService modulos)
+    public FundacionesController(MunerAppDbContext db, IAlmacenamientoArchivos archivos, IModuloService modulos, CausasPublicas causas)
     {
         _db = db;
         _archivos = archivos;
         _modulos = modulos;
+        _causas = causas;
     }
 
     // ---------- HU-010: listado y búsqueda ----------
@@ -124,7 +127,8 @@ public class FundacionesController : Controller
                 d.Extension, d.FechaPublicacion, d.TamanoBytes)).ToList(),
             TieneDatosDonacion = tieneDatos,
             TieneModulosApoyo = activos.Overlaps(new[] { CodigosModulo.Beneficiarios, CodigosModulo.Adopcion, CodigosModulo.Tienda }),
-            FormasAyuda = ConstruirFormasAyuda(esal, activos, hayApadrinables)
+            FormasAyuda = ConstruirFormasAyuda(esal, activos, hayApadrinables),
+            Causas = await _causas.ListarAsync(esal.Id)
         };
 
         return View(modelo);

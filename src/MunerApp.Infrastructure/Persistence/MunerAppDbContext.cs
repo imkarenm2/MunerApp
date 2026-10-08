@@ -40,6 +40,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<EventoClinico> EventosClinicos => Set<EventoClinico>();
     public DbSet<FotoEventoClinico> FotosEventoClinico => Set<FotoEventoClinico>();
     public DbSet<Apadrinamiento> Apadrinamientos => Set<Apadrinamiento>();
+    public DbSet<Causa> Causas => Set<Causa>();
+    public DbSet<FotoCausa> FotosCausa => Set<FotoCausa>();
 
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
@@ -182,6 +184,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.DonanteId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Apadrinamiento).WithMany().HasForeignKey(x => x.ApadrinamientoId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.ApadrinamientoId);
+            e.HasOne(x => x.Causa).WithMany().HasForeignKey(x => x.CausaId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.CausaId);
         });
 
         builder.Entity<Notificacion>(e =>
@@ -294,6 +298,27 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.PadrinoId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        builder.Entity<Causa>(e =>
+        {
+            e.ToTable("Causa");
+            e.Property(x => x.Titulo).HasMaxLength(120).IsRequired();
+            e.Property(x => x.Descripcion).HasMaxLength(3000).IsRequired();
+            e.Property(x => x.Meta).HasPrecision(14, 2);
+            e.Property(x => x.FechaLimite).HasColumnType("date");
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.CreadaPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.Estado });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<DocumentoTransparencia>().WithMany().HasForeignKey(x => x.RendicionDocumentoId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<FotoCausa>(e =>
+        {
+            e.ToTable("FotoCausa");
+            e.Property(x => x.Ruta).HasMaxLength(300).IsRequired();
+            e.HasOne(x => x.Causa).WithMany(x => x.Fotos).HasForeignKey(x => x.CausaId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
@@ -310,6 +335,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<EventoClinico>(builder);
         AplicarFiltroEsal<FotoEventoClinico>(builder);
         AplicarFiltroEsal<Apadrinamiento>(builder);
+        AplicarFiltroEsal<Causa>(builder);
+        AplicarFiltroEsal<FotoCausa>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal

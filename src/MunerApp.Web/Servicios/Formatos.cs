@@ -69,6 +69,22 @@ public static class Formatos
         return digitos.Length is > 0 and <= 12 ? decimal.Parse(digitos) : null;
     }
 
+    /// <summary>Porcentaje de la meta alcanzado (0 a 100). Si hay algo recaudado nunca muestra 0 %.</summary>
+    public static int Porcentaje(decimal recaudado, decimal meta)
+    {
+        if (meta <= 0 || recaudado <= 0) return 0;
+        var p = (int)Math.Floor(recaudado * 100 / meta);
+        return Math.Clamp(p == 0 ? 1 : p, 0, 100);
+    }
+
+    /// <summary>"Último día", "1 día restante" o "12 días restantes".</summary>
+    public static string DiasRestantes(int dias) => dias switch
+    {
+        <= 0 => "Último día",
+        1 => "1 día restante",
+        _ => $"{dias} días restantes"
+    };
+
     /// <summary>Enlace de WhatsApp para un número colombiano.</summary>
     public static string? WhatsApp(string? telefono)
     {
