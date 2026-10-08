@@ -1,40 +1,62 @@
-@model List<PostulacionEsalItem>
+@model PostulacionesEsalViewModel
 @{
     ViewData["Title"] = "Voluntarios";
     ViewData["Seccion"] = "Postulaciones";
+    int Conteo(EstadoPostulacion[] estados) => estados.Sum(e => Model.Conteos.TryGetValue(e, out var c) ? c : 0);
+    var pendientes = Model.Estado == EstadoPostulacion.Pendiente;
 }
 <div class="container py-4 py-md-5">
-    <h1 class="h2 mb-1">Postulaciones de voluntarios</h1>
-    <p class="text-suave mb-3">Personas que quieren apoyar a la fundación con su tiempo o sus conocimientos.</p>
+    <h1 class="h2 mb-1">Voluntarios</h1>
+    <p class="text-suave mb-3">Personas que quieren apoyar a la fundación con su tiempo o sus conocimientos. Al aprobarlas obtienen acceso al panel según su perfil.</p>
 
     <partial name="_NavFundacion" />
 
-    <div class="alert alert-info small">
-        <i class="bi bi-info-circle" aria-hidden="true"></i>
-        <div>Por ahora pueden consultar las postulaciones y contactar a las personas. La aprobación dentro de la plataforma llega en el Sprint 6.</div>
-    </div>
+    <ul class="nav nav-tabs pestanas mb-3" role="tablist">
+        @foreach (var p in PostulacionesEsalViewModel.Pestanas)
+        {
+            var activa = p.Estados.Contains(Model.Estado);
+            <li class="nav-item">
+                <a class="nav-link @(activa ? "active" : "")" asp-area="Fundacion" asp-action="Index" asp-route-estado="@p.Estados[0]" aria-current="@(activa ? "page" : null)">
+                    <i class="bi @p.Icono me-1" aria-hidden="true"></i>@p.Texto
+                    <span class="badge rounded-pill @(p.Estados[0] == EstadoPostulacion.Pendiente && Conteo(p.Estados) > 0 ? "text-bg-warning" : "text-bg-light") ms-1">@Conteo(p.Estados)</span>
+                </a>
+            </li>
+        }
+    </ul>
 
-    @if (Model.Count == 0)
+    @if (pendientes && !Model.PuedeGestionar && Model.Postulaciones.Count > 0)
+    {
+        <div class="alert alert-info small">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+            <div>El administrador principal es quien aprueba o rechaza las postulaciones, porque da acceso al panel de la fundación.</div>
+        </div>
+    }
+
+    @if (Model.Postulaciones.Count == 0)
     {
         <div class="estado-vacio">
-            <div class="icono-circulo exito mb-3"><i class="bi bi-people" aria-hidden="true"></i></div>
-            <h2 class="h5">Aún no hay postulaciones</h2>
-            <p class="text-suave mb-0">Cuando alguien se postule desde el perfil público, aparecerá aquí y recibirán una notificación.</p>
+            <div class="icono-circulo exito mb-3"><i class="bi @(pendientes ? "bi-check2-all" : "bi-people")" aria-hidden="true"></i></div>
+            <h2 class="h5">@(pendientes ? "¡Todo al día! No hay postulaciones por revisar." : "No hay personas en esta lista.")</h2>
+            @if (pendientes)
+            {
+                <p class="text-suave mb-0">Cuando alguien se postule desde el perfil público, aparecerá aquí y recibirán una notificación.</p>
+            }
         </div>
     }
     else
     {
         <div class="row g-3">
-            @foreach (var p in Model)
+            @foreach (var p in Model.Postulaciones)
             {
+                var salud = p.Tipo == TipoPostulacion.PracticanteSalud;
                 <div class="col-12 col-lg-6">
-                    <div class="mu-card p-4 h-100">
+                    <div class="mu-card p-4 h-100 d-flex flex-column">
                         <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
                             <div>
                                 <div class="fw-bold">@p.Nombre</div>
                                 <div class="small text-suave">Se postuló @Formatos.Hace(p.Fecha)</div>
                             </div>
-                            <span class="mu-badge @(p.Tipo == TipoPostulacion.PracticanteSalud ? "acento" : "")">@Textos.De(p.Tipo)</span>
+                            <span class="mu-badge @(salud ? "acento" : "")">@Textos.De(p.Tipo)</span>
                         </div>
                         <ul class="list-unstyled small d-grid gap-1 mb-2">
                             <li><i class="bi bi-envelope me-2 text-principal" aria-hidden="true"></i><a href="mailto:@p.Correo">@p.Correo</a></li>
@@ -44,7 +66,7 @@
                                 @if (wa is not null) { <a href="@wa" target="_blank" rel="noopener">@p.Telefono</a> } else { @p.Telefono }
                             </li>
                             <li><i class="bi bi-calendar-week me-2 text-principal" aria-hidden="true"></i>@p.Disponibilidad</li>
-                            @if (p.Tipo == TipoPostulacion.PracticanteSalud)
+                            @if (salud)
                             {
                                 <li><i class="bi bi-mortarboard me-2 text-principal" aria-hidden="true"></i>@p.Programa · @p.Institucion · Semestre @p.Semestre</li>
                             }
@@ -55,8 +77,54 @@
                         }
                         @if (p.TieneSoporte)
                         {
-                            <a class="btn btn-sm btn-suave" asp-action="Soporte" asp-route-id="@p.Id" target="_blank" rel="noopener"><i class="bi bi-paperclip me-1" aria-hidden="true"></i>Soporte académico</a>
+                            <a class="btn btn-sm btn-suave align-self-start mb-2" asp-action="Soporte" asp-route-id="@p.Id" target="_blank" rel="noopener"><i class="bi bi-paperclip me-1" aria-hidden="true"></i>Soporte académico</a>
                         }
+
+                        <div class="mt-auto pt-2">
+                            @if (p.Estado == EstadoPostulacion.Pendiente && Model.PuedeGestionar)
+                            {
+                                @* HU-036 escenarios 1 y 2 *@
+                                <form asp-action="Aprobar" asp-route-id="@p.Id" method="post" class="mb-2"
+                                      data-confirmar="@p.Nombre obtendrá acceso al panel de la fundación como @(salud ? "voluntario de salud, incluida la información clínica" : "voluntario general"). Le avisaremos por la plataforma."
+                                      data-confirmar-titulo="¿Aprobar a @p.Nombre?" data-confirmar-boton="Sí, aprobar">
+                                    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-person-check me-1" aria-hidden="true"></i>Aprobar como @(salud ? "voluntario de salud" : "voluntario")</button>
+                                </form>
+                                <details>
+                                    <summary class="btn btn-link btn-sm text-danger p-0">Rechazar postulación</summary>
+                                    <form asp-action="Rechazar" asp-route-id="@p.Id" method="post" class="mt-2"
+                                          data-confirmar="La persona verá el motivo y seguirá como donante." data-confirmar-titulo="¿Rechazar la postulación?"
+                                          data-confirmar-boton="Sí, rechazar" data-confirmar-tipo="peligro">
+                                        <label for="motivo@(p.Id)" class="form-label small">Motivo (lo verá la persona)</label>
+                                        <textarea id="motivo@(p.Id)" name="motivo" class="form-control form-control-sm" rows="2" maxlength="300" minlength="10" required
+                                                  placeholder="Ej.: por ahora no tenemos cupos en el horario que indicaste."></textarea>
+                                        <button type="submit" class="btn btn-outline-danger btn-sm mt-2">Rechazar</button>
+                                    </form>
+                                </details>
+                            }
+                            else if (p.Estado == EstadoPostulacion.Aprobada)
+                            {
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                    <span class="small text-suave"><i class="bi bi-person-check me-1 text-principal" aria-hidden="true"></i>Voluntario desde el @(p.FechaRespuesta is DateTime fr ? Formatos.FechaCorta(fr) : "—")</span>
+                                    @if (Model.PuedeGestionar)
+                                    {
+                                        @* HU-036 escenario 3 *@
+                                        <form asp-action="Desvincular" asp-route-id="@p.Id" method="post"
+                                              data-confirmar="@p.Nombre perderá de inmediato el acceso al panel y a los módulos internos de la fundación. Seguirá como donante."
+                                              data-confirmar-titulo="¿Desvincular a @p.Nombre?" data-confirmar-boton="Sí, desvincular" data-confirmar-tipo="peligro">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-person-dash me-1" aria-hidden="true"></i>Desvincular</button>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                            else if (p.Estado == EstadoPostulacion.Rechazada)
+                            {
+                                <p class="small mb-0"><span class="mu-badge error me-1">Rechazada</span>@p.MotivoRechazo</p>
+                            }
+                            else if (p.Estado == EstadoPostulacion.Retirada)
+                            {
+                                <p class="small mb-0"><span class="mu-badge me-1">Desvinculado</span>el @(p.FechaRetiro is DateTime ft ? Formatos.FechaCorta(ft) : "—")</p>
+                            }
+                        </div>
                     </div>
                 </div>
             }

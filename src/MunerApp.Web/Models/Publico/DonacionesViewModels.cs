@@ -120,4 +120,7 @@ public class PostulacionItem
     public TipoPostulacion Tipo { get; set; }
     public EstadoPostulacion Estado { get; set; }
     public DateTime Fecha { get; set; }
+
+    /// <summary>Si la fundación la rechazó, por qué (HU-036).</summary>
+    public string? MotivoRechazo { get; set; }
 }

@@ -13,7 +13,7 @@ using MunerApp.Web.Validacion;
 
 namespace MunerApp.Web.Controllers;
 
-/// <summary>HU-035: postulación como voluntario. La aprobación de postulaciones llega en el Sprint 6.</summary>
+/// <summary>HU-035: postulación como voluntario. La fundación la aprueba o rechaza en su panel (HU-036).</summary>
 [Authorize]
 public class PostulacionesController : Controller
 {
@@ -121,7 +121,7 @@ public class PostulacionesController : Controller
         var postulaciones = await _db.PostulacionesVoluntario.IgnoreQueryFilters().AsNoTracking()
             .Where(p => p.UsuarioId == UsuarioId)
             .OrderByDescending(p => p.FechaPostulacion)
-            .Select(p => new { p.Esal!.Nombre, p.Esal.Slug, p.Esal.LogoRuta, p.Tipo, p.Estado, p.FechaPostulacion })
+            .Select(p => new { p.Esal!.Nombre, p.Esal.Slug, p.Esal.LogoRuta, p.Tipo, p.Estado, p.FechaPostulacion, p.MotivoRechazo })
             .ToListAsync();
 
         return View(postulaciones.Select(p => new PostulacionItem
@@ -131,7 +131,8 @@ public class PostulacionesController : Controller
             LogoUrl = p.LogoRuta is null ? null : _archivos.UrlPublica(p.LogoRuta),
             Tipo = p.Tipo,
             Estado = p.Estado,
-            Fecha = p.FechaPostulacion
+            Fecha = p.FechaPostulacion,
+            MotivoRechazo = p.MotivoRechazo
         }).ToList());
     }
 

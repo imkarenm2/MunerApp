@@ -25,8 +25,12 @@
                     <span class="flex-grow-1 min-w-0">
                         <span class="d-block fw-semibold text-body text-truncate">@p.NombreEsal</span>
                         <span class="d-block small text-suave">@Textos.De(p.Tipo) · @Formatos.FechaCorta(p.Fecha)</span>
+                        @if (!string.IsNullOrEmpty(p.MotivoRechazo))
+                        {
+                            <span class="d-block small text-body mt-1">Motivo: @p.MotivoRechazo</span>
+                        }
                     </span>
-                    <span class="mu-badge @(p.Estado switch { EstadoPostulacion.Aprobada => "exito", EstadoPostulacion.Rechazada => "error", _ => "alerta" })">@Textos.De(p.Estado)</span>
+                    <span class="mu-badge @(p.Estado switch { EstadoPostulacion.Aprobada => "exito", EstadoPostulacion.Rechazada => "error", EstadoPostulacion.Retirada => "", _ => "alerta" })">@Textos.De(p.Estado)</span>
                 </a>
             }
         </div>
