@@ -1,0 +1,11 @@
+@{
+    ViewData["Title"] = "Enlace no válido";
+}
+<div class="container">
+    <div class="estado-vacio">
+        <div class="icono-circulo alerta"><i class="bi bi-link-45deg" aria-hidden="true"></i></div>
+        <h1 class="h3">Este enlace ya no es válido</h1>
+        <p class="text-suave mb-4">Puede que haya vencido (dura 1 hora) o que ya lo hayas usado. Pide uno nuevo y te lo enviamos al correo.</p>
+        <a class="btn btn-primary" asp-area="" asp-controller="Cuenta" asp-action="OlvideContrasena">Pedir un enlace nuevo</a>
+    </div>
+</div>

@@ -1,0 +1,140 @@
+@model PanelViewModel
+@{
+    ViewData["Title"] = "Panel de " + Model.NombreEsal;
+    ViewData["Seccion"] = "Inicio";
+    var iconos = new Dictionary<string, string>
+    {
+        [CodigosModulo.Perfil] = "bi-building",
+        [CodigosModulo.Donaciones] = "bi-cash-coin",
+        [CodigosModulo.Voluntariado] = "bi-people",
+        [CodigosModulo.Boletin] = "bi-newspaper",
+        [CodigosModulo.Beneficiarios] = "bi-balloon-heart",
+        [CodigosModulo.Tienda] = "bi-bag-heart",
+        [CodigosModulo.Adopcion] = "bi-house-heart",
+        [CodigosModulo.Salud] = "bi-capsule"
+    };
+    // Módulos que ya funcionan desde el Sprint 2
+    var disponibles = new HashSet<string> { CodigosModulo.Perfil, CodigosModulo.Donaciones, CodigosModulo.Voluntariado };
+    var rolTexto = Model.EsAdmin
+        ? (Model.EsAdminPrincipal ? "Administrador principal" : "Administrador de consulta")
+        : (Model.Perfil == Perfiles.Salud ? "Voluntario de salud" : "Voluntario");
+    var nombre = User.FindFirst(MunerAppClaims.NombreCompleto)?.Value?.Split(' ')[0] ?? "";
+}
+<div class="container py-4 py-md-5">
+    <div class="mb-3">
+        <span class="mu-badge mb-2"><i class="bi bi-person-badge" aria-hidden="true"></i>@rolTexto</span>
+        <h1 class="h2 mb-1">Hola, @nombre</h1>
+        <p class="text-suave mb-0">Este es el panel de <strong>@Model.NombreEsal</strong>.</p>
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    @if (Model.EsAdmin && (Model.DonacionesPendientes > 0 || Model.PostulacionesPendientes > 0))
+    {
+        <div class="row g-3 mb-4">
+            @if (Model.DonacionesPendientes > 0)
+            {
+                <div class="col-12 col-md-6">
+                    <a class="aviso-panel" asp-controller="Donaciones" asp-action="Index">
+                        <span class="icono-circulo alerta flex-shrink-0"><i class="bi bi-cash-coin" aria-hidden="true"></i></span>
+                        <span class="flex-grow-1">
+                            <span class="d-block fw-bold">@Model.DonacionesPendientes @(Model.DonacionesPendientes == 1 ? "donación por confirmar" : "donaciones por confirmar")</span>
+                            <span class="small text-suave">Los donantes esperan su comprobante.</span>
+                        </span>
+                        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                    </a>
+                </div>
+            }
+            @if (Model.PostulacionesPendientes > 0)
+            {
+                <div class="col-12 col-md-6">
+                    <a class="aviso-panel" asp-controller="Postulaciones" asp-action="Index">
+                        <span class="icono-circulo exito flex-shrink-0"><i class="bi bi-person-raised-hand" aria-hidden="true"></i></span>
+                        <span class="flex-grow-1">
+                            <span class="d-block fw-bold">@Model.PostulacionesPendientes @(Model.PostulacionesPendientes == 1 ? "postulación nueva" : "postulaciones nuevas")</span>
+                            <span class="small text-suave">Personas que quieren ser voluntarias.</span>
+                        </span>
+                        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+
+    @if (Model.EsAdminPrincipal)
+    {
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <h2 class="h5 mb-0">Perfil público</h2>
+            @if (Model.Slug is not null)
+            {
+                <a class="small fw-semibold" href="/fundaciones/@Model.Slug" target="_blank" rel="noopener">Ver como visitante <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
+            }
+        </div>
+        <div class="row g-3 mb-5">
+            <div class="col-12 col-md-4">
+                <a class="mu-card mu-card-hover p-4 d-block h-100 text-decoration-none text-body" asp-controller="Perfil" asp-action="Index">
+                    <div class="icono-circulo mb-3"><i class="bi bi-building" aria-hidden="true"></i></div>
+                    <div class="fw-bold">Perfil de la fundación</div>
+                    <div class="small text-suave mb-2">@(Model.PerfilCompleto >= 100 ? "Completo" : $"{Model.PerfilCompleto} % completo")</div>
+                    <div class="mu-progreso" role="progressbar" aria-label="Perfil completo" aria-valuenow="@Model.PerfilCompleto" aria-valuemin="0" aria-valuemax="100"><span style="width: @Model.PerfilCompleto%"></span></div>
+                </a>
+            </div>
+            <div class="col-12 col-md-4">
+                <a class="mu-card mu-card-hover p-4 d-block h-100 text-decoration-none text-body" asp-controller="Documentos" asp-action="Index">
+                    <div class="icono-circulo exito mb-3"><i class="bi bi-folder-check" aria-hidden="true"></i></div>
+                    <div class="fw-bold">Transparencia</div>
+                    <div class="small text-suave">@(Model.DocumentosVisibles == 0 ? "Sin documentos publicados" : $"{Model.DocumentosVisibles} {(Model.DocumentosVisibles == 1 ? "documento publicado" : "documentos publicados")}")</div>
+                </a>
+            </div>
+            <div class="col-12 col-md-4">
+                <a class="mu-card mu-card-hover p-4 d-block h-100 text-decoration-none text-body" asp-controller="DatosDonacion" asp-action="Index">
+                    <div class="icono-circulo @(Model.DatosDonacionConfigurados ? "exito" : "alerta") mb-3"><i class="bi bi-bank" aria-hidden="true"></i></div>
+                    <div class="fw-bold">Datos para donar</div>
+                    <div class="small text-suave">@(Model.DatosDonacionConfigurados ? "Configurados" : "Sin configurar: nadie puede donar todavía")</div>
+                </a>
+            </div>
+        </div>
+
+        <h2 class="h5 mb-3">Configuración</h2>
+        <div class="row g-3 mb-5">
+            <div class="col-12 col-md-4">
+                <a class="mu-card mu-card-hover p-4 d-block h-100 text-decoration-none text-body" asp-controller="Usuarios" asp-action="Index">
+                    <div class="icono-circulo mb-3"><i class="bi bi-people" aria-hidden="true"></i></div>
+                    <div class="fw-bold">Equipo</div>
+                    <div class="small text-suave">@Model.UsuariosActivos @(Model.UsuariosActivos == 1 ? "persona activa" : "personas activas")</div>
+                </a>
+            </div>
+            <div class="col-12 col-md-4">
+                <a class="mu-card mu-card-hover p-4 d-block h-100 text-decoration-none text-body" asp-controller="Redes" asp-action="Index">
+                    <div class="icono-circulo acento mb-3"><i class="bi bi-share" aria-hidden="true"></i></div>
+                    <div class="fw-bold">Redes sociales</div>
+                    <div class="small text-suave">@(Model.RedesConfiguradas == 0 ? "Sin redes vinculadas" : $"{Model.RedesConfiguradas} de 3 vinculadas")</div>
+                </a>
+            </div>
+            <div class="col-12 col-md-4">
+                <a class="mu-card mu-card-hover p-4 d-block h-100 text-decoration-none text-body" asp-controller="Pasarela" asp-action="Index">
+                    <div class="icono-circulo @(Model.PasarelaActiva ? "exito" : "alerta") mb-3"><i class="bi bi-credit-card" aria-hidden="true"></i></div>
+                    <div class="fw-bold">Pagos en línea</div>
+                    <div class="small text-suave">@(Model.PasarelaActiva ? "Wompi habilitado" : "Sin configurar")</div>
+                </a>
+            </div>
+        </div>
+    }
+
+    <h2 class="h5 mb-1">Módulos activos</h2>
+    <p class="small text-suave mb-3">Las demás secciones se irán habilitando a medida que avancen los sprints.</p>
+    <div class="row g-3">
+        @foreach (var m in Model.Modulos)
+        {
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="mu-card p-3 h-100 d-flex align-items-center gap-3">
+                    <div class="icono-circulo flex-shrink-0" style="width:42px;height:42px;font-size:1.15rem"><i class="bi @(iconos.TryGetValue(m.Codigo, out var ic) ? ic : "bi-puzzle")" aria-hidden="true"></i></div>
+                    <div>
+                        <div class="fw-semibold small">@m.Nombre</div>
+                        <div class="text-suave" style="font-size:.75rem">@(disponibles.Contains(m.Codigo) ? "Activo" : "Próximamente")</div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

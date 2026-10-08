@@ -64,35 +64,82 @@ dotnet tool install --global dotnet-ef
 
    Al arrancar se crean los 4 roles y el superadministrador configurado en los secretos.
 
-## Qué ya trae esta base
+## Sprint 1: estado del código
 
-| Pieza | Dónde | Historia |
+| HU | Historia | Dónde está |
 |---|---|---|
-| Solución en 4 capas y configuración de Identity | toda la solución, `Program.cs` | HU-001 |
-| Registro de donantes (con mensajes en español) | `CuentaController.Registrar` | HU-001 |
-| Inicio de sesión, bloqueo por intentos, cuenta inactiva | `CuentaController.IniciarSesion` | HU-002 |
-| Cierre de sesión y expiración por inactividad (20 min) | `CuentaController.CerrarSesion`, `Program.cs` | HU-005 |
-| Modelo de datos del Sprint 1 y catálogo de 8 módulos | `MunerAppDbContext` | HU-006 |
-| Filtro global por ESAL | `MunerAppDbContext.AplicarFiltroEsal` | HU-008 |
-| Atributo `[RequiereModulo]` | `Web/Filtros/RequiereModuloAttribute.cs` | HU-007 |
-| Claims de ESAL, perfil y nombre en la sesión | `MunerAppClaimsFactory` | HU-002 / HU-008 |
-| Servicio de correo SMTP | `CorreoSmtpService` | HU-004 |
-| Entidades `RedSocial` y `ConfigPasarela` | `Domain/Entities` | HU-011 / HU-045 |
+| 001 | Registro de donantes | `Controllers/CuentaController.cs` → `Registrar` |
+| 002 | Inicio de sesión y redirección por rol | `CuentaController` → `IniciarSesion`, `RedirigirSegunRolAsync` |
+| 003 | Login con Gmail | `CuentaController` → `LoginExterno`, `LoginExternoCallback` · `Views/Cuenta/_BotonGoogle.cshtml` |
+| 004 | Recuperar contraseña | `CuentaController` → `OlvideContrasena`, `RestablecerContrasena` · `Servicios/InvitacionService.cs` |
+| 005 | Cierre y expiración de sesión | `CuentaController.CerrarSesion` · `Program.cs` (cookie de 20 min) |
+| 006 | Registro de ESAL | `Areas/Plataforma/Controllers/EsalesController.cs` |
+| 007 | Módulos configurables | `EsalesController.Modulos` · `Filtros/RequiereModuloAttribute.cs` · `Areas/Fundacion/.../PanelController.cs` |
+| 008 | Usuarios y roles de la ESAL | `Areas/Fundacion/Controllers/UsuariosController.cs` · filtro global en `MunerAppDbContext` |
+| 011 | Redes sociales | `Areas/Fundacion/Controllers/RedesController.cs` |
+| 045 | Llaves de Wompi | `Areas/Fundacion/Controllers/PasarelaController.cs` · `Infrastructure/Servicios/WompiService.cs`, `SecretosService.cs` |
 
-## Pendientes del Sprint 1 (buscar `TODO HU-` en el código)
+Cada responsable revisa su historia, prueba sus 3 escenarios y la sube por pull request.
 
-| Integrante | Historia | Qué falta |
+### Rutas principales
+
+| Ruta | Quién | Qué hace |
 |---|---|---|
-| Karen | HU-001 | Revisar los 3 escenarios y ajustar la vista |
-| Karen | HU-008 | CRUD de usuarios de la ESAL, asignación de rol y perfil, pruebas de aislamiento |
-| Esteban | HU-006 | Primera migración, despliegue en Azure, CRUD de ESAL para el superadministrador |
-| Esteban | HU-045 | Formulario de llaves de Wompi, cifrado con Data Protection, validación de la llave pública |
-| Jailer | HU-002 | Redirección al panel según el rol |
-| Jailer | HU-007 | Pantalla para activar y desactivar módulos, ocultar el menú según los módulos |
-| Jailer | HU-005 | Probar la expiración y las rutas protegidas |
-| Santiago | HU-003 | `LoginExterno` y `LoginExternoCallback` con Google |
-| Santiago | HU-004 | `OlvideContrasena` y `RestablecerContrasena` |
-| Santiago | HU-011 | CRUD de redes sociales con validación de URL |
+| `/Plataforma/Esales` | Superadministrador | Registrar fundaciones, editarlas, activarlas y elegir módulos |
+| `/Fundacion/Panel` | Administrador o voluntario de ESAL | Inicio del panel con los módulos activos |
+| `/Fundacion/Usuarios` | Administrador de ESAL | Equipo de la fundación (crear y editar solo el perfil Principal) |
+| `/Fundacion/Redes` | Administrador principal | Redes sociales |
+| `/Fundacion/Pasarela` | Administrador principal | Llaves de Wompi |
+| `/Home/Estilos` | Solo en desarrollo | Guía de estilos |
+
+### Probar sin correo configurado
+
+Si el SMTP no está configurado, en **desarrollo** la plataforma muestra en pantalla el enlace para crear o restablecer la contraseña, para que puedan probar las invitaciones y la recuperación sin enviar correos.
+
+### Probar el login con Google
+
+1. En Google Cloud Console crear un proyecto → **APIs y servicios → Pantalla de consentimiento OAuth** (tipo Externo) → **Credenciales → Crear ID de cliente de OAuth** (aplicación web).
+2. URI de redireccionamiento autorizado: `https://localhost:7180/signin-google` (y luego la de Azure: `https://<app>.azurewebsites.net/signin-google`).
+3. Guardar el Client ID y el Client Secret con `dotnet user-secrets` (ver arriba).
+
+### Probar Wompi (sandbox)
+
+Crear una cuenta de pruebas en Wompi, entrar como administrador principal a `/Fundacion/Pasarela` y pegar la llave pública (`pub_test_...`), el secreto de integridad (`test_integrity_...`) y el de eventos (`test_events_...`).
+
+## Sprint 2: estado del código
+
+| HU | Historia | Dónde está |
+|---|---|---|
+| 009 | Perfil institucional | `Areas/Fundacion/Controllers/PerfilController.cs` |
+| 010 | Directorio y perfil público | `Controllers/FundacionesController.cs` → `Index`, `Perfil` (`/fundaciones`, `/fundaciones/{slug}`) |
+| 012 | Documentos de transparencia | `Areas/Fundacion/Controllers/DocumentosController.cs` |
+| 013 | Datos oficiales para donar | `Areas/Fundacion/Controllers/DatosDonacionController.cs` · `FundacionesController.Donar` |
+| 014 | Reporte de donación y "Mis donaciones" | `Controllers/DonacionesController.cs` (`/fundaciones/{slug}/reportar-donacion`, `/mis-donaciones`) |
+| 015 | Confirmar o rechazar donaciones, comprobante PDF y notificaciones | `Areas/Fundacion/Controllers/DonacionesController.cs` · `Infrastructure/Servicios/ComprobantePdfService.cs`, `NotificacionService.cs` |
+| 016 | Otras formas de ayudar | `FundacionesController.ConstruirFormasAyuda` · sección `#como-ayudar` del perfil |
+| 035 | Postulación de voluntarios | `Controllers/PostulacionesController.cs` · consulta en `Areas/Fundacion/Controllers/PostulacionesController.cs` |
+
+También completa el escenario 3 de HU-006 (una fundación inactiva no aparece en `/fundaciones`) y el escenario 1 de HU-011 (redes en el perfil).
+
+### Migración del Sprint 2 (una sola persona)
+
+```bash
+dotnet ef migrations add Sprint2_PerfilDonaciones -p src/MunerApp.Infrastructure -s src/MunerApp.Web -o Persistence/Migrations
+dotnet ef database update -p src/MunerApp.Infrastructure -s src/MunerApp.Web
+```
+
+Al arrancar, las fundaciones que ya existían reciben su dirección pública (`slug`) automáticamente.
+
+### Archivos que suben los usuarios
+
+- Se guardan con `IAlmacenamientoArchivos` (`Infrastructure/Servicios/AlmacenamientoLocal.cs`). En desarrollo quedan en `src/MunerApp.Web/App_Data/archivos` (ignorada por Git).
+- Públicos (logo, galería, documentos): se sirven en `/archivos/...`. Privados (soportes de pago y académicos): solo se descargan por controladores que validan quién los pide.
+- Se valida la extensión, el tamaño y la firma real del archivo (`Validacion/ValidadorArchivos.cs`).
+- En Azure App Service configurar `Archivos:RutaBase` = `/home/data/archivos` (Linux) o `D:\home\data\archivos` (Windows), que es almacenamiento persistente.
+
+### Páginas públicas y el filtro por ESAL
+
+Las páginas públicas (`/fundaciones/...`), "Mis donaciones" y "Mis postulaciones" consultan con `IgnoreQueryFilters()` y **siempre** filtran explícitamente por la fundación consultada o por el usuario autenticado. Así un administrador de una fundación también ve completo el perfil de otra, y un donante ve sus donaciones a varias fundaciones.
 
 ## Cómo se protege un módulo
 
@@ -109,7 +156,7 @@ Toda entidad nueva que pertenezca a una fundación debe:
 1. Implementar `IPerteneceAEsal` (propiedad `EsalId`).
 2. Registrarse en `MunerAppDbContext.OnModelCreating` con `AplicarFiltroEsal<Entidad>(builder);`.
 
-Los usuarios de una ESAL (administradores y voluntarios) solo ven los datos de su fundación. Las páginas públicas filtran explícitamente por la ESAL que se consulta. El superadministrador puede usar `IgnoreQueryFilters()` solo en el panel de plataforma.
+Los usuarios de una ESAL (administradores y voluntarios) solo ven los datos de su fundación. Las páginas públicas filtran explícitamente por la ESAL que se consulta. El superadministrador puede usar `IgnoreQueryFilters()` en el panel de plataforma; las páginas públicas también, filtrando siempre de forma explícita (ver Sprint 2).
 
 ## Flujo de trabajo en Git
 

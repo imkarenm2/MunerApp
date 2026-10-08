@@ -1,0 +1,45 @@
+@model List<MunerApp.Domain.Entities.Notificacion>
+@{
+    ViewData["Title"] = "Notificaciones";
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+        <h1 class="h2 mb-0">Notificaciones</h1>
+        @if (Model.Any(n => !n.Leida))
+        {
+            <form action="/notificaciones/leer-todas" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-sm btn-suave"><i class="bi bi-check2-all me-1" aria-hidden="true"></i>Marcar todas como leídas</button>
+            </form>
+        }
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-bell" aria-hidden="true"></i></div>
+            <h2 class="h5">No tienes notificaciones</h2>
+            <p class="text-suave mb-0">Aquí te avisaremos cuando una fundación confirme tus donaciones o responda tus postulaciones.</p>
+        </div>
+    }
+    else
+    {
+        <div class="mu-card lista-notificaciones">
+            @foreach (var n in Model)
+            {
+                <a class="notificacion @(n.Leida ? "" : "no-leida")" href="/notificaciones/@n.Id">
+                    <span class="icono-circulo flex-shrink-0"><i class="bi @n.Icono" aria-hidden="true"></i></span>
+                    <span class="flex-grow-1 min-w-0">
+                        <span class="d-block fw-semibold text-body">@n.Titulo</span>
+                        <span class="d-block small text-suave">@n.Mensaje</span>
+                        <span class="d-block small text-suave mt-1">@Formatos.Hace(n.Fecha)</span>
+                    </span>
+                    @if (!n.Leida)
+                    {
+                        <span class="punto-no-leida" aria-label="Sin leer"></span>
+                    }
+                </a>
+            }
+        </div>
+    }
+</div>

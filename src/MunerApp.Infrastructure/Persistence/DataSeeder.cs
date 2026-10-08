@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MunerApp.Domain.Common;
 using MunerApp.Domain.Constantes;
 using MunerApp.Infrastructure.Identity;
 
@@ -23,6 +25,8 @@ public static class DataSeeder
                 if (!await roleManager.RoleExistsAsync(rol))
                     await roleManager.CreateAsync(new IdentityRole(rol));
             }
+
+            await AsignarSlugsAsync(scope.ServiceProvider.GetRequiredService<MunerAppDbContext>());
 
             var email = config["Seed:SuperAdmin:Email"];
             var password = config["Seed:SuperAdmin:Password"];
@@ -54,5 +58,27 @@ public static class DataSeeder
         {
             logger.LogError(ex, "Error al sembrar datos iniciales. ¿Ya aplicaron las migraciones (dotnet ef database update)?");
         }
+    }
+
+    /// <summary>Las fundaciones registradas antes del Sprint 2 no tienen dirección pública; se la genera aquí.</summary>
+    private static async Task AsignarSlugsAsync(MunerAppDbContext db)
+    {
+        var sinSlug = await db.Esales.Where(e => e.Slug == null || e.Slug == "").ToListAsync();
+        if (sinSlug.Count == 0) return;
+
+        var usados = new HashSet<string>(await db.Esales.Where(e => e.Slug != null).Select(e => e.Slug!).ToListAsync());
+        foreach (var esal in sinSlug)
+        {
+            esal.Slug = SlugUnico(Slugs.Generar(esal.Nombre), usados);
+            usados.Add(esal.Slug);
+        }
+        await db.SaveChangesAsync();
+    }
+
+    public static string SlugUnico(string baseSlug, ISet<string> usados)
+    {
+        var slug = baseSlug;
+        for (var i = 2; usados.Contains(slug); i++) slug = $"{baseSlug}-{i}";
+        return slug;
     }
 }

@@ -1,0 +1,43 @@
+@model RestablecerContrasenaViewModel
+@{
+    ViewData["Title"] = Model.Invitacion ? "Crea tu contraseña" : "Nueva contraseña";
+}
+<div class="auth-contenedor">
+    <div class="container">
+        <div class="mu-card mx-auto p-4 p-md-5" style="max-width: 480px">
+            <div class="icono-circulo mb-3"><i class="bi bi-shield-lock" aria-hidden="true"></i></div>
+            <h1 class="h3 mb-1">@(Model.Invitacion ? "Crea tu contraseña" : "Crea una nueva contraseña")</h1>
+            <p class="text-suave mb-4">Para la cuenta <strong>@Model.Email</strong></p>
+            <form asp-action="RestablecerContrasena" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2" role="alert"></div>
+                <input type="hidden" asp-for="Email" />
+                <input type="hidden" asp-for="Token" />
+                <input type="hidden" asp-for="Invitacion" />
+                <div class="mb-3">
+                    <label asp-for="Contrasena" class="form-label"></label>
+                    <div class="input-icono con-boton">
+                        <i class="bi bi-lock" aria-hidden="true"></i>
+                        <input asp-for="Contrasena" class="form-control" autocomplete="new-password" aria-describedby="ayudaClave" />
+                        <button type="button" class="btn-ver-clave" data-ver-clave="Contrasena" aria-label="Mostrar contraseña"><i class="bi bi-eye" aria-hidden="true"></i></button>
+                    </div>
+                    <div id="ayudaClave" class="form-text">Mínimo 8 caracteres, con una mayúscula, una minúscula y un número.</div>
+                    <span asp-validation-for="Contrasena"></span>
+                </div>
+                <div class="mb-4">
+                    <label asp-for="ConfirmarContrasena" class="form-label"></label>
+                    <div class="input-icono con-boton">
+                        <i class="bi bi-lock" aria-hidden="true"></i>
+                        <input asp-for="ConfirmarContrasena" class="form-control" autocomplete="new-password" />
+                        <button type="button" class="btn-ver-clave" data-ver-clave="ConfirmarContrasena" aria-label="Mostrar contraseña"><i class="bi bi-eye" aria-hidden="true"></i></button>
+                    </div>
+                    <span asp-validation-for="ConfirmarContrasena"></span>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg w-100" data-cargando="Guardando...">Guardar contraseña</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

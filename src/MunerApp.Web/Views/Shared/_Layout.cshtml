@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="MunerApp: conoce fundaciones, mira en qué se usan las donaciones y elige cómo ayudar." />
+    <meta name="description" content="@(ViewData["Descripcion"] as string ?? "MunerApp: conoce fundaciones, mira en qué se usan las donaciones y elige cómo ayudar.")" />
     <meta name="theme-color" content="#0F5257" />
     <title>@ViewData["Title"] · MunerApp</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -27,9 +27,9 @@
                 </button>
                 <div class="collapse navbar-collapse" id="menu">
                     <ul class="navbar-nav mx-lg-auto my-3 my-lg-0 gap-lg-1">
-                        <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="fundaciones">Fundaciones</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar">Cómo ayudar</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="transparencia">Transparencia</a></li>
+                        <li class="nav-item"><a class="nav-link @(ViewData["Nav"] as string == "Fundaciones" ? "active" : "")" href="/fundaciones">Fundaciones</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar">Cómo ayudar</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="transparencia">Transparencia</a></li>
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>
@@ -73,9 +73,9 @@
                 <div class="col-6 col-md-3">
                     <h3 class="h6 fw-bold">Plataforma</h3>
                     <ul class="list-unstyled d-grid gap-2 mb-0">
-                        <li><a asp-controller="Home" asp-action="Index" asp-fragment="fundaciones">Fundaciones</a></li>
-                        <li><a asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar">Cómo ayudar</a></li>
-                        <li><a asp-controller="Home" asp-action="Index" asp-fragment="transparencia">Transparencia</a></li>
+                        <li><a href="/fundaciones">Fundaciones</a></li>
+                        <li><a asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar">Cómo ayudar</a></li>
+                        <li><a asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="transparencia">Transparencia</a></li>
                     </ul>
                 </div>
                 <div class="col-6 col-md-4">
@@ -87,6 +87,23 @@
             <p class="small text-suave mb-0">© @DateTime.Now.Year MunerApp</p>
         </div>
     </footer>
+
+    <!-- Ventana de confirmación general: se usa con <form data-confirmar="..."> (ver site.js) -->
+    <div class="modal fade" id="modalConfirmar" tabindex="-1" aria-labelledby="modalConfirmarTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content mu-modal">
+                <div class="modal-body p-4 text-center">
+                    <div class="mu-modal-icono mb-3" data-icono aria-hidden="true"><i class="bi bi-question-lg"></i></div>
+                    <h2 class="h5 fw-bold mb-2" id="modalConfirmarTitulo" data-titulo>¿Estás seguro?</h2>
+                    <p class="text-suave mb-0" data-mensaje></p>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4 justify-content-center gap-2">
+                    <button type="button" class="btn btn-suave" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" data-aceptar>Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

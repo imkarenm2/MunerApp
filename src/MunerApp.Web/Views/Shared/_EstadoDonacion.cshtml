@@ -1,0 +1,13 @@
+@model EstadoDonacion
+@switch (Model)
+{
+    case EstadoDonacion.Confirmada:
+        <span class="mu-badge exito"><i class="bi bi-check-circle" aria-hidden="true"></i>Confirmada</span>
+        break;
+    case EstadoDonacion.Rechazada:
+        <span class="mu-badge error"><i class="bi bi-x-circle" aria-hidden="true"></i>Rechazada</span>
+        break;
+    default:
+        <span class="mu-badge alerta"><i class="bi bi-hourglass-split" aria-hidden="true"></i>Pendiente</span>
+        break;
+}

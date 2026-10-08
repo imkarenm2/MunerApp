@@ -1,3 +1,4 @@
+using MunerApp.Web.Validacion;
 using System.ComponentModel.DataAnnotations;
 
 namespace MunerApp.Web.Models.Cuenta;
@@ -10,7 +11,7 @@ public class RegistroViewModel
     public string NombreCompleto { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Ingresa tu correo.")]
-    [EmailAddress(ErrorMessage = "El correo no es válido.")]
+    [Correo]
     [Display(Name = "Correo electrónico")]
     public string Email { get; set; } = string.Empty;
 

@@ -1,11 +1,17 @@
 @inject SignInManager<Usuario> SignInManager
+@inject MunerApp.Infrastructure.Persistence.MunerAppDbContext Db
+@inject MunerApp.Application.Interfaces.IEsalActual EsalActual
 @{
+    var esalIdUsuario = EsalActual.EsalId;
+    var slugEsal = esalIdUsuario is null ? null : Db.Esales.Where(e => e.Id == esalIdUsuario).Select(e => e.Slug).FirstOrDefault();
     var nombre = User.FindFirst(MunerAppClaims.NombreCompleto)?.Value ?? User.Identity?.Name ?? "";
     var iniciales = string.Concat(nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
 }
 
 @if (SignInManager.IsSignedIn(User))
 {
+    <div class="d-flex align-items-center gap-1">
+    @await Component.InvokeAsync("CampanaNotificaciones")
     <div class="dropdown">
         <button class="btn btn-link text-decoration-none d-flex align-items-center gap-2 p-1" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menú de mi cuenta">
@@ -19,9 +25,26 @@
                 <div class="small text-suave">@User.Identity?.Name</div>
             </li>
             <li><hr class="dropdown-divider" /></li>
-            @* TODO HU-002: enlaces a "Mi panel", "Mis donaciones" según el rol *@
+            @if (User.IsInRole(Roles.SuperAdministrador))
+            {
+                <li><a class="dropdown-item rounded-2" asp-area="Plataforma" asp-controller="Esales" asp-action="Index"><i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Panel de plataforma</a></li>
+            }
+            @if (User.IsInRole(Roles.AdministradorESAL) || User.IsInRole(Roles.Voluntario))
+            {
+                <li><a class="dropdown-item rounded-2" asp-area="Fundacion" asp-controller="Panel" asp-action="Index"><i class="bi bi-grid me-2" aria-hidden="true"></i>Panel de mi fundación</a></li>
+                @if (slugEsal is not null)
+                {
+                    <li><a class="dropdown-item rounded-2" href="/fundaciones/@slugEsal"><i class="bi bi-globe2 me-2" aria-hidden="true"></i>Ver página pública</a></li>
+                }
+            }
+            <li><a class="dropdown-item rounded-2" href="/mis-donaciones"><i class="bi bi-heart me-2" aria-hidden="true"></i>Mis donaciones</a></li>
+            <li><a class="dropdown-item rounded-2" href="/mis-postulaciones"><i class="bi bi-person-raised-hand me-2" aria-hidden="true"></i>Mis postulaciones</a></li>
+            <li><a class="dropdown-item rounded-2" href="/notificaciones"><i class="bi bi-bell me-2" aria-hidden="true"></i>Notificaciones</a></li>
+            <li><hr class="dropdown-divider" /></li>
             <li>
-                <form asp-controller="Cuenta" asp-action="CerrarSesion" method="post">
+                <form asp-area="" asp-controller="Cuenta" asp-action="CerrarSesion" method="post"
+                      data-confirmar="Tendrás que volver a ingresar con tu correo o con Google para seguir usando MunerApp."
+                      data-confirmar-titulo="¿Cerrar sesión?" data-confirmar-boton="Sí, cerrar sesión">
                     <button type="submit" class="dropdown-item rounded-2">
                         <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Cerrar sesión
                     </button>
@@ -29,11 +52,12 @@
             </li>
         </ul>
     </div>
+    </div>
 }
 else
 {
     <div class="d-flex flex-column flex-lg-row gap-2">
-        <a class="btn btn-suave" asp-controller="Cuenta" asp-action="IniciarSesion">Iniciar sesión</a>
-        <a class="btn btn-primary" asp-controller="Cuenta" asp-action="Registrar">Crear cuenta</a>
+        <a class="btn btn-suave" asp-area="" asp-controller="Cuenta" asp-action="IniciarSesion">Iniciar sesión</a>
+        <a class="btn btn-primary" asp-area="" asp-controller="Cuenta" asp-action="Registrar">Crear cuenta</a>
     </div>
 }

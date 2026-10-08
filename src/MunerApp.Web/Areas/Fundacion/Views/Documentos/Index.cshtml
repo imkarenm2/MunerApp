@@ -1,0 +1,76 @@
+@model List<DocumentoItem>
+@{
+    ViewData["Title"] = "Transparencia";
+    ViewData["Seccion"] = "Documentos";
+    var visibles = Model.Count(d => d.Visible);
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Transparencia</h1>
+            <p class="text-suave mb-0">Documentos que demuestran la legalidad de la fundación y el uso de las donaciones.</p>
+        </div>
+        <a class="btn btn-primary" asp-action="Crear"><i class="bi bi-upload me-1" aria-hidden="true"></i>Publicar documento</a>
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    @if (Model.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-folder2-open" aria-hidden="true"></i></div>
+            <h2 class="h5">Aún no han publicado documentos</h2>
+            <p class="text-suave">Empiecen por el registro legal (Cámara de Comercio o RUT) y el último informe de gestión.</p>
+            <a class="btn btn-primary" asp-action="Crear">Publicar el primero</a>
+        </div>
+    }
+    else
+    {
+        <p class="small text-suave mb-3">@visibles @(visibles == 1 ? "documento visible" : "documentos visibles") en el perfil · @(Model.Count - visibles) en el historial</p>
+        <div class="d-grid gap-2">
+            @foreach (var d in Model)
+            {
+                var pdf = d.Extension == ".pdf";
+                <div class="documento-item mu-card @(d.Visible ? "" : "documento-oculto")">
+                    <span class="documento-icono @(pdf ? "pdf" : "")"><i class="bi @(pdf ? "bi-file-earmark-pdf" : "bi-file-earmark-image")" aria-hidden="true"></i></span>
+                    <span class="flex-grow-1 min-w-0">
+                        <span class="d-flex flex-wrap align-items-center gap-2">
+                            <a class="fw-semibold" href="@d.Url" target="_blank" rel="noopener">@d.Titulo</a>
+                            @if (d.Visible)
+                            {
+                                <span class="mu-badge exito"><i class="bi bi-eye" aria-hidden="true"></i>Visible</span>
+                            }
+                            else
+                            {
+                                <span class="mu-badge"><i class="bi bi-eye-slash" aria-hidden="true"></i>Oculto</span>
+                            }
+                        </span>
+                        <span class="d-block small text-suave">
+                            @Textos.De(d.Categoria) · Publicado el @Formatos.FechaCorta(d.FechaPublicacion)
+                            @if (d.FechaOcultado is DateTime oculto)
+                            {
+                                <span> · Oculto el @Formatos.FechaCorta(oculto)</span>
+                            }
+                        </span>
+                    </span>
+                    @if (d.Visible)
+                    {
+                        <form asp-action="Ocultar" asp-route-id="@d.Id" method="post"
+                              data-confirmar="Dejará de verse en el perfil público, pero quedará guardado en el historial y podrás volver a mostrarlo."
+                              data-confirmar-titulo="¿Ocultar este documento?" data-confirmar-boton="Sí, ocultar" data-confirmar-tipo="peligro">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-eye-slash" aria-hidden="true"></i><span class="d-none d-md-inline ms-1">Ocultar</span></button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form asp-action="Mostrar" asp-route-id="@d.Id" method="post"
+                              data-confirmar="Volverá a verse en la sección Transparencia del perfil público."
+                              data-confirmar-titulo="¿Mostrar este documento?" data-confirmar-boton="Sí, mostrar">
+                            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye" aria-hidden="true"></i><span class="d-none d-md-inline ms-1">Mostrar</span></button>
+                        </form>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>

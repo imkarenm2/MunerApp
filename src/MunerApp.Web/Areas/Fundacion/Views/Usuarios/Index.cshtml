@@ -1,0 +1,80 @@
+@model List<UsuarioEsalItem>
+@{
+    ViewData["Title"] = "Equipo";
+    ViewData["Seccion"] = "Usuarios";
+    var puedeGestionar = ViewData["PuedeGestionar"] as bool? ?? false;
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Equipo de la fundación</h1>
+            <p class="text-suave mb-0">Administradores y voluntarios con acceso al panel.</p>
+        </div>
+        @if (puedeGestionar)
+        {
+            <a class="btn btn-primary" asp-action="Crear"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>Agregar persona</a>
+        }
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    <div class="mu-card overflow-hidden">
+        <div class="table-responsive">
+            <table class="table tabla-mu align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Persona</th>
+                        <th scope="col">Rol</th>
+                        <th scope="col">Estado</th>
+                        @if (puedeGestionar)
+                        {
+                            <th scope="col" class="text-end">Acciones</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@u.NombreCompleto @if (u.EsUsuarioActual) { <span class="mu-badge ms-1">Tú</span> }</div>
+                                <div class="small text-suave">@u.Email</div>
+                            </td>
+                            <td>@UsuarioEsalFormViewModel.TextoDe(u.RolPerfil)</td>
+                            <td>
+                                @if (u.Activo)
+                                {
+                                    <span class="mu-badge exito">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="mu-badge error">Inactivo</span>
+                                }
+                            </td>
+                            @if (puedeGestionar)
+                            {
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-1">
+                                        <a class="btn btn-sm btn-suave" asp-action="Editar" asp-route-id="@u.Id"><i class="bi bi-pencil" aria-hidden="true"></i><span class="d-none d-lg-inline ms-1">Editar</span></a>
+                                        @if (!u.EsUsuarioActual)
+                                        {
+                                            <form asp-action="CambiarEstado" asp-route-id="@u.Id" method="post" class="d-inline"
+                                                  data-confirmar="@(u.Activo ? $"{u.NombreCompleto} no podrá ingresar al panel de la fundación hasta que lo vuelvas a activar." : $"{u.NombreCompleto} podrá volver a ingresar al panel de la fundación.")"
+                                                  data-confirmar-titulo="@(u.Activo ? "¿Desactivar este usuario?" : "¿Activar este usuario?")"
+                                                  data-confirmar-boton="@(u.Activo ? "Sí, desactivar" : "Sí, activar")"
+                                                  data-confirmar-tipo="@(u.Activo ? "peligro" : "normal")">
+                                                <button type="submit" class="btn btn-sm @(u.Activo ? "btn-outline-danger" : "btn-outline-primary")">
+                                                    @(u.Activo ? "Desactivar" : "Activar")
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,9 +1,15 @@
+using System.Security.Claims;
+using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using MunerApp.Domain.Constantes;
 using MunerApp.Infrastructure.Identity;
+using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Models.Cuenta;
+using MunerApp.Web.Servicios;
 
 namespace MunerApp.Web.Controllers;
 
@@ -11,23 +17,39 @@ public class CuentaController : Controller
 {
     private readonly UserManager<Usuario> _userManager;
     private readonly SignInManager<Usuario> _signInManager;
+    private readonly MunerAppDbContext _db;
+    private readonly InvitacionService _invitaciones;
+    private readonly IWebHostEnvironment _entorno;
 
-    public CuentaController(UserManager<Usuario> userManager, SignInManager<Usuario> signInManager)
+    public CuentaController(
+        UserManager<Usuario> userManager,
+        SignInManager<Usuario> signInManager,
+        MunerAppDbContext db,
+        InvitacionService invitaciones,
+        IWebHostEnvironment entorno)
     {
         _userManager = userManager;
         _signInManager = signInManager;
+        _db = db;
+        _invitaciones = invitaciones;
+        _entorno = entorno;
     }
 
-    // ---------------- HU-001 · Registro de donantes (Karen) ----------------
+    // ================= HU-001 · Registro de donantes =================
 
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult Registrar() => View(new RegistroViewModel());
+    public IActionResult Registrar(string? returnUrl = null)
+    {
+        ViewData["ReturnUrl"] = returnUrl;
+        return View(new RegistroViewModel());
+    }
 
     [HttpPost]
     [AllowAnonymous]
-    public async Task<IActionResult> Registrar(RegistroViewModel model)
+    public async Task<IActionResult> Registrar(RegistroViewModel model, string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = returnUrl;
         if (!ModelState.IsValid) return View(model);
 
         var usuario = new Usuario
@@ -41,11 +63,18 @@ public class CuentaController : Controller
         if (resultado.Succeeded)
         {
             await _userManager.AddToRoleAsync(usuario, Roles.Donante);
+            // HU-016 escenario 2: si venía de una opción que requiere cuenta, entra de una vez y vuelve a ella
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                await _signInManager.SignInAsync(usuario, isPersistent: false);
+                TempData["Mensaje"] = "¡Bienvenido a MunerApp! Tu cuenta fue creada.";
+                return LocalRedirect(returnUrl);
+            }
+
             TempData["Mensaje"] = "Tu cuenta fue creada. Ya puedes iniciar sesión.";
             return RedirectToAction(nameof(IniciarSesion));
         }
 
-        // Duplicado de correo: un solo mensaje (Identity reporta usuario y correo por separado)
         if (resultado.Errors.Any(e => e.Code is "DuplicateEmail" or "DuplicateUserName"))
             ModelState.AddModelError(nameof(model.Email), "Ya existe una cuenta con este correo.");
 
@@ -55,7 +84,7 @@ public class CuentaController : Controller
         return View(model);
     }
 
-    // ---------------- HU-002 · Inicio de sesión (Jailer) ----------------
+    // ================= HU-002 · Inicio de sesión =================
 
     [HttpGet]
     [AllowAnonymous]
@@ -78,13 +107,14 @@ public class CuentaController : Controller
         if (resultado.Succeeded)
         {
             var usuario = await _userManager.FindByEmailAsync(model.Email);
-            if (usuario is null || !usuario.Activo)
+            var bloqueo = usuario is null ? "No encontramos tu cuenta." : await ValidarAccesoAsync(usuario);
+            if (bloqueo is not null)
             {
                 await _signInManager.SignOutAsync();
-                ModelState.AddModelError(string.Empty, "Tu cuenta está inactiva. Contacta al administrador de tu fundación.");
+                ModelState.AddModelError(string.Empty, bloqueo);
                 return View(model);
             }
-            return await RedirigirSegunRolAsync(usuario, returnUrl);
+            return await RedirigirSegunRolAsync(usuario!, returnUrl);
         }
 
         ModelState.AddModelError(string.Empty, resultado.IsLockedOut
@@ -93,13 +123,189 @@ public class CuentaController : Controller
         return View(model);
     }
 
-    // ---------------- HU-005 · Cierre de sesión (Jailer) ----------------
+    // ================= HU-003 · Inicio de sesión con Gmail =================
+
+    [HttpPost]
+    [AllowAnonymous]
+    public IActionResult LoginExterno(string proveedor, string? returnUrl = null)
+    {
+        var urlRetorno = Url.Action(nameof(LoginExternoCallback), "Cuenta", new { returnUrl });
+        var propiedades = _signInManager.ConfigureExternalAuthenticationProperties(proveedor, urlRetorno);
+        return Challenge(propiedades, proveedor);
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> LoginExternoCallback(string? returnUrl = null, string? remoteError = null)
+    {
+        // Escenario 3: el usuario canceló o rechazó la autorización en Google
+        if (remoteError is not null)
+        {
+            TempData["Error"] = "No se completó el inicio de sesión con Google. Puedes intentarlo de nuevo o usar tu correo y contraseña.";
+            return RedirectToAction(nameof(IniciarSesion), new { returnUrl });
+        }
+
+        var info = await _signInManager.GetExternalLoginInfoAsync();
+        if (info is null)
+        {
+            TempData["Error"] = "Se canceló el inicio de sesión con Google.";
+            return RedirectToAction(nameof(IniciarSesion), new { returnUrl });
+        }
+
+        // Escenario 1: cuenta de Google ya vinculada
+        var resultado = await _signInManager.ExternalLoginSignInAsync(
+            info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
+
+        if (resultado.Succeeded)
+        {
+            var vinculado = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+            return await FinalizarLoginExternoAsync(vinculado, returnUrl);
+        }
+
+        if (resultado.IsLockedOut)
+        {
+            TempData["Error"] = "Tu cuenta está bloqueada temporalmente. Intenta de nuevo en 10 minutos.";
+            return RedirectToAction(nameof(IniciarSesion));
+        }
+
+        var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            TempData["Error"] = "Google no compartió tu correo. Intenta con otra cuenta o regístrate con tu correo.";
+            return RedirectToAction(nameof(IniciarSesion));
+        }
+
+        // Si el correo ya existe (por ejemplo, un administrador invitado), se vincula a esa cuenta.
+        // Escenario 2: si no existe, se crea una cuenta nueva con rol Donante.
+        var usuario = await _userManager.FindByEmailAsync(email);
+        if (usuario is null)
+        {
+            usuario = new Usuario
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                NombreCompleto = info.Principal.FindFirstValue(ClaimTypes.Name) ?? email
+            };
+            var creado = await _userManager.CreateAsync(usuario);
+            if (!creado.Succeeded)
+            {
+                TempData["Error"] = "No pudimos crear tu cuenta con Google. Intenta registrarte con tu correo.";
+                return RedirectToAction(nameof(Registrar));
+            }
+            await _userManager.AddToRoleAsync(usuario, Roles.Donante);
+        }
+
+        var vinculo = await _userManager.AddLoginAsync(usuario, info);
+        if (!vinculo.Succeeded)
+        {
+            TempData["Error"] = "No pudimos vincular tu cuenta de Google. Intenta iniciar sesión con tu correo.";
+            return RedirectToAction(nameof(IniciarSesion));
+        }
+
+        return await FinalizarLoginExternoAsync(usuario, returnUrl, iniciarSesion: true);
+    }
+
+    private async Task<IActionResult> FinalizarLoginExternoAsync(Usuario? usuario, string? returnUrl, bool iniciarSesion = false)
+    {
+        var bloqueo = usuario is null ? "No encontramos tu cuenta." : await ValidarAccesoAsync(usuario);
+        if (bloqueo is not null)
+        {
+            await _signInManager.SignOutAsync();
+            TempData["Error"] = bloqueo;
+            return RedirectToAction(nameof(IniciarSesion));
+        }
+
+        if (iniciarSesion)
+            await _signInManager.SignInAsync(usuario!, isPersistent: false);
+
+        return await RedirigirSegunRolAsync(usuario!, returnUrl);
+    }
+
+    // ================= HU-004 · Recuperar contraseña =================
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult OlvideContrasena() => View(new OlvideContrasenaViewModel());
+
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<IActionResult> OlvideContrasena(OlvideContrasenaViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var usuario = await _userManager.FindByEmailAsync(model.Email);
+        if (usuario is not null && usuario.Activo)
+        {
+            var envio = await _invitaciones.EnviarRecuperacionAsync(usuario);
+            if (!envio.Enviado && _entorno.IsDevelopment())
+                TempData["Error"] = $"[Solo en desarrollo] No se pudo enviar el correo; revisa la configuración SMTP. Enlace: {envio.Enlace}";
+        }
+
+        // Por seguridad se muestra el mismo mensaje exista o no la cuenta
+        TempData["CorreoRecuperacion"] = model.Email;
+        return RedirectToAction(nameof(OlvideContrasenaConfirmacion));
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult OlvideContrasenaConfirmacion() => View();
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult RestablecerContrasena(string? email = null, string? token = null, bool invitacion = false)
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+            return View("EnlaceInvalido");
+
+        return View(new RestablecerContrasenaViewModel { Email = email, Token = token, Invitacion = invitacion });
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<IActionResult> RestablecerContrasena(RestablecerContrasenaViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var usuario = await _userManager.FindByEmailAsync(model.Email);
+        if (usuario is null) return View("EnlaceInvalido");
+
+        string token;
+        try
+        {
+            token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(model.Token));
+        }
+        catch (FormatException)
+        {
+            return View("EnlaceInvalido");
+        }
+
+        var resultado = await _userManager.ResetPasswordAsync(usuario, token, model.Contrasena);
+        if (resultado.Succeeded)
+        {
+            TempData["Mensaje"] = model.Invitacion
+                ? "Tu contraseña quedó creada. Ya puedes iniciar sesión."
+                : "Tu contraseña fue actualizada. Ya puedes iniciar sesión.";
+            return RedirectToAction(nameof(IniciarSesion));
+        }
+
+        // Escenario 3: enlace vencido o ya usado
+        if (resultado.Errors.Any(e => e.Code == "InvalidToken"))
+            return View("EnlaceInvalido");
+
+        foreach (var error in resultado.Errors)
+            ModelState.AddModelError(string.Empty, error.Description);
+        return View(model);
+    }
+
+    // ================= HU-005 · Cierre de sesión =================
 
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> CerrarSesion()
     {
         await _signInManager.SignOutAsync();
+        TempData["Mensaje"] = "Cerraste sesión correctamente. ¡Gracias por pasar!";
         return RedirectToAction("Index", "Home");
     }
 
@@ -107,22 +313,44 @@ public class CuentaController : Controller
     [AllowAnonymous]
     public IActionResult AccesoDenegado() => View();
 
-    // ---------------- Pendientes del Sprint 1 ----------------
-    // TODO HU-003 (Santiago): LoginExterno (Challenge a Google) y LoginExternoCallback
-    //      -> si el correo existe, iniciar sesión; si no, crear Usuario con rol Donante.
-    // TODO HU-004 (Santiago): OlvideContrasena, RestablecerContrasena con
-    //      _userManager.GeneratePasswordResetTokenAsync / ResetPasswordAsync e ICorreoService.
+    // ================= Utilidades =================
 
+    /// <summary>Devuelve el motivo si el usuario no puede entrar, o null si puede.</summary>
+    private async Task<string?> ValidarAccesoAsync(Usuario usuario)
+    {
+        if (!usuario.Activo)
+            return "Tu cuenta está inactiva. Contacta al administrador de tu fundación.";
+
+        if (usuario.EsalId is int esalId)
+        {
+            var esalActiva = await _db.Esales.Where(e => e.Id == esalId).Select(e => e.Activa).FirstOrDefaultAsync();
+            if (!esalActiva)
+                return "Tu fundación está desactivada en la plataforma. Contacta al equipo de MunerApp.";
+        }
+
+        return null;
+    }
+
+    /// <summary>HU-002 escenario 1: cada rol llega a su panel.</summary>
     private async Task<IActionResult> RedirigirSegunRolAsync(Usuario usuario, string? returnUrl)
     {
+        // Mensaje de confirmación del ingreso (observación de pruebas Sprint 1); no pisa uno anterior
+        if (TempData.Peek("Mensaje") is null)
+        {
+            var nombre = (usuario.NombreCompleto ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            TempData["Mensaje"] = string.IsNullOrEmpty(nombre) ? "Iniciaste sesión." : $"Hola, {nombre}. Iniciaste sesión.";
+        }
+
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return LocalRedirect(returnUrl);
 
-        // TODO HU-002 (Jailer): redirigir a cada panel cuando existan, por ejemplo:
-        // if (await _userManager.IsInRoleAsync(usuario, Roles.SuperAdministrador))
-        //     return RedirectToAction("Index", "Esales", new { area = "Plataforma" });
-        // AdministradorESAL / Voluntario -> panel de su ESAL; Donante -> inicio.
-        await Task.CompletedTask;
+        if (await _userManager.IsInRoleAsync(usuario, Roles.SuperAdministrador))
+            return RedirectToAction("Index", "Esales", new { area = "Plataforma" });
+
+        if (await _userManager.IsInRoleAsync(usuario, Roles.AdministradorESAL)
+            || await _userManager.IsInRoleAsync(usuario, Roles.Voluntario))
+            return RedirectToAction("Index", "Panel", new { area = "Fundacion" });
+
         return RedirectToAction("Index", "Home");
     }
 }

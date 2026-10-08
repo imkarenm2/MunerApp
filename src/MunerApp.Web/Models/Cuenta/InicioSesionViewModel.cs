@@ -1,3 +1,4 @@
+using MunerApp.Web.Validacion;
 using System.ComponentModel.DataAnnotations;
 
 namespace MunerApp.Web.Models.Cuenta;
@@ -5,7 +6,7 @@ namespace MunerApp.Web.Models.Cuenta;
 public class InicioSesionViewModel
 {
     [Required(ErrorMessage = "Ingresa tu correo.")]
-    [EmailAddress(ErrorMessage = "El correo no es válido.")]
+    [Correo(SugerirCorrecciones = false)]
     [Display(Name = "Correo electrónico")]
     public string Email { get; set; } = string.Empty;
 

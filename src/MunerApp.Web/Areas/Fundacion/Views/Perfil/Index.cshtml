@@ -1,0 +1,188 @@
+@model PerfilEsalViewModel
+@{
+    ViewData["Title"] = "Perfil de la fundación";
+    ViewData["Seccion"] = "Perfil";
+    var maxFotos = MunerApp.Web.Areas.Fundacion.Controllers.PerfilController.MaxFotos;
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Perfil de la fundación</h1>
+            <p class="text-suave mb-0">Es lo primero que ven los donantes. Cuéntales quiénes son y por qué pueden confiar en ustedes.</p>
+        </div>
+        @if (Model.Slug is not null)
+        {
+            <a class="btn btn-outline-primary" href="/fundaciones/@Model.Slug" target="_blank" rel="noopener">
+                <i class="bi bi-eye me-1" aria-hidden="true"></i>Ver perfil público
+            </a>
+        }
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    <form asp-action="Index" method="post" enctype="multipart/form-data" novalidate
+          data-confirmar="Los cambios se verán de inmediato en el perfil público de la fundación."
+          data-confirmar-titulo="¿Guardar el perfil?" data-confirmar-boton="Sí, guardar">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-8">
+                <div class="mu-card p-4 mb-4">
+                    <h2 class="h5 mb-3">Datos principales</h2>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-8">
+                            <label asp-for="Nombre" class="form-label"></label> <span class="text-danger" aria-hidden="true">*</span>
+                            <input asp-for="Nombre" class="form-control" maxlength="150" />
+                            <span asp-validation-for="Nombre"></span>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label asp-for="Nit" class="form-label"></label> <span class="text-danger" aria-hidden="true">*</span>
+                            <input asp-for="Nit" class="form-control" inputmode="numeric" maxlength="11" placeholder="900123456-7" />
+                            <span asp-validation-for="Nit"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="DescripcionCorta" class="form-label"></label>
+                            <input asp-for="DescripcionCorta" class="form-control" maxlength="200" placeholder="Rescatamos, cuidamos y buscamos hogar para gatos en Facatativá." data-contador />
+                            <div class="form-text">Aparece en la tarjeta del directorio y debajo del nombre en el perfil.</div>
+                            <span asp-validation-for="DescripcionCorta"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mu-card p-4 mb-4">
+                    <h2 class="h5 mb-3">Quiénes somos</h2>
+                    <div class="mb-3">
+                        <label asp-for="Historia" class="form-label"></label>
+                        <textarea asp-for="Historia" class="form-control" rows="6" maxlength="4000" placeholder="¿Cómo nació la fundación? ¿Qué han logrado?" data-contador></textarea>
+                        <span asp-validation-for="Historia"></span>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label asp-for="Mision" class="form-label"></label> <span class="text-danger" aria-hidden="true">*</span>
+                            <textarea asp-for="Mision" class="form-control" rows="5" maxlength="1000" data-contador></textarea>
+                            <span asp-validation-for="Mision"></span>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label asp-for="Vision" class="form-label"></label>
+                            <textarea asp-for="Vision" class="form-control" rows="5" maxlength="1000" data-contador></textarea>
+                            <span asp-validation-for="Vision"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mu-card p-4 mb-4">
+                    <h2 class="h5 mb-3">Contacto</h2>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label asp-for="CorreoContacto" class="form-label"></label> <span class="text-danger" aria-hidden="true">*</span>
+                            <input asp-for="CorreoContacto" class="form-control" />
+                            <span asp-validation-for="CorreoContacto"></span>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label asp-for="Telefono" class="form-label"></label>
+                            <input asp-for="Telefono" class="form-control" inputmode="tel" placeholder="3001234567" />
+                            <div class="form-text">Si es un celular, los visitantes podrán escribirles por WhatsApp.</div>
+                            <span asp-validation-for="Telefono"></span>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label asp-for="Ciudad" class="form-label"></label>
+                            <input asp-for="Ciudad" class="form-control" placeholder="Facatativá, Cundinamarca" />
+                            <span asp-validation-for="Ciudad"></span>
+                        </div>
+                        <div class="col-12 col-md-6 d-flex align-items-end">
+                            <div class="form-check form-switch mb-2">
+                                <input asp-for="VoluntariadoPausado" class="form-check-input" role="switch" />
+                                <label asp-for="VoluntariadoPausado" class="form-check-label"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-4">
+                <div class="mu-card p-4 mb-4">
+                    <h2 class="h5 mb-3">Logo</h2>
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span data-vista-previa-logo>
+                            <partial name="_LogoEsal" model="new LogoEsalModel(Model.Nombre, Model.LogoUrl, 88)" />
+                        </span>
+                        <div class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Imagen) Ideal: cuadrado, de al menos 400 × 400 píxeles.</div>
+                    </div>
+                    <label class="btn btn-suave w-100" for="Logo"><i class="bi bi-image me-1" aria-hidden="true"></i>@(Model.LogoUrl is null ? "Subir logo" : "Cambiar logo")</label>
+                    <input asp-for="Logo" type="file" class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Imagen)" data-archivo data-vista-previa="logo" />
+                    <div class="small text-suave mt-2 text-center" data-nombre-archivo></div>
+                    <span asp-validation-for="Logo"></span>
+                    @if (Model.LogoUrl is not null)
+                    {
+                        <div class="form-check mt-2">
+                            <input asp-for="QuitarLogo" class="form-check-input" />
+                            <label asp-for="QuitarLogo" class="form-check-label small">Quitar el logo actual</label>
+                        </div>
+                    }
+                </div>
+
+                <div class="mu-card p-4 mb-4 perfil-lateral">
+                    <h2 class="h6 fw-bold mb-3">Así se ve en el directorio</h2>
+                    <div class="tarjeta-esal border rounded-4">
+                        <div class="tarjeta-esal-banda" aria-hidden="true"></div>
+                        <div class="tarjeta-esal-cuerpo">
+                            <partial name="_LogoEsal" model="new LogoEsalModel(Model.Nombre, Model.LogoUrl, 60)" />
+                            <div class="h6 fw-bold mt-2 mb-1">@Model.Nombre</div>
+                            <p class="small text-suave texto-recortado mb-0">@(Model.DescripcionCorta ?? "Agrega una descripción corta para que aparezca aquí.")</p>
+                        </div>
+                    </div>
+                    @if (Model.FechaActualizacion is DateTime act)
+                    {
+                        <p class="small text-suave mt-3 mb-0"><i class="bi bi-clock-history me-1" aria-hidden="true"></i>Última actualización: @Formatos.FechaHora(act)</p>
+                    }
+                    <button type="submit" class="btn btn-primary w-100 mt-3" data-cargando="Guardando...">Guardar perfil</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    @* ---------- Galería ---------- *@
+    <section id="galeria" class="mu-card p-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <div>
+                <h2 class="h5 mb-1">Galería</h2>
+                <p class="small text-suave mb-0">Fotos de la fundación, sus actividades y sus peludos. Máximo @maxFotos (@Model.Fotos.Count de @maxFotos).</p>
+            </div>
+            @if (Model.Fotos.Count < maxFotos)
+            {
+                <form asp-action="SubirFoto" method="post" enctype="multipart/form-data" data-subida-automatica>
+                    <label class="btn btn-suave mb-0" for="foto"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Agregar foto</label>
+                    <input type="file" id="foto" name="foto" class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Imagen)" />
+                    <span class="d-block small mt-1" data-nombre-archivo></span>
+                </form>
+            }
+        </div>
+        @if (Model.Fotos.Count == 0)
+        {
+            <div class="text-center text-suave py-4">
+                <i class="bi bi-images fs-2 d-block mb-2" aria-hidden="true"></i>
+                Todavía no hay fotos. Las fotos ayudan a que los donantes conozcan su labor.
+            </div>
+        }
+        else
+        {
+            <div class="galeria">
+                @foreach (var f in Model.Fotos)
+                {
+                    <div class="galeria-item">
+                        <img src="@f.Url" alt="Foto de la galería" loading="lazy" />
+                        <form asp-action="EliminarFoto" asp-route-id="@f.Id" method="post" class="galeria-eliminar"
+                              data-confirmar="La foto dejará de verse en el perfil público." data-confirmar-titulo="¿Eliminar esta foto?"
+                              data-confirmar-boton="Sí, eliminar" data-confirmar-tipo="peligro">
+                            <button type="submit" class="btn btn-sm btn-light" aria-label="Eliminar foto"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
