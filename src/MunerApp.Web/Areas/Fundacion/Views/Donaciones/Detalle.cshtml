@@ -17,6 +17,10 @@
                 <div class="small text-suave">Valor reportado</div>
                 <div class="display-6 fw-bold text-principal mb-3">@Formatos.Pesos(Model.Valor)</div>
                 <dl class="row datos-detalle mb-0">
+                    @if (Model.Apadrinado is not null)
+                    {
+                        <dt class="col-sm-5">Tipo de aporte</dt><dd class="col-sm-7">Apadrinamiento de @Model.Apadrinado</dd>
+                    }
                     <dt class="col-sm-5">Donante</dt><dd class="col-sm-7">@Model.Donante<div class="small text-suave">@Model.CorreoDonante</div></dd>
                     <dt class="col-sm-5">Fecha de la transferencia</dt><dd class="col-sm-7">@Formatos.Fecha(Model.FechaTransferencia)</dd>
                     <dt class="col-sm-5">Cuenta de destino</dt><dd class="col-sm-7">@Model.MedioPago</dd>

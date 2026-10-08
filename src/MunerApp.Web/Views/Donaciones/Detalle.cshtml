@@ -68,6 +68,10 @@
 
             <dl class="row datos-detalle mb-4">
                 <dt class="col-sm-5">Código</dt><dd class="col-sm-7">@Model.Codigo</dd>
+                @if (Model.ApadrinamientoId is int apId)
+                {
+                    <dt class="col-sm-5">Aporte de</dt><dd class="col-sm-7"><a href="/mis-apadrinamientos/@apId">Apadrinamiento@(Model.Apadrinado is null ? "" : " de " + Model.Apadrinado)</a></dd>
+                }
                 <dt class="col-sm-5">Fecha de la transferencia</dt><dd class="col-sm-7">@Formatos.Fecha(Model.FechaTransferencia)</dd>
                 <dt class="col-sm-5">Medio de pago</dt><dd class="col-sm-7">@Model.MedioPago</dd>
                 @if (!string.IsNullOrEmpty(Model.ReferenciaPago))

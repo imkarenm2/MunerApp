@@ -179,6 +179,46 @@
                 </div>
             }
 
+            @if (Model.PuedeGestionar)
+            {
+                var activos = Model.Padrinos.Where(p => p.Activo).ToList();
+                <div class="mu-card p-4 mb-4">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                        <h2 class="h6 fw-bold mb-0"><i class="bi bi-people me-1 text-acento" aria-hidden="true"></i>Padrinos</h2>
+                        @if (activos.Count > 0)
+                        {
+                            <span class="small text-suave">@activos.Count @(activos.Count == 1 ? "activo" : "activos") · @Formatos.Pesos(activos.Sum(p => p.ValorMensual)) al mes</span>
+                        }
+                    </div>
+                    @if (Model.Padrinos.Count == 0)
+                    {
+                        <p class="small text-suave mb-0">Todavía no tiene padrinos.</p>
+                    }
+                    else
+                    {
+                        <div class="d-grid gap-2">
+                            @foreach (var p in Model.Padrinos)
+                            {
+                                <div class="documento-item mu-card @(p.Activo ? "" : "documento-oculto")">
+                                    <span class="flex-grow-1 min-w-0">
+                                        <span class="d-block fw-semibold text-truncate">@p.Nombre</span>
+                                        <span class="d-block small text-suave text-truncate">@p.Correo · desde @Formatos.FechaCorta(p.FechaInicio)</span>
+                                    </span>
+                                    <span class="text-end">
+                                        <span class="d-block fw-bold">@Formatos.Pesos(p.ValorMensual)<span class="small fw-normal text-suave"> /mes</span></span>
+                                        <span class="d-block small text-suave">Confirmado: @Formatos.Pesos(p.TotalConfirmado)</span>
+                                        @if (!p.Activo)
+                                        {
+                                            <span class="mu-badge">Cancelado</span>
+                                        }
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
             <div class="mu-card p-4">
                 <h2 class="h6 fw-bold mb-3">Historial de estados</h2>
                 <ul class="linea-tiempo">

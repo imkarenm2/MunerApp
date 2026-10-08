@@ -133,4 +133,7 @@ public class ApadrinableFichaViewModel
     public string NombreEsal { get; set; } = string.Empty;
     public string? LogoUrl { get; set; }
     public ApadrinableTarjeta Beneficiario { get; set; } = new();
+
+    /// <summary>Si quien mira ya es su padrino activo (HU-021), el apadrinamiento para abrirlo.</summary>
+    public int? ApadrinamientoPropioId { get; set; }
 }

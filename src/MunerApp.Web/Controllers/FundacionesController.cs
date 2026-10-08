@@ -198,8 +198,19 @@ public class FundacionesController : Controller
             return View("ApadrinableNoDisponible", new ApadrinablesViewModel { Slug = esal.Slug!, Nombre = esal.Nombre, LogoUrl = UrlArchivo(esal.LogoRuta) });
         }
 
+        int? propio = null;
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var usuarioId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            propio = await _db.Apadrinamientos.IgnoreQueryFilters().AsNoTracking()
+                .Where(a => a.PadrinoId == usuarioId && a.BeneficiarioId == id && a.Estado == EstadoApadrinamiento.Activo)
+                .Select(a => (int?)a.Id)
+                .FirstOrDefaultAsync();
+        }
+
         return View(new ApadrinableFichaViewModel
         {
+            ApadrinamientoPropioId = propio,
             Slug = esal.Slug!,
             NombreEsal = esal.Nombre,
             LogoUrl = UrlArchivo(esal.LogoRuta),

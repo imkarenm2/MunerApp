@@ -30,6 +30,28 @@
                 <div class="small text-suave">Aporte sugerido</div>
                 <div class="h3 fw-bold text-principal mb-0">@Formatos.Pesos(b.AporteSugerido) <span class="h6 fw-normal text-suave">al mes</span></div>
             </div>
+
+            @{
+                var destino = $"/fundaciones/{Model.Slug}/apadrinar/{b.Id}/confirmar";
+                var autenticado = User.Identity?.IsAuthenticated == true;
+            }
+            @if (Model.ApadrinamientoPropioId is int propio)
+            {
+                <div class="alert alert-success mt-3 mb-0">
+                    <i class="bi bi-heart-fill" aria-hidden="true"></i>
+                    <div>Ya eres padrino de @b.Nombre. <a class="fw-semibold" href="/mis-apadrinamientos/@propio">Ver mi apadrinamiento</a></div>
+                </div>
+            }
+            else
+            {
+                <a class="btn btn-apoyar btn-lg mt-3 w-100" href="@(autenticado ? destino : "/Cuenta/IniciarSesion?returnUrl=" + Uri.EscapeDataString(destino))">
+                    <i class="bi bi-balloon-heart me-2" aria-hidden="true"></i>Apadrinar a @b.Nombre
+                </a>
+                @if (!autenticado)
+                {
+                    <p class="small text-suave text-center mt-2 mb-0">Te pediremos iniciar sesión o crear tu cuenta.</p>
+                }
+            }
         </div>
     </div>
 </div>

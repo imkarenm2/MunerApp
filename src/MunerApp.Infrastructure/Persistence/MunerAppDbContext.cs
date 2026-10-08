@@ -39,6 +39,7 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<AdoptanteBeneficiario> AdoptantesBeneficiario => Set<AdoptanteBeneficiario>();
     public DbSet<EventoClinico> EventosClinicos => Set<EventoClinico>();
     public DbSet<FotoEventoClinico> FotosEventoClinico => Set<FotoEventoClinico>();
+    public DbSet<Apadrinamiento> Apadrinamientos => Set<Apadrinamiento>();
 
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
@@ -179,6 +180,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasIndex(x => x.DonanteId);
             e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.DonanteId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Apadrinamiento).WithMany().HasForeignKey(x => x.ApadrinamientoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.ApadrinamientoId);
         });
 
         builder.Entity<Notificacion>(e =>
@@ -276,6 +279,21 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne(x => x.Evento).WithMany(x => x.Fotos).HasForeignKey(x => x.EventoClinicoId).OnDelete(DeleteBehavior.Cascade);
         });
 
+        builder.Entity<Apadrinamiento>(e =>
+        {
+            e.ToTable("Apadrinamiento");
+            e.Property(x => x.PadrinoId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.ValorMensual).HasPrecision(14, 2);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.HasIndex(x => new { x.EsalId, x.BeneficiarioId, x.Estado });
+            e.HasIndex(x => x.PadrinoId);
+            // Un padrino solo puede tener un apadrinamiento activo por beneficiario
+            e.HasIndex(x => new { x.PadrinoId, x.BeneficiarioId }).IsUnique().HasFilter("[Estado] = N'Activo'");
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Beneficiario).WithMany().HasForeignKey(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.PadrinoId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
@@ -291,6 +309,7 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<AdoptanteBeneficiario>(builder);
         AplicarFiltroEsal<EventoClinico>(builder);
         AplicarFiltroEsal<FotoEventoClinico>(builder);
+        AplicarFiltroEsal<Apadrinamiento>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal
