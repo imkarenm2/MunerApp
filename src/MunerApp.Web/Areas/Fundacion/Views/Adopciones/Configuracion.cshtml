@@ -1,14 +1,14 @@
-@model ConfigRecomendacionesViewModel
+@model ConfigAdopcionViewModel
 @{
-    ViewData["Title"] = "Recomendaciones de adopción";
+    ViewData["Title"] = "Configuración de adopción";
     ViewData["Seccion"] = "Adopciones";
     var vistaPrevia = MunerApp.Domain.Entities.ConfigAdopcion.ComoLista(Model.Recomendaciones);
 }
 <div class="container py-4 py-md-5">
     <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
         <div>
-            <h1 class="h2 mb-1">Recomendaciones de adopción</h1>
-            <p class="text-suave mb-0">Lo que una persona debe leer y aceptar antes de diligenciar el formulario de adopción.</p>
+            <h1 class="h2 mb-1">Configuración de adopción</h1>
+            <p class="text-suave mb-0">Lo que una persona lee y acepta al solicitar una adopción en su fundación.</p>
         </div>
         @if (Model.Slug is not null)
         {
@@ -18,40 +18,81 @@
 
     <partial name="_NavFundacion" />
 
-    <div class="row g-4">
-        <div class="col-12 col-lg-7">
-            <form asp-action="Recomendaciones" method="post" novalidate class="mu-card p-4">
-                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
-                <label asp-for="Recomendaciones" class="form-label"></label>
-                <textarea asp-for="Recomendaciones" class="form-control" rows="12" maxlength="3000" aria-describedby="ayudaRecomendaciones"></textarea>
-                <div class="form-text" id="ayudaRecomendaciones">Escribe una recomendación por línea. Cada línea se muestra como un punto de la lista.</div>
-                <span asp-validation-for="Recomendaciones"></span>
-                <button type="submit" class="btn btn-primary mt-4" data-cargando="Guardando...">Guardar recomendaciones</button>
-            </form>
-        </div>
-        <div class="col-12 col-lg-5">
-            <div class="mu-card p-4">
-                <h2 class="h6 fw-bold mb-3">Así las ven las personas interesadas</h2>
-                <ul class="lista-check small mb-0">
-                    @foreach (var r in vistaPrevia)
-                    {
-                        <li>@r</li>
-                    }
-                </ul>
-                @if (!Model.Personalizadas)
-                {
-                    <div class="alert alert-info small mt-3 mb-0">
-                        <i class="bi bi-info-circle" aria-hidden="true"></i>
-                        <div>Estas son las recomendaciones predeterminadas. Ajústenlas a las condiciones de su fundación y guárdenlas.</div>
+    <form asp-action="Configuracion" method="post" enctype="multipart/form-data" novalidate>
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <div class="row g-4">
+            <div class="col-12 col-lg-7">
+                <div class="mu-card p-4 mb-4">
+                    <h2 class="h5 mb-3">Recomendaciones y responsabilidades</h2>
+                    <label asp-for="Recomendaciones" class="visually-hidden"></label>
+                    <textarea asp-for="Recomendaciones" class="form-control" rows="10" maxlength="3000" aria-describedby="ayudaRecomendaciones"></textarea>
+                    <div class="form-text" id="ayudaRecomendaciones">Escribe una recomendación por línea. Cada línea se muestra como un punto de la lista.</div>
+                    <span asp-validation-for="Recomendaciones"></span>
+                </div>
+
+                <div class="mu-card p-4">
+                    <h2 class="h5 mb-3">Requisito y toxoplasmosis</h2>
+                    <div class="mb-3" style="max-width: 320px">
+                        <label asp-for="ValorAporte" class="form-label"></label>
+                        <div class="input-icono">
+                            <i class="bi bi-currency-dollar" aria-hidden="true"></i>
+                            <input asp-for="ValorAporte" class="form-control" inputmode="numeric" placeholder="100.000" autocomplete="off" data-moneda />
+                        </div>
+                        <div class="form-text">La persona acepta aportarlo y llevar un huacal antes de enviar su solicitud.</div>
+                        <span asp-validation-for="ValorAporte"></span>
                     </div>
-                }
-                else if (Model.FechaActualizacion is DateTime f)
-                {
-                    <p class="small text-suave mt-3 mb-0"><i class="bi bi-clock-history me-1" aria-hidden="true"></i>Actualizado: @Formatos.FechaHora(f)</p>
-                }
+                    <div class="mb-3">
+                        <label asp-for="MensajeToxoplasmosis" class="form-label"></label>
+                        <textarea asp-for="MensajeToxoplasmosis" class="form-control" rows="5" maxlength="1500" aria-describedby="ayudaToxo"></textarea>
+                        <div class="form-text" id="ayudaToxo">Se muestra cuando la persona responde si alguien en su hogar está embarazada.</div>
+                        <span asp-validation-for="MensajeToxoplasmosis"></span>
+                    </div>
+                    <label asp-for="ImagenToxoplasmosis" class="form-label"></label>
+                    @if (Model.ImagenToxoplasmosisUrl is not null)
+                    {
+                        <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
+                            <img src="@Model.ImagenToxoplasmosisUrl" alt="Imagen actual sobre toxoplasmosis" class="rounded" style="max-height: 90px" />
+                            <span class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" name="QuitarImagen" id="QuitarImagen" value="true" />
+                                <label class="form-check-label" for="QuitarImagen">Quitar la imagen</label>
+                            </span>
+                        </div>
+                    }
+                    <label class="zona-archivo" for="ImagenToxoplasmosis">
+                        <i class="bi bi-image" aria-hidden="true"></i>
+                        <span class="fw-semibold" data-nombre-archivo>@(Model.ImagenToxoplasmosisUrl is null ? "Selecciona la imagen" : "Reemplazar la imagen")</span>
+                        <span class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Imagen)</span>
+                    </label>
+                    <input asp-for="ImagenToxoplasmosis" type="file" class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Imagen)" data-archivo />
+                    <span asp-validation-for="ImagenToxoplasmosis"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-4" data-cargando="Guardando...">Guardar configuración</button>
+            </div>
+            <div class="col-12 col-lg-5">
+                <div class="mu-card p-4">
+                    <h2 class="h6 fw-bold mb-3">Así ven las recomendaciones las personas interesadas</h2>
+                    <ul class="lista-check small mb-0">
+                        @foreach (var r in vistaPrevia)
+                        {
+                            <li>@r</li>
+                        }
+                    </ul>
+                    @if (!Model.Personalizadas)
+                    {
+                        <div class="alert alert-info small mt-3 mb-0">
+                            <i class="bi bi-info-circle" aria-hidden="true"></i>
+                            <div>Estos son los valores predeterminados. Ajústenlos a las condiciones de su fundación y guárdenlos.</div>
+                        </div>
+                    }
+                    else if (Model.FechaActualizacion is DateTime f)
+                    {
+                        <p class="small text-suave mt-3 mb-0"><i class="bi bi-clock-history me-1" aria-hidden="true"></i>Actualizado: @Formatos.FechaHora(f)</p>
+                    }
+                </div>
             </div>
         </div>
-    </div>
+    </form>
 </div>
 
 @section Scripts {
