@@ -49,6 +49,10 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<SolicitudAdopcion> SolicitudesAdopcion => Set<SolicitudAdopcion>();
     public DbSet<EventoPasarela> EventosPasarela => Set<EventoPasarela>();
 
+    // Sprint 6
+    public DbSet<Medicamento> Medicamentos => Set<Medicamento>();
+    public DbSet<MovimientoMedicamento> MovimientosMedicamento => Set<MovimientoMedicamento>();
+
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
     // Superadministrador, tareas internas (seed, migraciones) y usuarios sin ESAL no se filtran:
@@ -408,6 +412,38 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        // ---------------- Sprint 6 ----------------
+
+        builder.Entity<Medicamento>(e =>
+        {
+            e.ToTable("Medicamento");
+            e.Property(x => x.NombreComercial).HasMaxLength(150).IsRequired();
+            e.Property(x => x.PrincipioActivo).HasMaxLength(150).IsRequired();
+            e.Property(x => x.FechaVencimiento).HasColumnType("date");
+            e.Property(x => x.Uso).HasMaxLength(300).IsRequired();
+            e.Property(x => x.Via).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Dosis).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Presentacion).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Cantidad).HasPrecision(10, 2);
+            e.Property(x => x.CantidadMinima).HasPrecision(10, 2);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.FechaVencimiento });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<MovimientoMedicamento>(e =>
+        {
+            e.ToTable("MovimientoMedicamento");
+            e.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(15);
+            e.Property(x => x.Cantidad).HasPrecision(10, 2);
+            e.Property(x => x.CantidadResultante).HasPrecision(10, 2);
+            e.Property(x => x.Nota).HasMaxLength(300);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.MedicamentoId, x.Fecha });
+            e.HasOne(x => x.Medicamento).WithMany(x => x.Movimientos).HasForeignKey(x => x.MedicamentoId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Beneficiario).WithMany().HasForeignKey(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
@@ -428,6 +464,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<FotoCausa>(builder);
         AplicarFiltroEsal<ConfigAdopcion>(builder);
         AplicarFiltroEsal<SolicitudAdopcion>(builder);
+        AplicarFiltroEsal<Medicamento>(builder);
+        AplicarFiltroEsal<MovimientoMedicamento>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal
