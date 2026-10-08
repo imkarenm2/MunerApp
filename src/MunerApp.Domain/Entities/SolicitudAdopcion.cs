@@ -109,12 +109,30 @@ public class SolicitudAdopcion : IPerteneceAEsal
     public DateTime? FechaRevision { get; set; }
     public string? RevisadoPorId { get; set; }
 
+    // ---- Cita presencial y resultado (HU-034) ----
+
+    /// <summary>Fecha y hora de la cita, en UTC.</summary>
+    public DateTime? FechaCita { get; set; }
+    public string? LugarCita { get; set; }
+
+    /// <summary>Indicaciones adicionales de la fundación para la cita (opcional).</summary>
+    public string? IndicacionesCita { get; set; }
+
+    /// <summary>Cuántas veces se cambió la fecha de la cita (HU-034, escenario 2).</summary>
+    public int Reprogramaciones { get; set; }
+
+    /// <summary>Beneficiario que se llevó la persona, si la adopción se concretó (escenario 3).</summary>
+    public int? BeneficiarioAdoptadoId { get; set; }
+    public string? ObservacionesResultado { get; set; }
+    public DateTime? FechaResultado { get; set; }
+
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
     public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
 
     public Esal? Esal { get; set; }
+    public Beneficiario? BeneficiarioAdoptado { get; set; }
 
     /// <summary>Estados en los que la solicitud sigue en trámite: la persona no puede iniciar otra en la misma fundación.</summary>
     public static readonly EstadoSolicitudAdopcion[] EstadosEnProceso =
-        { EstadoSolicitudAdopcion.Recibida, EstadoSolicitudAdopcion.AprobadaParaCita };
+        { EstadoSolicitudAdopcion.Recibida, EstadoSolicitudAdopcion.AprobadaParaCita, EstadoSolicitudAdopcion.CitaAgendada };
 }

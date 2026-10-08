@@ -112,6 +112,9 @@ public static class Textos
         EstadoSolicitudAdopcion.Recibida => "Recibida",
         EstadoSolicitudAdopcion.AprobadaParaCita => "Aprobada para cita",
         EstadoSolicitudAdopcion.Rechazada => "Rechazada",
+        EstadoSolicitudAdopcion.CitaAgendada => "Cita agendada",
+        EstadoSolicitudAdopcion.AdopcionConcretada => "Adopción concretada",
+        EstadoSolicitudAdopcion.NoConcretada => "Adopción no concretada",
         _ => e.ToString()
     };
 

@@ -368,6 +368,11 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             // Revisión de la fundación (HU-033)
             e.Property(x => x.MotivoRechazo).HasMaxLength(300);
             e.Property(x => x.RevisadoPorId).HasMaxLength(450);
+            // Cita presencial y resultado (HU-034)
+            e.Property(x => x.LugarCita).HasMaxLength(200);
+            e.Property(x => x.IndicacionesCita).HasMaxLength(300);
+            e.Property(x => x.ObservacionesResultado).HasMaxLength(500);
+            e.HasOne(x => x.BeneficiarioAdoptado).WithMany().HasForeignKey(x => x.BeneficiarioAdoptadoId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.EsalId, x.Estado });
             // Una persona solo tiene un borrador por fundación: si vuelve, continúa el mismo
             e.HasIndex(x => new { x.EsalId, x.UsuarioId }).IsUnique().HasFilter("[Estado] = N'Borrador'");
