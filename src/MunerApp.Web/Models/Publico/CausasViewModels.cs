@@ -24,12 +24,16 @@ public class CausaTarjeta
     public string SlugEsal { get; set; } = string.Empty;
     public string? LogoUrl { get; set; }
 
+    /// <summary>En el listado de todas las fundaciones se muestra a cuál pertenece cada causa.</summary>
+    public bool MostrarFundacion { get; set; }
+
     public bool RecibeDonaciones => !Cerrada && !Pausada;
     public string Url => $"/fundaciones/{SlugEsal}/causas/{Id}";
 }
 
 public class CausasPublicasViewModel
 {
+    public bool HayCausas => Abiertas.Count + Cerradas.Count > 0;
     public IReadOnlyList<CausaTarjeta> Abiertas { get; set; } = Array.Empty<CausaTarjeta>();
     public IReadOnlyList<CausaTarjeta> Cerradas { get; set; } = Array.Empty<CausaTarjeta>();
 }

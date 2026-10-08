@@ -38,6 +38,7 @@ public class CausasPublicas
         var hoy = DateTime.Today;
 
         var tarjetas = causas.Select(c => Tarjeta(c, recaudos.GetValueOrDefault(c.Id), hoy)).ToList();
+        foreach (var t in tarjetas) t.MostrarFundacion = esalId is null;
         return new CausasPublicasViewModel
         {
             // Las que están por terminar primero; las pausadas después de las activas
