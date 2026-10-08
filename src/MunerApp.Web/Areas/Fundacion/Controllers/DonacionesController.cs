@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
 using MunerApp.Domain.Constantes;
+using MunerApp.Domain.Entities;
 using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Areas.Fundacion.Models;
@@ -96,7 +97,9 @@ public class DonacionesController : Controller
             MotivoRechazo = d.MotivoRechazo,
             FechaRevision = d.FechaRevision,
             RevisadoPor = revisor,
-            SoporteEsPdf = d.SoporteRuta.EndsWith(".pdf")
+            SoporteEsPdf = d.SoporteRuta.EndsWith(".pdf"),
+            EnLinea = d.Origen == OrigenDonacion.Wompi,
+            TransaccionPasarelaId = d.TransaccionPasarelaId
         });
     }
 
@@ -104,7 +107,7 @@ public class DonacionesController : Controller
     public async Task<IActionResult> Soporte(int id)
     {
         var d = await _db.Donaciones.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
-        if (d is null) return NotFound();
+        if (d is null || string.IsNullOrEmpty(d.SoporteRuta)) return NotFound(); // las donaciones en línea no tienen soporte
         var stream = await _archivos.AbrirAsync(d.SoporteRuta);
         return stream is null ? NotFound() : File(stream, ValidadorArchivos.ContentTypeDe(d.SoporteRuta));
     }
@@ -120,6 +123,7 @@ public class DonacionesController : Controller
             TempData["Error"] = $"La donación {d.Codigo} ya había sido {(d.Estado == EstadoDonacion.Confirmada ? "confirmada" : "rechazada")}.";
             return RedirectToAction(nameof(Detalle), new { id });
         }
+        if (d.Origen == OrigenDonacion.Wompi) return EnLineaNoSeRevisaAMano(d);
 
         d.Estado = EstadoDonacion.Confirmada;
         d.FechaRevision = DateTime.UtcNow;
@@ -146,6 +150,7 @@ public class DonacionesController : Controller
             TempData["Error"] = $"La donación {d.Codigo} ya había sido revisada.";
             return RedirectToAction(nameof(Detalle), new { id });
         }
+        if (d.Origen == OrigenDonacion.Wompi) return EnLineaNoSeRevisaAMano(d);
 
         motivo = motivo?.Trim();
         if (string.IsNullOrEmpty(motivo) || motivo.Length < 10)
@@ -166,6 +171,13 @@ public class DonacionesController : Controller
 
         TempData["Mensaje"] = $"Rechazaste la donación {d.Codigo}. El donante verá el motivo.";
         return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>HU-044: una donación en línea solo la confirma o rechaza el aviso firmado de Wompi.</summary>
+    private IActionResult EnLineaNoSeRevisaAMano(Donacion d)
+    {
+        TempData["Error"] = $"La donación {d.Codigo} se pagó en línea: se confirma sola cuando Wompi avisa el resultado del pago.";
+        return RedirectToAction(nameof(Detalle), new { id = d.Id });
     }
 
     [HttpGet]

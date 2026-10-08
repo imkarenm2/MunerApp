@@ -151,6 +151,7 @@ Las páginas públicas (`/fundaciones/...`), "Mis donaciones" y "Mis postulacion
 | 032 | Hogar y compromisos, y envío de la solicitud | `AdopcionesController` → `Hogar` (`/fundaciones/{slug}/adoptar/formulario/hogar`), `MisAdopciones` (`/mis-adopciones`) · aporte y toxoplasmosis en `Areas/Fundacion/Controllers/AdopcionesController.cs` → `Configuracion` |
 | 033 | Panel de solicitudes: aprobar para cita o rechazar | `Areas/Fundacion/Controllers/AdopcionesController.cs` → `Index`, `Detalle`, `Aprobar`, `Rechazar` (`/Fundacion/Adopciones`) |
 | 034 | Cita presencial: agendar, reprogramar y registrar el resultado | `Areas/Fundacion/Controllers/AdopcionesController.cs` → `AgendarCita`, `RegistrarResultado` · `Servicios/EstadosBeneficiario.cs` |
+| 044 | Confirmación automática de donaciones en línea con el aviso de Wompi | `Controllers/WompiController.cs` (`POST /api/wompi/eventos/{esalId}`) · `Servicios/ConfirmacionPagosWompi.cs` · `Infrastructure/Servicios/WompiFirmaEventos.cs` |
 
 ### Solicitud de adopción
 
@@ -169,6 +170,25 @@ Las páginas públicas (`/fundaciones/...`), "Mis donaciones" y "Mis postulacion
 - `Servicios/EstadosBeneficiario.cs` concentra el cambio de estado de un beneficiario (historial, retiro del apadrinamiento y aviso a los padrinos). Lo usan la hoja de vida (Sprint 3) y la adopción concretada, para que las reglas estén en un solo lugar.
 - La acción pública se llama `MisAdopciones` (no `Index`) para que los enlaces del área `Fundacion` no se confundan con `/mis-adopciones`: ambos controladores se llaman `Adopciones`.
 - Requiere el módulo **Adopción** activo en la fundación.
+
+### Confirmación automática con Wompi (HU-044)
+
+- Cada fundación pega en su panel de Wompi (**Desarrolladores → URL de eventos**) la URL que muestra **Panel → Pagos en línea**: `https://{dominio}/api/wompi/eventos/{esalId}`.
+- La firma se valida con el secreto de eventos de la fundación: SHA256 de los valores de `signature.properties` + `timestamp` + secreto ([documentación de Wompi](https://docs.wompi.co/docs/colombia/eventos/)). Si no coincide, se responde 401 y no se toca ninguna donación.
+- La donación se busca por `ReferenciaPasarela` (la genera HU-043) y debe tener `Origen = Wompi`. `APPROVED` → Confirmada; `DECLINED`, `VOIDED` o `ERROR` → Rechazada; `PENDING` no cambia nada. El valor pagado debe coincidir con el de la donación.
+- La donación solo cambia si sigue Pendiente (actualización atómica): un aviso repetido, o varios a la vez, no la procesan dos veces. El recaudado de la causa se calcula con las donaciones confirmadas, así que nunca se suma doble.
+- Cada aviso queda en la tabla `EventoPasarela` con su resultado (Procesado, FirmaInvalida, Duplicado, MontoNoCoincide...).
+- Una donación en línea no se confirma ni rechaza a mano desde el panel de donaciones.
+- **Contrato con HU-043:** al iniciar el pago se crea la `Donacion` en Pendiente con `Origen = Wompi`, `ReferenciaPasarela` única, `CausaId`, `MedioPago = "Wompi"` y `SoporteRuta` vacío.
+- Para probar en local se necesita una URL pública (por ejemplo, un túnel de Visual Studio o ngrok) registrada como URL de eventos en el sandbox de Wompi.
+
+## Pruebas automatizadas
+
+```bash
+dotnet test
+```
+
+`tests/MunerApp.Tests` (xUnit) prueba la validación de la firma de los eventos de Wompi.
 
 ## Cómo se protege un módulo
 

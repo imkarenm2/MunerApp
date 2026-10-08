@@ -177,6 +177,10 @@ public class DonacionEsalDetalleViewModel : DonacionEsalItem
     public DateTime? FechaRevision { get; set; }
     public string? RevisadoPor { get; set; }
     public bool SoporteEsPdf { get; set; }
+
+    /// <summary>HU-044: las donaciones en línea las confirma el aviso de Wompi, no la fundación.</summary>
+    public bool EnLinea { get; set; }
+    public string? TransaccionPasarelaId { get; set; }
 }
 
 /// <summary>HU-035: postulaciones recibidas (solo consulta; la aprobación llega en el Sprint 6).</summary>
