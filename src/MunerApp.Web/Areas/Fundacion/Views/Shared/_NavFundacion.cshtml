@@ -26,13 +26,13 @@
         <a class="nav-link @Activa("Perfil")" asp-area="Fundacion" asp-controller="Perfil" asp-action="Index"><i class="bi bi-building me-1" aria-hidden="true"></i>Perfil</a>
         <a class="nav-link @Activa("Documentos")" asp-area="Fundacion" asp-controller="Documentos" asp-action="Index"><i class="bi bi-folder-check me-1" aria-hidden="true"></i>Transparencia</a>
     }
+    @if (moduloBeneficiarios)
+    {
+        <a class="nav-link @Activa("Beneficiarios")" asp-area="Fundacion" asp-controller="Beneficiarios" asp-action="Index"><i class="bi bi-balloon-heart me-1" aria-hidden="true"></i>Beneficiarios</a>
+    }
     @if (admin)
     {
         <a class="nav-link @Activa("Donaciones")" asp-area="Fundacion" asp-controller="Donaciones" asp-action="Index"><i class="bi bi-cash-coin me-1" aria-hidden="true"></i>Donaciones</a>
-        @if (moduloBeneficiarios)
-        {
-            <a class="nav-link @Activa("Beneficiarios")" asp-area="Fundacion" asp-controller="Beneficiarios" asp-action="Index"><i class="bi bi-balloon-heart me-1" aria-hidden="true"></i>Beneficiarios</a>
-        }
         <a class="nav-link @Activa("Postulaciones")" asp-area="Fundacion" asp-controller="Postulaciones" asp-action="Index"><i class="bi bi-person-raised-hand me-1" aria-hidden="true"></i>Voluntarios</a>
         <a class="nav-link @Activa("Usuarios")" asp-area="Fundacion" asp-controller="Usuarios" asp-action="Index"><i class="bi bi-people me-1" aria-hidden="true"></i>Equipo</a>
     }

@@ -12,7 +12,10 @@
             <h1 class="h2 mb-0">@Model.Nombre</h1>
             <partial name="_EstadoBeneficiario" model="Model.Estado" />
         </div>
-        <a class="btn btn-suave btn-sm" asp-action="Editar" asp-route-id="@Model.Id"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar datos</a>
+        @if (Model.PuedeGestionar)
+        {
+            <a class="btn btn-suave btn-sm" asp-action="Editar" asp-route-id="@Model.Id"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar datos</a>
+        }
     </div>
 
     <partial name="_NavFundacion" />
@@ -52,6 +55,8 @@
         </div>
 
         <div class="col-12 col-lg-7">
+            @if (Model.PuedeGestionar)
+            {
             <div class="mu-card p-4 mb-4">
                 <h2 class="h6 fw-bold mb-3">Cambiar estado</h2>
                 <form asp-action="CambiarEstado" asp-route-id="@Model.Id" method="post" id="form-estado"
@@ -78,8 +83,9 @@
                     </div>
                 </form>
             </div>
+            }
 
-            @if (Model.Estado == EstadoBeneficiario.Adoptado)
+            @if (Model.PuedeGestionar && Model.Estado == EstadoBeneficiario.Adoptado)
             {
                 <div class="mu-card p-4 mb-4">
                     <div class="d-flex align-items-center justify-content-between gap-2 mb-3">

@@ -16,11 +16,13 @@ namespace MunerApp.Web.Areas.Fundacion.Controllers;
 
 /// <summary>
 /// HU-017: hoja de vida de los beneficiarios (en el piloto, los gatos). Información interna de la fundación.
-/// Solo la gestionan los administradores de la ESAL y solo si tiene activo el módulo de beneficiarios.
+/// HU-018: administradores y voluntarios consultan el listado y la hoja de vida; solo los administradores
+/// registran, editan, cambian estados y ven los datos personales del adoptante (HU-017).
+/// Todo requiere que la fundación tenga activo el módulo de beneficiarios.
 /// El filtro global por ESAL garantiza que nunca se vea un beneficiario de otra fundación.
 /// </summary>
 [Area("Fundacion")]
-[Authorize(Roles = Roles.AdministradorESAL)]
+[Authorize(Roles = Roles.AdministradorESAL + "," + Roles.Voluntario)]
 [RequiereModulo(CodigosModulo.Beneficiarios)]
 public class BeneficiariosController : Controller
 {
@@ -35,16 +37,41 @@ public class BeneficiariosController : Controller
         _archivos = archivos;
     }
 
+    private const int PorPagina = 12;
+
     private string UsuarioId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
     private int EsalId => _esalActual.EsalId ?? throw new InvalidOperationException("El usuario no pertenece a una ESAL.");
 
-    // ---------- Listado (la versión con filtros es la HU-018) ----------
+    // ---------- HU-018: listado interno con filtros ----------
 
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(EstadoBeneficiario? estado, string? q, int pagina = 1)
     {
-        var items = await _db.Beneficiarios.AsNoTracking()
+        var esAdmin = User.IsInRole(Roles.AdministradorESAL);
+
+        var conteos = await _db.Beneficiarios.AsNoTracking()
+            .GroupBy(b => b.Estado)
+            .Select(g => new { g.Key, Cantidad = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Cantidad);
+
+        var consulta = _db.Beneficiarios.AsNoTracking().AsQueryable();
+        if (estado is not null && Enum.IsDefined(estado.Value))
+            consulta = consulta.Where(b => b.Estado == estado.Value);
+        else
+            estado = null;
+
+        q = q?.Trim();
+        if (!string.IsNullOrEmpty(q))
+            consulta = consulta.Where(b => b.Nombre.Contains(q));
+
+        var total = await consulta.CountAsync();
+        var totalPaginas = Math.Max(1, (int)Math.Ceiling(total / (double)PorPagina));
+        pagina = Math.Clamp(pagina, 1, totalPaginas);
+
+        var items = await consulta
             .OrderBy(b => b.Nombre)
+            .Skip((pagina - 1) * PorPagina)
+            .Take(PorPagina)
             .Select(b => new BeneficiarioItem
             {
                 Id = b.Id,
@@ -54,18 +81,30 @@ public class BeneficiariosController : Controller
                 Color = b.Color,
                 Estado = b.Estado,
                 TieneFoto = b.FotoRuta != null,
-                FaltaAdoptante = b.Estado == EstadoBeneficiario.Adoptado && b.Adoptante == null
+                FaltaAdoptante = esAdmin && b.Estado == EstadoBeneficiario.Adoptado && b.Adoptante == null
             }).ToListAsync();
 
-        return View(new BeneficiariosIndexViewModel { Beneficiarios = items });
+        return View(new BeneficiariosIndexViewModel
+        {
+            Beneficiarios = items,
+            Estado = estado,
+            Busqueda = q,
+            Conteos = conteos,
+            Total = total,
+            Pagina = pagina,
+            TotalPaginas = totalPaginas,
+            PuedeGestionar = esAdmin
+        });
     }
 
     // ---------- Escenario 1: registro exitoso ----------
 
     [HttpGet]
+    [Authorize(Roles = Roles.AdministradorESAL)]
     public IActionResult Crear() => View(new BeneficiarioFormViewModel { FechaRescate = DateTime.Today });
 
     [HttpPost]
+    [Authorize(Roles = Roles.AdministradorESAL)]
     [RequestSizeLimit(ValidadorArchivos.LimitePeticionBytes)]
     public async Task<IActionResult> Crear(BeneficiarioFormViewModel model)
     {
@@ -110,6 +149,7 @@ public class BeneficiariosController : Controller
     [HttpGet]
     public async Task<IActionResult> Detalle(int id)
     {
+        var esAdmin = User.IsInRole(Roles.AdministradorESAL);
         var b = await _db.Beneficiarios.AsNoTracking()
             .Include(x => x.Adoptante)
             .FirstOrDefaultAsync(x => x.Id == id);
@@ -138,9 +178,11 @@ public class BeneficiariosController : Controller
             FechaRescate = b.FechaRescate,
             FechaRegistro = b.FechaRegistro,
             RegistradoPor = registrador,
-            FaltaAdoptante = b.Estado == EstadoBeneficiario.Adoptado && b.Adoptante is null,
+            PuedeGestionar = esAdmin,
+            FaltaAdoptante = esAdmin && b.Estado == EstadoBeneficiario.Adoptado && b.Adoptante is null,
             Historial = historial,
-            Adoptante = b.Adoptante is null ? null : new AdoptanteItem
+            // Los datos personales del adoptante son solo para los administradores
+            Adoptante = !esAdmin || b.Adoptante is null ? null : new AdoptanteItem
             {
                 Nombre = b.Adoptante.Nombre,
                 Documento = b.Adoptante.Documento,
@@ -169,6 +211,7 @@ public class BeneficiariosController : Controller
     // ---------- Edición de los datos ----------
 
     [HttpGet]
+    [Authorize(Roles = Roles.AdministradorESAL)]
     public async Task<IActionResult> Editar(int id)
     {
         var b = await _db.Beneficiarios.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
@@ -189,6 +232,7 @@ public class BeneficiariosController : Controller
     }
 
     [HttpPost]
+    [Authorize(Roles = Roles.AdministradorESAL)]
     [RequestSizeLimit(ValidadorArchivos.LimitePeticionBytes)]
     public async Task<IActionResult> Editar(int id, BeneficiarioFormViewModel model)
     {
@@ -233,6 +277,7 @@ public class BeneficiariosController : Controller
     // ---------- Escenario 2: cambio de estado ----------
 
     [HttpPost]
+    [Authorize(Roles = Roles.AdministradorESAL)]
     public async Task<IActionResult> CambiarEstado(int id, CambioEstadoViewModel model)
     {
         var b = await _db.Beneficiarios.FirstOrDefaultAsync(x => x.Id == id);
@@ -274,6 +319,7 @@ public class BeneficiariosController : Controller
     // ---------- Escenario 3: datos del adoptante ----------
 
     [HttpGet]
+    [Authorize(Roles = Roles.AdministradorESAL)]
     public async Task<IActionResult> Adoptante(int id)
     {
         var b = await _db.Beneficiarios.AsNoTracking().Include(x => x.Adoptante).FirstOrDefaultAsync(x => x.Id == id);
@@ -303,6 +349,7 @@ public class BeneficiariosController : Controller
     }
 
     [HttpPost]
+    [Authorize(Roles = Roles.AdministradorESAL)]
     public async Task<IActionResult> Adoptante(int id, AdoptanteFormViewModel model)
     {
         var b = await _db.Beneficiarios.Include(x => x.Adoptante).FirstOrDefaultAsync(x => x.Id == id);
