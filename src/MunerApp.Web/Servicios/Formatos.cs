@@ -12,6 +12,10 @@ public static class Formatos
     public static DateTime Local(DateTime utc) =>
         TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), Zona);
 
+    /// <summary>Convierte una fecha y hora de Colombia (por ejemplo, la de una cita) a UTC para guardarla.</summary>
+    public static DateTime Utc(DateTime local) =>
+        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), Zona);
+
     /// <summary>$ 50.000</summary>
     public static string Pesos(decimal valor) => valor.ToString("C0", Co);
 

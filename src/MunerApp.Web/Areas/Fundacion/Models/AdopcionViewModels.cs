@@ -43,7 +43,19 @@ public class SolicitudesAdopcionViewModel
     public Dictionary<EstadoSolicitudAdopcion, int> Conteos { get; set; } = new();
     public List<SolicitudAdopcionEsalItem> Solicitudes { get; set; } = new();
     public bool PuedeConfigurar { get; set; }
+
+    /// <summary>Pestañas del panel en el orden del proceso; "Cerradas" agrupa las que terminaron sin adopción.</summary>
+    public static readonly PestanaAdopcion[] Pestanas =
+    {
+        new("Por revisar", "bi-hourglass-split", new[] { EstadoSolicitudAdopcion.Recibida }),
+        new("Por agendar", "bi-calendar-plus", new[] { EstadoSolicitudAdopcion.AprobadaParaCita }),
+        new("Citas", "bi-calendar-check", new[] { EstadoSolicitudAdopcion.CitaAgendada }),
+        new("Adoptados", "bi-heart-fill", new[] { EstadoSolicitudAdopcion.AdopcionConcretada }),
+        new("Cerradas", "bi-archive", new[] { EstadoSolicitudAdopcion.Rechazada, EstadoSolicitudAdopcion.NoConcretada })
+    };
 }
+
+public record PestanaAdopcion(string Texto, string Icono, EstadoSolicitudAdopcion[] Estados);
 
 public class SolicitudAdopcionEsalItem
 {
@@ -53,6 +65,7 @@ public class SolicitudAdopcionEsalItem
     public string Ciudad { get; set; } = string.Empty;
     public DateTime FechaEnvio { get; set; }
     public EstadoSolicitudAdopcion Estado { get; set; }
+    public DateTime? FechaCita { get; set; }
 }
 
 /// <summary>HU-033 escenario 1: detalle completo de una solicitud.</summary>
@@ -62,4 +75,30 @@ public class SolicitudAdopcionDetalleViewModel
     public string Correo { get; set; } = string.Empty;
     public string? RevisadoPor { get; set; }
     public bool CarneEsPdf { get; set; }
+
+    // HU-034: cita y resultado
+    public decimal ValorAporte { get; set; }
+    public string? NombreBeneficiarioAdoptado { get; set; }
+
+    /// <summary>Beneficiarios que pueden adoptarse (ni adoptados ni fallecidos), para registrar el resultado.</summary>
+    public List<BeneficiarioOpcion> BeneficiariosDisponibles { get; set; } = new();
+}
+
+public record BeneficiarioOpcion(int Id, string Nombre, EstadoBeneficiario Estado);
+
+/// <summary>HU-034 escenarios 1 y 2: agendar o reprogramar la cita.</summary>
+public class CitaAdopcionViewModel
+{
+    /// <summary>Fecha y hora de Colombia, del campo datetime-local.</summary>
+    public DateTime? Fecha { get; set; }
+    public string? Lugar { get; set; }
+    public string? Indicaciones { get; set; }
+}
+
+/// <summary>HU-034 escenario 3: resultado de la cita.</summary>
+public class ResultadoCitaViewModel
+{
+    public bool? Concretada { get; set; }
+    public int? BeneficiarioId { get; set; }
+    public string? Observaciones { get; set; }
 }

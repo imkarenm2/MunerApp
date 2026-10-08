@@ -220,4 +220,11 @@ public class SolicitudAdopcionItem
     public EstadoSolicitudAdopcion Estado { get; set; }
     public DateTime Fecha { get; set; }
     public string? MotivoRechazo { get; set; }
+
+    // Cita presencial y resultado (HU-034)
+    public DateTime? FechaCita { get; set; }
+    public string? LugarCita { get; set; }
+    public string? IndicacionesCita { get; set; }
+    public decimal ValorAporte { get; set; }
+    public string? NombreAdoptado { get; set; }
 }

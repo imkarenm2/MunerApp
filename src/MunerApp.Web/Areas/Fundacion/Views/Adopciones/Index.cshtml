@@ -2,19 +2,16 @@
 @{
     ViewData["Title"] = "Solicitudes de adopción";
     ViewData["Seccion"] = "Adopciones";
-    int Conteo(EstadoSolicitudAdopcion e) => Model.Conteos.TryGetValue(e, out var c) ? c : 0;
-    var pestanas = new[]
-    {
-        (Estado: EstadoSolicitudAdopcion.Recibida, Texto: "Por revisar", Icono: "bi-hourglass-split"),
-        (Estado: EstadoSolicitudAdopcion.AprobadaParaCita, Texto: "Aprobadas para cita", Icono: "bi-house-check"),
-        (Estado: EstadoSolicitudAdopcion.Rechazada, Texto: "Rechazadas", Icono: "bi-x-circle")
-    };
+    int Conteo(PestanaAdopcion p) => p.Estados.Sum(e => Model.Conteos.TryGetValue(e, out var c) ? c : 0);
+    // Pestañas que piden una acción de la fundación: se resaltan si tienen solicitudes
+    bool Pendiente(PestanaAdopcion p) => p.Estados[0] is EstadoSolicitudAdopcion.Recibida or EstadoSolicitudAdopcion.AprobadaParaCita;
+    var citas = Model.Estado == EstadoSolicitudAdopcion.CitaAgendada;
 }
 <div class="container py-4 py-md-5">
     <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
         <div>
             <h1 class="h2 mb-1">Solicitudes de adopción</h1>
-            <p class="text-suave mb-0">Revisa cada solicitud y aprueba a quienes cumplen para agendarles la cita presencial.</p>
+            <p class="text-suave mb-0">Revisa cada solicitud, agenda la cita presencial a quienes apruebes y registra si la adopción se concretó.</p>
         </div>
         @if (Model.PuedeConfigurar)
         {
@@ -25,13 +22,14 @@
     <partial name="_NavFundacion" />
 
     <ul class="nav nav-tabs pestanas mb-3" role="tablist">
-        @foreach (var p in pestanas)
+        @foreach (var p in SolicitudesAdopcionViewModel.Pestanas)
         {
+            var activa = p.Estados.Contains(Model.Estado);
             <li class="nav-item">
-                <a class="nav-link @(Model.Estado == p.Estado ? "active" : "")" asp-action="Index" asp-route-estado="@p.Estado"
-                   aria-current="@(Model.Estado == p.Estado ? "page" : null)">
+                <a class="nav-link @(activa ? "active" : "")" asp-action="Index" asp-route-estado="@p.Estados[0]"
+                   aria-current="@(activa ? "page" : null)">
                     <i class="bi @p.Icono me-1" aria-hidden="true"></i>@p.Texto
-                    <span class="badge rounded-pill @(p.Estado == EstadoSolicitudAdopcion.Recibida && Conteo(p.Estado) > 0 ? "text-bg-warning" : "text-bg-light") ms-1">@Conteo(p.Estado)</span>
+                    <span class="badge rounded-pill @(Pendiente(p) && Conteo(p) > 0 ? "text-bg-warning" : "text-bg-light") ms-1">@Conteo(p)</span>
                 </a>
             </li>
         }
@@ -55,7 +53,7 @@
                         <tr>
                             <th scope="col">Solicitante</th>
                             <th scope="col">Código</th>
-                            <th scope="col">Enviada</th>
+                            <th scope="col">@(citas ? "Cita" : "Enviada")</th>
                             <th scope="col">Estado</th>
                             <th scope="col" class="text-end"><span class="visually-hidden">Acciones</span></th>
                         </tr>
@@ -69,12 +67,26 @@
                                     <div class="small text-suave">@s.Ciudad</div>
                                 </td>
                                 <td class="small">@s.Codigo</td>
-                                <td class="small">@Formatos.FechaCorta(s.FechaEnvio)<div class="text-suave">@Formatos.Hace(s.FechaEnvio)</div></td>
+                                @if (citas && s.FechaCita is DateTime cita)
+                                {
+                                    <td class="small fw-semibold">@Formatos.FechaHora(cita)</td>
+                                }
+                                else
+                                {
+                                    <td class="small">@Formatos.FechaCorta(s.FechaEnvio)<div class="text-suave">@Formatos.Hace(s.FechaEnvio)</div></td>
+                                }
                                 <td><partial name="_EstadoSolicitudAdopcion" model="s.Estado" /></td>
                                 <td class="text-end">
-                                    <a class="btn btn-sm @(s.Estado == EstadoSolicitudAdopcion.Recibida ? "btn-primary" : "btn-suave")" asp-action="Detalle" asp-route-id="@s.Id">
-                                        @(s.Estado == EstadoSolicitudAdopcion.Recibida ? "Revisar" : "Ver")
-                                    </a>
+                                    @{
+                                        var accion = s.Estado switch
+                                        {
+                                            EstadoSolicitudAdopcion.Recibida => "Revisar",
+                                            EstadoSolicitudAdopcion.AprobadaParaCita => "Agendar cita",
+                                            EstadoSolicitudAdopcion.CitaAgendada => "Gestionar",
+                                            _ => null
+                                        };
+                                    }
+                                    <a class="btn btn-sm @(accion is null ? "btn-suave" : "btn-primary")" asp-action="Detalle" asp-route-id="@s.Id">@(accion ?? "Ver")</a>
                                 </td>
                             </tr>
                         }

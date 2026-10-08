@@ -374,8 +374,18 @@ public class AdopcionesController : Controller
         var solicitudes = await _db.SolicitudesAdopcion.IgnoreQueryFilters().AsNoTracking()
             .Where(s => s.UsuarioId == UsuarioId && s.Estado != EstadoSolicitudAdopcion.Borrador)
             .OrderByDescending(s => s.FechaEnvio)
-            .Select(s => new { s.Codigo, s.Esal!.Nombre, s.Esal.Slug, s.Esal.LogoRuta, s.Estado, s.FechaEnvio, s.MotivoRechazo })
+            .Select(s => new
+            {
+                s.Codigo, s.EsalId, s.Esal!.Nombre, s.Esal.Slug, s.Esal.LogoRuta, s.Estado, s.FechaEnvio, s.MotivoRechazo,
+                s.FechaCita, s.LugarCita, s.IndicacionesCita, Adoptado = s.BeneficiarioAdoptado != null ? s.BeneficiarioAdoptado.Nombre : null
+            })
             .ToListAsync();
+
+        // Aporte de cada fundación, para los requisitos de la cita (HU-034, escenario 1)
+        var esales = solicitudes.Select(s => s.EsalId).Distinct().ToList();
+        var aportes = await _db.ConfigAdopciones.IgnoreQueryFilters().AsNoTracking()
+            .Where(c => esales.Contains(c.EsalId))
+            .ToDictionaryAsync(c => c.EsalId, c => c.ValorAporte);
 
         return View(solicitudes.Select(s => new SolicitudAdopcionItem
         {
@@ -385,7 +395,12 @@ public class AdopcionesController : Controller
             LogoUrl = UrlArchivo(s.LogoRuta),
             Estado = s.Estado,
             Fecha = s.FechaEnvio ?? DateTime.UtcNow,
-            MotivoRechazo = s.MotivoRechazo
+            MotivoRechazo = s.MotivoRechazo,
+            FechaCita = s.FechaCita,
+            LugarCita = s.LugarCita,
+            IndicacionesCita = s.IndicacionesCita,
+            ValorAporte = aportes.TryGetValue(s.EsalId, out var aporte) ? aporte : ConfigAdopcion.ValorAportePredeterminado,
+            NombreAdoptado = s.Adoptado
         }).ToList());
     }
 
