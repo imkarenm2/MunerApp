@@ -99,8 +99,13 @@ public class AdoptanteItem
     public string? Observaciones { get; set; }
 }
 
+public record PadrinoItem(string Nombre, string Correo, decimal ValorMensual, DateTime FechaInicio, bool Activo, decimal TotalConfirmado);
+
 public class BeneficiarioDetalleViewModel : BeneficiarioItem
 {
+    /// <summary>Padrinos del beneficiario (HU-021): solo lo ven los administradores.</summary>
+    public IReadOnlyList<PadrinoItem> Padrinos { get; set; } = Array.Empty<PadrinoItem>();
+
     public bool PuedeGestionar { get; set; }
 
     /// <summary>Administrador principal: decide qué se publica de cada beneficiario (HU-020).</summary>

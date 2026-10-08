@@ -31,12 +31,15 @@ public class BeneficiariosController : Controller
     private readonly MunerAppDbContext _db;
     private readonly IEsalActual _esalActual;
     private readonly IAlmacenamientoArchivos _archivos;
+    private readonly INotificacionService _notificaciones;
 
-    public BeneficiariosController(MunerAppDbContext db, IEsalActual esalActual, IAlmacenamientoArchivos archivos)
+    public BeneficiariosController(MunerAppDbContext db, IEsalActual esalActual, IAlmacenamientoArchivos archivos,
+        INotificacionService notificaciones)
     {
         _db = db;
         _esalActual = esalActual;
         _archivos = archivos;
+        _notificaciones = notificaciones;
     }
 
     private const int PorPagina = 12;
@@ -170,8 +173,19 @@ public class BeneficiariosController : Controller
         var registrador = b.RegistradoPorId is null ? null
             : await _db.Users.AsNoTracking().Where(u => u.Id == b.RegistradoPorId).Select(u => u.NombreCompleto).FirstOrDefaultAsync();
 
+        var padrinos = !esAdmin ? new List<PadrinoItem>() : await (
+            from a in _db.Apadrinamientos.AsNoTracking()
+            where a.BeneficiarioId == id
+            join u in _db.Users on a.PadrinoId equals u.Id
+            orderby a.Estado, a.FechaInicio descending
+            select new PadrinoItem(
+                u.NombreCompleto, u.Email ?? "", a.ValorMensual, a.FechaInicio, a.Estado == EstadoApadrinamiento.Activo,
+                _db.Donaciones.Where(d => d.ApadrinamientoId == a.Id && d.Estado == EstadoDonacion.Confirmada).Sum(d => (decimal?)d.Valor) ?? 0))
+            .ToListAsync();
+
         return View(new BeneficiarioDetalleViewModel
         {
+            Padrinos = padrinos,
             Id = b.Id,
             Nombre = b.Nombre,
             FechaNacimiento = b.FechaNacimiento,
@@ -311,7 +325,12 @@ public class BeneficiariosController : Controller
 
         // Un beneficiario adoptado o fallecido ya no se ofrece para apadrinar (HU-020)
         var retiradoDeApadrinamiento = b.Apadrinable && !PuedeApadrinarse(nuevo);
-        if (retiradoDeApadrinamiento) await RetirarDeApadrinamientoAsync(b);
+        if (retiradoDeApadrinamiento)
+        {
+            await RetirarDeApadrinamientoAsync(b);
+            await NotificarPadrinosAsync(b, $"{b.Nombre} cambió de estado",
+                $"{b.Nombre} ahora está \"{Textos.De(nuevo)}\" y dejó de ofrecerse para apadrinar. Tu apadrinamiento sigue activo hasta que decidas cancelarlo.");
+        }
         _db.HistorialEstadosBeneficiario.Add(new HistorialEstadoBeneficiario
         {
             EsalId = b.EsalId,
@@ -514,14 +533,29 @@ public class BeneficiariosController : Controller
         }
 
         await RetirarDeApadrinamientoAsync(b);
+        var avisados = await NotificarPadrinosAsync(b, $"{b.Nombre} ya no se ofrece para apadrinar",
+            $"La fundación dejó de ofrecer a {b.Nombre} para apadrinar. Tu apadrinamiento sigue activo hasta que decidas cancelarlo.");
         await _db.SaveChangesAsync();
 
-        TempData["Mensaje"] = $"{b.Nombre} dejó de mostrarse al público.";
+        TempData["Mensaje"] = $"{b.Nombre} dejó de mostrarse al público." +
+            (avisados > 0 ? $" Avisamos a {avisados} {(avisados == 1 ? "padrino" : "padrinos")}." : "");
         return RedirectToAction(nameof(Detalle), new { id });
     }
 
     private static bool PuedeApadrinarse(EstadoBeneficiario estado)
         => estado is not (EstadoBeneficiario.Adoptado or EstadoBeneficiario.Fallecido);
+
+    /// <summary>Avisa a los padrinos activos del beneficiario (se guarda con el siguiente SaveChanges). Devuelve cuántos son.</summary>
+    private async Task<int> NotificarPadrinosAsync(Beneficiario b, string titulo, string mensaje)
+    {
+        var padrinos = await _db.Apadrinamientos.AsNoTracking()
+            .Where(a => a.BeneficiarioId == b.Id && a.Estado == EstadoApadrinamiento.Activo)
+            .Select(a => new { a.Id, a.PadrinoId })
+            .ToListAsync();
+        foreach (var p in padrinos)
+            _notificaciones.Agregar(p.PadrinoId, titulo, mensaje, $"/mis-apadrinamientos/{p.Id}", "bi-balloon-heart");
+        return padrinos.Count;
+    }
 
     /// <summary>Deja de mostrarse al público; el texto y el aporte se conservan por si se vuelve a ofrecer.</summary>
     private async Task RetirarDeApadrinamientoAsync(Beneficiario b)

@@ -155,6 +155,9 @@ public class DonacionesEsalViewModel
 
 public class DonacionEsalItem
 {
+    /// <summary>Si es un aporte de apadrinamiento (HU-021), el nombre del apadrinado.</summary>
+    public string? Apadrinado { get; set; }
+
     public int Id { get; set; }
     public string Codigo { get; set; } = string.Empty;
     public string Donante { get; set; } = string.Empty;

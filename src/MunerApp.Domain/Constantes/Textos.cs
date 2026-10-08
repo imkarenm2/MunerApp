@@ -90,4 +90,11 @@ public static class Textos
         TipoEventoClinico.Otro => "Otro",
         _ => t.ToString()
     };
+
+    public static string De(EstadoApadrinamiento e) => e switch
+    {
+        EstadoApadrinamiento.Activo => "Activo",
+        EstadoApadrinamiento.Cancelado => "Cancelado",
+        _ => e.ToString()
+    };
 }

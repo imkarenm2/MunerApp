@@ -56,7 +56,8 @@ public class DonacionesController : Controller
                                     Valor = d.Valor,
                                     FechaTransferencia = d.FechaTransferencia,
                                     FechaReporte = d.FechaReporte,
-                                    Estado = d.Estado
+                                    Estado = d.Estado,
+                                    Apadrinado = d.Apadrinamiento != null ? d.Apadrinamiento.Beneficiario!.Nombre : null
                                 }).Take(200).ToListAsync();
 
         return View(new DonacionesEsalViewModel
@@ -71,7 +72,7 @@ public class DonacionesController : Controller
     [HttpGet]
     public async Task<IActionResult> Detalle(int id)
     {
-        var d = await _db.Donaciones.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        var d = await _db.Donaciones.AsNoTracking().Include(x => x.Apadrinamiento!).ThenInclude(a => a.Beneficiario).FirstOrDefaultAsync(x => x.Id == id);
         if (d is null) return NotFound();
 
         var donante = await _db.Users.AsNoTracking().FirstAsync(u => u.Id == d.DonanteId);
@@ -88,6 +89,7 @@ public class DonacionesController : Controller
             FechaTransferencia = d.FechaTransferencia,
             FechaReporte = d.FechaReporte,
             Estado = d.Estado,
+            Apadrinado = d.Apadrinamiento?.Beneficiario?.Nombre,
             MedioPago = d.MedioPago,
             ReferenciaPago = d.ReferenciaPago,
             Mensaje = d.Mensaje,
