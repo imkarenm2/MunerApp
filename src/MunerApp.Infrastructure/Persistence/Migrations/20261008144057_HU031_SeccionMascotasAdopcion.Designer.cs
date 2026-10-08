@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MunerApp.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using MunerApp.Infrastructure.Persistence;
 namespace MunerApp.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(MunerAppDbContext))]
-    partial class MunerAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261008144057_HU031_SeccionMascotasAdopcion")]
+    partial class HU031_SeccionMascotasAdopcion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

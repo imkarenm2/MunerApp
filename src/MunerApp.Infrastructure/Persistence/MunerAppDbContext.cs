@@ -349,6 +349,14 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.Property(x => x.ReferenciaNombre).HasMaxLength(150);
             e.Property(x => x.ReferenciaCelular).HasMaxLength(10);
             e.Property(x => x.ReferenciaRelacion).HasMaxLength(60);
+            // Sección 2: mascotas (HU-031)
+            e.Property(x => x.Mascotas).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.OtraMascota).HasMaxLength(100);
+            e.Property(x => x.GatoEsterilizacion).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.GatoVacunas).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.CarneVacunasRuta).HasMaxLength(300);
+            e.Property(x => x.PerroSociabilidad).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.QuePasoMascota).HasMaxLength(500);
             e.HasIndex(x => new { x.EsalId, x.Estado });
             // Una persona solo tiene un borrador por fundación: si vuelve, continúa el mismo
             e.HasIndex(x => new { x.EsalId, x.UsuarioId }).IsUnique().HasFilter("[Estado] = N'Borrador'");

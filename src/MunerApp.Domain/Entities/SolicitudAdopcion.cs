@@ -41,6 +41,30 @@ public class SolicitudAdopcion : IPerteneceAEsal
     /// <summary>Relación con la referencia: amigo, familiar, compañero de trabajo...</summary>
     public string? ReferenciaRelacion { get; set; }
 
+    // ---- Sección 2: mascotas (HU-031) ----
+
+    public TenenciaMascotas? Mascotas { get; set; }
+
+    // Si tiene mascotas: qué tipo (puede tener varias)
+    public bool TieneGato { get; set; }
+    public bool TienePerro { get; set; }
+    public bool TieneOtraMascota { get; set; }
+    public string? OtraMascota { get; set; }
+
+    // Si tiene gato
+    public bool? GatoUsaArenero { get; set; }
+    public EsterilizacionMascotas? GatoEsterilizacion { get; set; }
+    public VacunasGato? GatoVacunas { get; set; }
+
+    /// <summary>Carné de vacunas (archivo privado, opcional), solo si las vacunas son completas o parciales.</summary>
+    public string? CarneVacunasRuta { get; set; }
+
+    // Si tiene perro
+    public SociabilidadPerro? PerroSociabilidad { get; set; }
+
+    /// <summary>Si tuvo mascotas: qué ocurrió con ellas (HU-031, escenario 3).</summary>
+    public string? QuePasoMascota { get; set; }
+
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
     public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
 
