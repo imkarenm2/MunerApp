@@ -110,6 +110,8 @@ public static class Textos
     {
         EstadoSolicitudAdopcion.Borrador => "En diligenciamiento",
         EstadoSolicitudAdopcion.Recibida => "Recibida",
+        EstadoSolicitudAdopcion.AprobadaParaCita => "Aprobada para cita",
+        EstadoSolicitudAdopcion.Rechazada => "Rechazada",
         _ => e.ToString()
     };
 

@@ -102,11 +102,19 @@ public class SolicitudAdopcion : IPerteneceAEsal
     public string? Codigo { get; set; }
     public DateTime? FechaEnvio { get; set; }
 
+    // ---- Revisión de la fundación (HU-033) ----
+
+    /// <summary>Por qué no se aprobó: lo ve el solicitante.</summary>
+    public string? MotivoRechazo { get; set; }
+    public DateTime? FechaRevision { get; set; }
+    public string? RevisadoPorId { get; set; }
+
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
     public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
 
     public Esal? Esal { get; set; }
 
     /// <summary>Estados en los que la solicitud sigue en trámite: la persona no puede iniciar otra en la misma fundación.</summary>
-    public static readonly EstadoSolicitudAdopcion[] EstadosEnProceso = { EstadoSolicitudAdopcion.Recibida };
+    public static readonly EstadoSolicitudAdopcion[] EstadosEnProceso =
+        { EstadoSolicitudAdopcion.Recibida, EstadoSolicitudAdopcion.AprobadaParaCita };
 }

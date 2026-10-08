@@ -365,6 +365,9 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.Property(x => x.TenenciaVivienda).HasConversion<string>().HasMaxLength(15);
             e.Property(x => x.Codigo).HasMaxLength(20);
             e.HasIndex(x => x.Codigo).IsUnique(); // EF agrega el filtro "Codigo IS NOT NULL"
+            // Revisión de la fundación (HU-033)
+            e.Property(x => x.MotivoRechazo).HasMaxLength(300);
+            e.Property(x => x.RevisadoPorId).HasMaxLength(450);
             e.HasIndex(x => new { x.EsalId, x.Estado });
             // Una persona solo tiene un borrador por fundación: si vuelve, continúa el mismo
             e.HasIndex(x => new { x.EsalId, x.UsuarioId }).IsUnique().HasFilter("[Estado] = N'Borrador'");
