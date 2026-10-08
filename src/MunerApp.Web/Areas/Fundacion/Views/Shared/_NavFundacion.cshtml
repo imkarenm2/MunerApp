@@ -5,6 +5,9 @@
     var esalId = EsalActual.EsalId;
     var moduloBeneficiarios = esalId is not null && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Beneficiarios);
     var moduloAdopcion = esalId is not null && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Adopcion);
+    // Inventario clínico (HU-037): módulo de salud y acceso clínico (administradores y voluntarios de salud)
+    var verSalud = esalId is not null && MunerApp.Web.Seguridad.Politicas.TieneAccesoClinico(User)
+                   && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Salud);
     var slug = esalId is null ? null : Db.Esales.Where(e => e.Id == esalId).Select(e => e.Slug).FirstOrDefault();
     var seccion = ViewData["Seccion"] as string ?? "";
     var principal = User.IsInRole(Roles.AdministradorESAL) && User.HasClaim(MunerAppClaims.Perfil, Perfiles.Principal);
@@ -30,6 +33,10 @@
     @if (moduloBeneficiarios)
     {
         <a class="nav-link @Activa("Beneficiarios")" asp-area="Fundacion" asp-controller="Beneficiarios" asp-action="Index"><i class="bi bi-balloon-heart me-1" aria-hidden="true"></i>Beneficiarios</a>
+    }
+    @if (verSalud)
+    {
+        <a class="nav-link @Activa("Medicamentos")" asp-area="Fundacion" asp-controller="Medicamentos" asp-action="Index"><i class="bi bi-capsule me-1" aria-hidden="true"></i>Medicamentos</a>
     }
     @if (admin)
     {

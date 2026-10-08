@@ -1,0 +1,87 @@
+@model MedicamentoFormViewModel
+@{
+    var editando = Model.Id is not null;
+    ViewData["Title"] = editando ? "Editar medicamento" : "Registrar medicamento";
+    ViewData["Seccion"] = "Medicamentos";
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <a asp-action="@(editando ? "Detalle" : "Index")" asp-route-id="@Model.Id" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>@(editando ? Model.NombreComercial : "Medicamentos e insumos")</a>
+    <h1 class="h2 mt-2 mb-1">@ViewData["Title"]</h1>
+    <p class="text-suave mb-4">@(editando ? "La cantidad no se edita aquí: regístrala como entrada o uso para que quede en el historial." : "La cantidad inicial queda como el primer movimiento de su historial.")</p>
+
+    <form asp-action="@(editando ? "Editar" : "Crear")" asp-route-id="@Model.Id" method="post" novalidate class="mu-card p-4 p-md-5">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <div class="row g-3">
+            <div class="col-12 col-sm-6">
+                <label asp-for="NombreComercial" class="form-label"></label>
+                <input asp-for="NombreComercial" class="form-control" maxlength="150" placeholder="Ej.: Drontal Gatos" />
+                <span asp-validation-for="NombreComercial"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="PrincipioActivo" class="form-label"></label>
+                <input asp-for="PrincipioActivo" class="form-control" maxlength="150" placeholder="Ej.: Praziquantel + Pirantel" />
+                <span asp-validation-for="PrincipioActivo"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Uso" class="form-label"></label>
+                <input asp-for="Uso" class="form-control" maxlength="300" placeholder="Ej.: Antiparasitario interno" />
+                <span asp-validation-for="Uso"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="Via" class="form-label"></label>
+                <select asp-for="Via" class="form-select">
+                    <option value="">Selecciona…</option>
+                    @foreach (var v in Enum.GetValues<ViaAdministracion>())
+                    {
+                        <option value="@v" selected="@(Model.Via == v)">@Textos.De(v)</option>
+                    }
+                </select>
+                <span asp-validation-for="Via"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="Dosis" class="form-label"></label>
+                <input asp-for="Dosis" class="form-control" maxlength="150" placeholder="Ej.: 1 tableta por cada 4 kg" />
+                <span asp-validation-for="Dosis"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="FechaVencimiento" class="form-label"></label>
+                <input asp-for="FechaVencimiento" type="date" class="form-control" />
+                <span asp-validation-for="FechaVencimiento"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="Presentacion" class="form-label"></label>
+                <select asp-for="Presentacion" class="form-select">
+                    <option value="">Selecciona…</option>
+                    @foreach (var p in Enum.GetValues<PresentacionMedicamento>())
+                    {
+                        <option value="@p" selected="@(Model.Presentacion == p)">@Textos.De(p)</option>
+                    }
+                </select>
+                <span asp-validation-for="Presentacion"></span>
+            </div>
+            @if (!editando)
+            {
+                <div class="col-12 col-sm-6">
+                    <label asp-for="Cantidad" class="form-label"></label>
+                    <input asp-for="Cantidad" class="form-control" inputmode="decimal" placeholder="Ej.: 20" autocomplete="off" />
+                    <span asp-validation-for="Cantidad"></span>
+                </div>
+            }
+            <div class="col-12 col-sm-6">
+                <label asp-for="CantidadMinima" class="form-label"></label>
+                <input asp-for="CantidadMinima" class="form-control" inputmode="decimal" placeholder="Ej.: 5" autocomplete="off" aria-describedby="ayudaMinima" />
+                <div class="form-text" id="ayudaMinima">Si la cantidad llega a este número, se avisará que hay que conseguir más.</div>
+                <span asp-validation-for="CantidadMinima"></span>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-primary" data-cargando="Guardando...">@(editando ? "Guardar cambios" : "Registrar medicamento")</button>
+            <a class="btn btn-link" asp-action="@(editando ? "Detalle" : "Index")" asp-route-id="@Model.Id">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
