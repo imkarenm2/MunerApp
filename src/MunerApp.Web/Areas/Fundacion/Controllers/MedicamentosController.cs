@@ -30,15 +30,100 @@ public class MedicamentosController : Controller
 
     private readonly MunerAppDbContext _db;
     private readonly IEsalActual _esalActual;
+    private readonly IReportesService _reportes;
 
-    public MedicamentosController(MunerAppDbContext db, IEsalActual esalActual)
+    public MedicamentosController(MunerAppDbContext db, IEsalActual esalActual, IReportesService reportes)
     {
         _db = db;
         _esalActual = esalActual;
+        _reportes = reportes;
     }
 
     private string UsuarioId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
     private int EsalId => _esalActual.EsalId ?? throw new InvalidOperationException("El usuario no pertenece a una ESAL.");
+
+    // ---------- HU-040: reporte de medicamentos (solo administradores) ----------
+
+    /// <summary>Escenario 1: reporte completo. Escenario 2: filtro por vencidos, por vencer o stock bajo.</summary>
+    [HttpGet]
+    [Authorize(Roles = Roles.AdministradorESAL)]
+    public async Task<IActionResult> Reporte(FiltroReporteMedicamentos filtro = FiltroReporteMedicamentos.Todos)
+        => View(await ArmarReporteAsync(filtro));
+
+    /// <summary>Escenario 3: el mismo reporte (con el filtro elegido) en PDF.</summary>
+    [HttpGet]
+    [Authorize(Roles = Roles.AdministradorESAL)]
+    public async Task<IActionResult> ReportePdf(FiltroReporteMedicamentos filtro = FiltroReporteMedicamentos.Todos)
+    {
+        var reporte = await ArmarReporteAsync(filtro);
+        var esal = await _db.Esales.AsNoTracking().Where(e => e.Id == EsalId).Select(e => new { e.Nombre, e.Nit }).FirstAsync();
+        var filas = reporte.Filas.Select(f => new FilaReporteMedicamento(
+            f.NombreComercial, f.PrincipioActivo, f.FechaVencimiento, f.Uso, Textos.De(f.Via), f.Dosis,
+            $"{Formatos.Cantidad(f.Cantidad)} {Textos.UnidadDe(f.Presentacion)}", f.Estado)).ToList();
+
+        var pdf = _reportes.GenerarReporteMedicamentos(new DatosReporteMedicamentos(
+            esal.Nombre, esal.Nit, ReporteMedicamentosViewModel.TextoDe(filtro), DateTime.UtcNow,
+            filas, reporte.Vencidos, reporte.PorVencer, reporte.StockBajo));
+
+        var hoy = Formatos.Local(DateTime.UtcNow);
+        return File(pdf, "application/pdf", $"Reporte-medicamentos-{ReporteMedicamentosViewModel.TextoDe(filtro).Replace(' ', '-')}-{hoy:yyyy-MM-dd}.pdf");
+    }
+
+    private async Task<ReporteMedicamentosViewModel> ArmarReporteAsync(FiltroReporteMedicamentos filtro)
+    {
+        var hoy = Formatos.Local(DateTime.UtcNow).Date;
+        var dias = Medicamento.DiasPorVencerPredeterminado;
+
+        // El inventario de una fundación es pequeño: se clasifica en memoria con las mismas reglas del dominio
+        var todos = await _db.Medicamentos.AsNoTracking().OrderBy(m => m.FechaVencimiento).ThenBy(m => m.NombreComercial).ToListAsync();
+        var filas = todos.Select(m =>
+        {
+            var vencido = m.EstaVencido(hoy);
+            var porVencer = m.EstaPorVencer(hoy, dias);
+            var estados = new List<string>();
+            if (vencido) estados.Add("Vencido");
+            if (porVencer)
+            {
+                var faltan = (m.FechaVencimiento.Date - hoy).Days;
+                estados.Add(faltan == 0 ? "Vence hoy" : $"Vence en {faltan} {(faltan == 1 ? "día" : "días")}");
+            }
+            if (m.TieneStockBajo) estados.Add("Stock bajo");
+            return new FilaReporteMedicamentoItem
+            {
+                Id = m.Id,
+                NombreComercial = m.NombreComercial,
+                PrincipioActivo = m.PrincipioActivo,
+                FechaVencimiento = m.FechaVencimiento,
+                Cantidad = m.Cantidad,
+                CantidadMinima = m.CantidadMinima,
+                Presentacion = m.Presentacion,
+                Via = m.Via,
+                Uso = m.Uso,
+                Dosis = m.Dosis,
+                Vencido = vencido,
+                PorVencer = porVencer,
+                StockBajo = m.TieneStockBajo,
+                Estado = estados.Count == 0 ? "Al día" : string.Join(" · ", estados)
+            };
+        }).ToList();
+
+        return new ReporteMedicamentosViewModel
+        {
+            Filtro = filtro,
+            DiasPorVencer = dias,
+            Total = filas.Count,
+            Vencidos = filas.Count(f => f.Vencido),
+            PorVencer = filas.Count(f => f.PorVencer),
+            StockBajo = filas.Count(f => f.StockBajo),
+            Filas = filtro switch
+            {
+                FiltroReporteMedicamentos.Vencidos => filas.Where(f => f.Vencido).ToList(),
+                FiltroReporteMedicamentos.PorVencer => filas.Where(f => f.PorVencer).ToList(),
+                FiltroReporteMedicamentos.StockBajo => filas.Where(f => f.StockBajo).ToList(),
+                _ => filas
+            }
+        };
+    }
 
     [HttpGet]
     public async Task<IActionResult> Index(string? q)

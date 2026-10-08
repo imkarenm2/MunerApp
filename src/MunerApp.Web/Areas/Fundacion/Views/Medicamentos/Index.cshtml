@@ -10,7 +10,14 @@
             <h1 class="h2 mb-1">Medicamentos e insumos</h1>
             <p class="text-suave mb-0">Inventario clínico de la fundación: qué hay disponible y hasta cuándo sirve.</p>
         </div>
-        <a class="btn btn-primary" asp-action="Crear"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Registrar medicamento</a>
+        <div class="d-flex flex-wrap gap-2">
+            @if (User.IsInRole(Roles.AdministradorESAL))
+            {
+                @* HU-040: reporte con filtros y PDF *@
+                <a class="btn btn-outline-primary" asp-action="Reporte"><i class="bi bi-clipboard-data me-1" aria-hidden="true"></i>Reporte</a>
+            }
+            <a class="btn btn-primary" asp-action="Crear"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Registrar medicamento</a>
+        </div>
     </div>
 
     <partial name="_NavFundacion" />

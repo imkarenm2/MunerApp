@@ -40,4 +40,11 @@ public class Medicamento : IPerteneceAEsal
 
     /// <summary>Stock bajo: tiene cantidad mínima y la cantidad actual es menor o igual.</summary>
     public bool TieneStockBajo => CantidadMinima is decimal minima && Cantidad <= minima;
+
+    /// <summary>Días antes del vencimiento en los que un medicamento se considera "por vencer" (HU-039, HU-040).</summary>
+    public const int DiasPorVencerPredeterminado = 30;
+
+    /// <summary>Por vencer: aún no vence, pero vence dentro de los próximos <paramref name="dias"/> días.</summary>
+    public bool EstaPorVencer(DateTime hoy, int dias = DiasPorVencerPredeterminado)
+        => !EstaVencido(hoy) && FechaVencimiento.Date <= hoy.Date.AddDays(dias);
 }

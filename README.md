@@ -196,6 +196,7 @@ dotnet test
 |---|---|---|
 | 036 | Aprobar o rechazar postulaciones y desvincular voluntarios | `Areas/Fundacion/Controllers/PostulacionesController.cs` → `Aprobar`, `Rechazar`, `Desvincular` (`/Fundacion/Postulaciones`) |
 | 037 | Inventario clínico de medicamentos e insumos | `Areas/Fundacion/Controllers/MedicamentosController.cs` (`/Fundacion/Medicamentos`) |
+| 040 | Reporte de medicamentos con filtros y PDF | `MedicamentosController` → `Reporte`, `ReportePdf` · `Infrastructure/Servicios/ReportesPdfService.cs` |
 
 ### Voluntarios (HU-036)
 
@@ -213,6 +214,7 @@ dotnet test
 - La cantidad se actualiza en la base de datos de forma atómica dentro de una transacción: varios usos simultáneos nunca dejan el inventario en negativo.
 - Las cantidades se leen con `Formatos.LeerCantidad` (acepta coma o punto, máximo dos decimales), porque los navegadores envían el punto aunque la cultura sea es-CO.
 - `CantidadMinima` (opcional) define cuándo hay stock bajo; la usarán las alertas de HU-039.
+- Reporte (HU-040), solo administradores: filtros *Vencidos*, *Por vencer* (vencen en los próximos `Medicamento.DiasPorVencerPredeterminado` días) y *Stock bajo*, con descarga en PDF horizontal. Las reglas están en `Medicamento` (`EstaVencido`, `EstaPorVencer`, `TieneStockBajo`) para que pantalla, PDF y alertas coincidan. Los PDF de reportes van en `IReportesService`.
 
 ## Cómo se protege un módulo
 

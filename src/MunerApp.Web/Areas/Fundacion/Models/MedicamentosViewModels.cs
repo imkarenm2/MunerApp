@@ -95,3 +95,44 @@ public class MedicamentoDetalleViewModel
     /// <summary>Beneficiarios de la fundación, para asociar un uso (opcional).</summary>
     public List<BeneficiarioOpcion> Beneficiarios { get; set; } = new();
 }
+
+/// <summary>HU-040 escenario 2: filtros del reporte de medicamentos.</summary>
+public enum FiltroReporteMedicamentos
+{
+    Todos,
+    Vencidos,
+    PorVencer,
+    StockBajo
+}
+
+public class FilaReporteMedicamentoItem : MedicamentoItem
+{
+    public string Uso { get; set; } = string.Empty;
+    public string Dosis { get; set; } = string.Empty;
+    public bool Vencido { get; set; }
+    public bool PorVencer { get; set; }
+    public bool StockBajo { get; set; }
+
+    /// <summary>"Vencido", "Por vencer", "Stock bajo" (pueden combinarse) o "Al día".</summary>
+    public string Estado { get; set; } = string.Empty;
+}
+
+/// <summary>HU-040: reporte de medicamentos con filtros y descarga en PDF.</summary>
+public class ReporteMedicamentosViewModel
+{
+    public FiltroReporteMedicamentos Filtro { get; set; }
+    public List<FilaReporteMedicamentoItem> Filas { get; set; } = new();
+    public int Total { get; set; }
+    public int Vencidos { get; set; }
+    public int PorVencer { get; set; }
+    public int StockBajo { get; set; }
+    public int DiasPorVencer { get; set; }
+
+    public static string TextoDe(FiltroReporteMedicamentos f) => f switch
+    {
+        FiltroReporteMedicamentos.Vencidos => "Vencidos",
+        FiltroReporteMedicamentos.PorVencer => "Por vencer",
+        FiltroReporteMedicamentos.StockBajo => "Stock bajo",
+        _ => "Todos"
+    };
+}

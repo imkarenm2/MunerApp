@@ -25,6 +25,9 @@ public static class DependencyInjection
         services.AddSingleton<IComprobanteService, ComprobantePdfService>();
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
+        // Sprint 6
+        services.AddSingleton<IReportesService, ReportesPdfService>();
+
         return services;
     }
 }

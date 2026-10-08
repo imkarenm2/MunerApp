@@ -1,0 +1,84 @@
+@model ReporteMedicamentosViewModel
+@{
+    ViewData["Title"] = "Reporte de medicamentos";
+    ViewData["Seccion"] = "Medicamentos";
+    var filtros = new[]
+    {
+        (Filtro: FiltroReporteMedicamentos.Todos, Cantidad: Model.Total, Icono: "bi-list-ul"),
+        (Filtro: FiltroReporteMedicamentos.Vencidos, Cantidad: Model.Vencidos, Icono: "bi-exclamation-octagon"),
+        (Filtro: FiltroReporteMedicamentos.PorVencer, Cantidad: Model.PorVencer, Icono: "bi-hourglass-split"),
+        (Filtro: FiltroReporteMedicamentos.StockBajo, Cantidad: Model.StockBajo, Icono: "bi-arrow-down-circle")
+    };
+}
+<div class="container py-4 py-md-5">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Medicamentos e insumos</a>
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mt-2 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Reporte de medicamentos</h1>
+            <p class="text-suave mb-0">Inventario, vencimientos y existencias. "Por vencer" son los que vencen en los próximos @Model.DiasPorVencer días.</p>
+        </div>
+        @* HU-040 escenario 3: descargar en PDF con el filtro elegido *@
+        <a class="btn btn-primary" asp-action="ReportePdf" asp-route-filtro="@Model.Filtro"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i>Descargar PDF</a>
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    @* HU-040 escenario 2: filtros *@
+    <ul class="nav nav-tabs pestanas mb-3" role="tablist">
+        @foreach (var f in filtros)
+        {
+            var activa = Model.Filtro == f.Filtro;
+            var alerta = f.Filtro != FiltroReporteMedicamentos.Todos && f.Cantidad > 0;
+            <li class="nav-item">
+                <a class="nav-link @(activa ? "active" : "")" asp-action="Reporte" asp-route-filtro="@f.Filtro" aria-current="@(activa ? "page" : null)">
+                    <i class="bi @f.Icono me-1" aria-hidden="true"></i>@ReporteMedicamentosViewModel.TextoDe(f.Filtro)
+                    <span class="badge rounded-pill @(alerta ? "text-bg-warning" : "text-bg-light") ms-1">@f.Cantidad</span>
+                </a>
+            </li>
+        }
+    </ul>
+
+    @if (Model.Filas.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo exito mb-3"><i class="bi bi-check2-all" aria-hidden="true"></i></div>
+            <h2 class="h5 mb-0">@(Model.Filtro == FiltroReporteMedicamentos.Todos ? "Aún no hay medicamentos registrados." : "No hay medicamentos en esta lista.")</h2>
+        </div>
+    }
+    else
+    {
+        <div class="mu-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="table tabla-mu align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Nombre comercial</th>
+                            <th scope="col">Principio activo</th>
+                            <th scope="col">Vencimiento</th>
+                            <th scope="col">Uso</th>
+                            <th scope="col">Vía</th>
+                            <th scope="col">Dosis</th>
+                            <th scope="col" class="text-end">Cantidad</th>
+                            <th scope="col">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var f in Model.Filas)
+                        {
+                            <tr>
+                                <td class="fw-semibold"><a asp-action="Detalle" asp-route-id="@f.Id" class="text-body">@f.NombreComercial</a></td>
+                                <td class="small">@f.PrincipioActivo</td>
+                                <td class="small text-nowrap">@Formatos.Fecha(f.FechaVencimiento)</td>
+                                <td class="small">@f.Uso</td>
+                                <td class="small">@Textos.De(f.Via)</td>
+                                <td class="small">@f.Dosis</td>
+                                <td class="text-end text-nowrap">@Formatos.Cantidad(f.Cantidad) <span class="small text-suave">@Textos.UnidadDe(f.Presentacion)</span></td>
+                                <td><span class="mu-badge @(f.Vencido ? "error" : f.PorVencer || f.StockBajo ? "alerta" : "exito")">@f.Estado</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
