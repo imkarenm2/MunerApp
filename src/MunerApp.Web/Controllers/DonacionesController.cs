@@ -126,8 +126,12 @@ public class DonacionesController : Controller
 
     // ---------- Escenario 3: historial ----------
 
+    /// <summary>
+    /// Se llama MisDonaciones y no Index: el área Fundacion tiene un DonacionesController con Index
+    /// y, con el mismo nombre, los enlaces del panel de la fundación terminaban en /mis-donaciones.
+    /// </summary>
     [HttpGet("mis-donaciones")]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> MisDonaciones()
     {
         var donaciones = await _db.Donaciones.IgnoreQueryFilters().AsNoTracking()
             .Where(d => d.DonanteId == UsuarioId)

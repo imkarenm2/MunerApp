@@ -112,11 +112,15 @@ public class PostulacionesController : Controller
         await _db.SaveChangesAsync();
 
         TempData["Mensaje"] = $"¡Listo! Enviaste tu postulación a {esal.Nombre}. Quedó pendiente y te avisaremos cuando la revisen.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(MisPostulaciones));
     }
 
+    /// <summary>
+    /// Se llama MisPostulaciones y no Index: el área Fundacion tiene un PostulacionesController con Index
+    /// y, con el mismo nombre, los enlaces del panel de la fundación terminaban en /mis-postulaciones.
+    /// </summary>
     [HttpGet("mis-postulaciones")]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> MisPostulaciones()
     {
         var postulaciones = await _db.PostulacionesVoluntario.IgnoreQueryFilters().AsNoTracking()
             .Where(p => p.UsuarioId == UsuarioId)
