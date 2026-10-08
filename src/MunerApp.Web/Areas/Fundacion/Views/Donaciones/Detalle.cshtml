@@ -1,0 +1,90 @@
+@model DonacionEsalDetalleViewModel
+@{
+    ViewData["Title"] = "Donación " + Model.Codigo;
+    ViewData["Seccion"] = "Donaciones";
+    var urlSoporte = Url.Action("Soporte", new { id = Model.Id });
+}
+<div class="container py-4 py-md-5" style="max-width: 1040px">
+    <a asp-action="Index" asp-route-estado="@Model.Estado" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Donaciones</a>
+    <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mb-4">
+        <h1 class="h2 mb-0">Donación @Model.Codigo</h1>
+        <partial name="_EstadoDonacion" model="Model.Estado" />
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-6">
+            <div class="mu-card p-4 mb-4">
+                <div class="small text-suave">Valor reportado</div>
+                <div class="display-6 fw-bold text-principal mb-3">@Formatos.Pesos(Model.Valor)</div>
+                <dl class="row datos-detalle mb-0">
+                    <dt class="col-sm-5">Donante</dt><dd class="col-sm-7">@Model.Donante<div class="small text-suave">@Model.CorreoDonante</div></dd>
+                    <dt class="col-sm-5">Fecha de la transferencia</dt><dd class="col-sm-7">@Formatos.Fecha(Model.FechaTransferencia)</dd>
+                    <dt class="col-sm-5">Cuenta de destino</dt><dd class="col-sm-7">@Model.MedioPago</dd>
+                    <dt class="col-sm-5">Referencia</dt><dd class="col-sm-7">@(Model.ReferenciaPago ?? "—")</dd>
+                    <dt class="col-sm-5">Reportada</dt><dd class="col-sm-7">@Formatos.FechaHora(Model.FechaReporte)</dd>
+                    @if (!string.IsNullOrEmpty(Model.Mensaje))
+                    {
+                        <dt class="col-sm-5">Mensaje</dt><dd class="col-sm-7">"@Model.Mensaje"</dd>
+                    }
+                    @if (Model.FechaRevision is DateTime rev)
+                    {
+                        <dt class="col-sm-5">Revisada</dt><dd class="col-sm-7">@Formatos.FechaHora(rev)@(Model.RevisadoPor is null ? "" : " por " + Model.RevisadoPor)</dd>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.MotivoRechazo))
+                    {
+                        <dt class="col-sm-5">Motivo del rechazo</dt><dd class="col-sm-7">@Model.MotivoRechazo</dd>
+                    }
+                </dl>
+            </div>
+
+            @if (Model.Estado == EstadoDonacion.Pendiente)
+            {
+                <div class="mu-card p-4">
+                    <h2 class="h6 fw-bold mb-2">¿Llegó el dinero a la cuenta?</h2>
+                    <p class="small text-suave">Busca en el extracto o en la app del banco una transferencia por <strong>@Formatos.Pesos(Model.Valor)</strong> del @Formatos.Fecha(Model.FechaTransferencia).</p>
+
+                    <form asp-action="Confirmar" asp-route-id="@Model.Id" method="post" class="mb-3"
+                          data-confirmar="El donante recibirá una notificación y podrá descargar su comprobante. Esta acción no se puede deshacer."
+                          data-confirmar-titulo="¿Confirmar la donación de @Formatos.Pesos(Model.Valor)?" data-confirmar-boton="Sí, confirmar">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check-circle me-2" aria-hidden="true"></i>Sí, llegó: confirmar donación</button>
+                    </form>
+
+                    <details class="rechazo">
+                        <summary class="btn btn-link text-danger p-0">No llegó: rechazar donación</summary>
+                        <form asp-action="Rechazar" asp-route-id="@Model.Id" method="post" class="mt-3"
+                              data-confirmar="El donante verá el motivo que escribiste. Esta acción no se puede deshacer."
+                              data-confirmar-titulo="¿Rechazar la donación?" data-confirmar-boton="Sí, rechazar" data-confirmar-tipo="peligro">
+                            <label for="motivo" class="form-label">Motivo (lo verá el donante)</label>
+                            <textarea id="motivo" name="motivo" class="form-control" rows="3" maxlength="300" minlength="10" required
+                                      placeholder="Ej.: no encontramos una transferencia por ese valor en la fecha indicada."></textarea>
+                            <button type="submit" class="btn btn-outline-danger mt-2">Rechazar donación</button>
+                        </form>
+                    </details>
+                </div>
+            }
+            else if (Model.Estado == EstadoDonacion.Confirmada)
+            {
+                <a class="btn btn-suave" asp-action="Comprobante" asp-route-id="@Model.Id"><i class="bi bi-file-earmark-arrow-down me-2" aria-hidden="true"></i>Descargar comprobante</a>
+            }
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="mu-card p-3 h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2 px-1">
+                    <h2 class="h6 fw-bold mb-0">Soporte del donante</h2>
+                    <a class="small" href="@urlSoporte" target="_blank" rel="noopener">Abrir en otra pestaña <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
+                </div>
+                @if (Model.SoporteEsPdf)
+                {
+                    <object class="visor-soporte" data="@urlSoporte" type="application/pdf" aria-label="Soporte en PDF">
+                        <p class="p-3 small">No se pudo mostrar el PDF aquí. <a href="@urlSoporte" target="_blank" rel="noopener">Ábrelo en otra pestaña</a>.</p>
+                    </object>
+                }
+                else
+                {
+                    <img class="visor-soporte img-soporte" src="@urlSoporte" alt="Soporte de la transferencia" />
+                }
+            </div>
+        </div>
+    </div>
+</div>

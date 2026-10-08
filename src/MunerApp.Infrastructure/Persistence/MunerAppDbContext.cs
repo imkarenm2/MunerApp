@@ -25,6 +25,14 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<RedSocial> RedesSociales => Set<RedSocial>();
     public DbSet<ConfigPasarela> ConfigPasarelas => Set<ConfigPasarela>();
 
+    // Sprint 2
+    public DbSet<FotoEsal> FotosEsal => Set<FotoEsal>();
+    public DbSet<DocumentoTransparencia> DocumentosTransparencia => Set<DocumentoTransparencia>();
+    public DbSet<DatosDonacion> DatosDonacion => Set<DatosDonacion>();
+    public DbSet<Donacion> Donaciones => Set<Donacion>();
+    public DbSet<Notificacion> Notificaciones => Set<Notificacion>();
+    public DbSet<PostulacionVoluntario> PostulacionesVoluntario => Set<PostulacionVoluntario>();
+
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
     // Superadministrador, tareas internas (seed, migraciones) y usuarios sin ESAL no se filtran:
@@ -52,6 +60,17 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasIndex(x => x.Nit).IsUnique();
             e.Property(x => x.TipoEntidad).HasMaxLength(50).IsRequired();
             e.Property(x => x.CorreoContacto).HasMaxLength(150).IsRequired();
+
+            // Perfil institucional (HU-009)
+            e.Property(x => x.Slug).HasMaxLength(90);
+            e.HasIndex(x => x.Slug).IsUnique(); // EF agrega el filtro "Slug IS NOT NULL"
+            e.Property(x => x.DescripcionCorta).HasMaxLength(200);
+            e.Property(x => x.Historia).HasMaxLength(4000);
+            e.Property(x => x.Mision).HasMaxLength(1000);
+            e.Property(x => x.Vision).HasMaxLength(1000);
+            e.Property(x => x.Ciudad).HasMaxLength(100);
+            e.Property(x => x.Telefono).HasMaxLength(20);
+            e.Property(x => x.LogoRuta).HasMaxLength(300);
         });
 
         builder.Entity<Modulo>(e =>
@@ -98,11 +117,102 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne(x => x.Esal).WithOne(x => x.ConfigPasarela).HasForeignKey<ConfigPasarela>(x => x.EsalId);
         });
 
+        // ---------------- Sprint 2 ----------------
+
+        builder.Entity<FotoEsal>(e =>
+        {
+            e.ToTable("FotoEsal");
+            e.Property(x => x.Ruta).HasMaxLength(300).IsRequired();
+            e.HasOne(x => x.Esal).WithMany(x => x.Fotos).HasForeignKey(x => x.EsalId);
+        });
+
+        builder.Entity<DocumentoTransparencia>(e =>
+        {
+            e.ToTable("DocumentoTransparencia");
+            e.Property(x => x.Titulo).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Categoria).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.Descripcion).HasMaxLength(300);
+            e.Property(x => x.Ruta).HasMaxLength(300).IsRequired();
+            e.Property(x => x.NombreOriginal).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Extension).HasMaxLength(10).IsRequired();
+            e.Property(x => x.PublicadoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.Visible });
+            e.HasOne(x => x.Esal).WithMany(x => x.Documentos).HasForeignKey(x => x.EsalId);
+        });
+
+        builder.Entity<DatosDonacion>(e =>
+        {
+            e.ToTable("DatosDonacion");
+            e.HasKey(x => x.EsalId);
+            e.Property(x => x.Titular).HasMaxLength(150).IsRequired();
+            e.Property(x => x.DocumentoTitular).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Entidad).HasMaxLength(100).IsRequired();
+            e.Property(x => x.TipoCuenta).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.TipoLlave).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Numero).HasMaxLength(60).IsRequired();
+            e.Property(x => x.Instrucciones).HasMaxLength(500);
+            e.HasOne(x => x.Esal).WithOne(x => x.DatosDonacion).HasForeignKey<DatosDonacion>(x => x.EsalId);
+        });
+
+        builder.Entity<Donacion>(e =>
+        {
+            e.ToTable("Donacion");
+            e.Property(x => x.Codigo).HasMaxLength(20).IsRequired();
+            e.HasIndex(x => x.Codigo).IsUnique();
+            e.Property(x => x.DonanteId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.Valor).HasPrecision(14, 2);
+            e.Property(x => x.MedioPago).HasMaxLength(200).IsRequired();
+            e.Property(x => x.ReferenciaPago).HasMaxLength(60);
+            e.Property(x => x.Mensaje).HasMaxLength(300);
+            e.Property(x => x.SoporteRuta).HasMaxLength(300).IsRequired();
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.MotivoRechazo).HasMaxLength(300);
+            e.Property(x => x.RevisadoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.Estado });
+            e.HasIndex(x => x.DonanteId);
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.DonanteId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Notificacion>(e =>
+        {
+            e.ToTable("Notificacion");
+            e.Property(x => x.UsuarioId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.Titulo).HasMaxLength(120).IsRequired();
+            e.Property(x => x.Mensaje).HasMaxLength(400).IsRequired();
+            e.Property(x => x.Url).HasMaxLength(300);
+            e.Property(x => x.Icono).HasMaxLength(40).IsRequired();
+            e.HasIndex(x => new { x.UsuarioId, x.Leida });
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<PostulacionVoluntario>(e =>
+        {
+            e.ToTable("PostulacionVoluntario");
+            e.Property(x => x.UsuarioId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Telefono).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Disponibilidad).HasMaxLength(300).IsRequired();
+            e.Property(x => x.Motivacion).HasMaxLength(500);
+            e.Property(x => x.Institucion).HasMaxLength(150);
+            e.Property(x => x.Programa).HasMaxLength(150);
+            e.Property(x => x.SoporteAcademicoRuta).HasMaxLength(300);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.HasIndex(x => new { x.EsalId, x.UsuarioId, x.Estado });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
         AplicarFiltroEsal<RedSocial>(builder);
         AplicarFiltroEsal<ConfigPasarela>(builder);
+        AplicarFiltroEsal<FotoEsal>(builder);
+        AplicarFiltroEsal<DocumentoTransparencia>(builder);
+        AplicarFiltroEsal<DatosDonacion>(builder);
+        AplicarFiltroEsal<Donacion>(builder);
+        AplicarFiltroEsal<PostulacionVoluntario>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal

@@ -1,0 +1,318 @@
+@model PerfilPublicoViewModel
+@{
+    ViewData["Title"] = Model.Nombre;
+    ViewData["Nav"] = "Fundaciones";
+    ViewData["Descripcion"] = Model.DescripcionCorta ?? $"Conoce a {Model.Nombre} y apóyala en MunerApp.";
+    var autenticado = User.Identity?.IsAuthenticated ?? false;
+    var tieneQuienes = !string.IsNullOrWhiteSpace(Model.Historia) || !string.IsNullOrWhiteSpace(Model.Mision) || !string.IsNullOrWhiteSpace(Model.Vision);
+    var whatsapp = Formatos.WhatsApp(Model.Telefono);
+    // Cuentas de una fundación (administradores y voluntarios) o superadministrador
+    var esalUsuario = User.FindFirst(MunerAppClaims.EsalId)?.Value;
+    var cuentaDeFundacion = esalUsuario is not null || User.IsInRole(Roles.SuperAdministrador);
+    var esMiFundacion = esalUsuario == Model.Id.ToString();
+}
+
+@if (esMiFundacion)
+{
+    @* Observación de pruebas Sprint 2: el administrador ve su página como la ven los visitantes *@
+    <div class="aviso-vista-publica">
+        <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <span><i class="bi bi-eye me-2" aria-hidden="true"></i>Estás viendo la página pública de tu fundación, tal como la ven los visitantes.</span>
+            <span class="d-flex gap-2">
+                @if (User.IsInRole(Roles.AdministradorESAL) && User.HasClaim(MunerAppClaims.Perfil, Perfiles.Principal))
+                {
+                    <a class="btn btn-sm btn-light" asp-area="Fundacion" asp-controller="Perfil" asp-action="Index"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar perfil</a>
+                }
+                <a class="btn btn-sm btn-outline-light" asp-area="Fundacion" asp-controller="Panel" asp-action="Index">Volver al panel</a>
+            </span>
+        </div>
+    </div>
+}
+
+@* ---------- Encabezado del perfil ---------- *@
+<section class="perfil-portada">
+    <div class="container">
+        <div class="perfil-encabezado">
+            <div class="perfil-logo">
+                <partial name="_LogoEsal" model="Model.Logo(112)" />
+            </div>
+            <div class="flex-grow-1">
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <span class="mu-badge"><i class="bi bi-patch-check" aria-hidden="true"></i>@Model.TipoEntidad</span>
+                    @if (!string.IsNullOrEmpty(Model.Ciudad))
+                    {
+                        <span class="mu-badge acento"><i class="bi bi-geo-alt" aria-hidden="true"></i>@Model.Ciudad</span>
+                    }
+                    <span class="mu-badge exito"><i class="bi bi-shield-check" aria-hidden="true"></i>NIT @Model.Nit</span>
+                </div>
+                <h1 class="perfil-nombre mb-2">@Model.Nombre</h1>
+                @if (!string.IsNullOrEmpty(Model.DescripcionCorta))
+                {
+                    <p class="lead text-suave mb-3">@Model.DescripcionCorta</p>
+                }
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <a class="btn btn-apoyar" href="/fundaciones/@Model.Slug/donar"><i class="bi bi-heart-fill me-2" aria-hidden="true"></i>Donar</a>
+                    <a class="btn btn-outline-primary" href="#como-ayudar">Otras formas de ayudar</a>
+                    @if (Model.Redes.Count > 0)
+                    {
+                        <span class="vr mx-1 d-none d-sm-inline-block" aria-hidden="true"></span>
+                        @foreach (var r in Model.Redes)
+                        {
+                            <a class="btn btn-suave btn-icono" href="@r.Url" target="_blank" rel="noopener" aria-label="@r.Tipo de @Model.Nombre" title="@r.Tipo">
+                                <i class="bi @r.Icono" aria-hidden="true"></i>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@* ---------- Navegación por secciones ---------- *@
+<nav class="perfil-secciones" aria-label="Secciones del perfil">
+    <div class="container">
+        <ul class="nav flex-nowrap overflow-auto">
+            @if (tieneQuienes) { <li class="nav-item"><a class="nav-link" href="#quienes-somos">Quiénes somos</a></li> }
+            @if (Model.Fotos.Count > 0) { <li class="nav-item"><a class="nav-link" href="#galeria">Galería</a></li> }
+            <li class="nav-item"><a class="nav-link" href="#transparencia">Transparencia</a></li>
+            <li class="nav-item"><a class="nav-link" href="#como-ayudar">Cómo ayudar</a></li>
+            <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container py-4 py-md-5">
+    <div class="row g-4 g-lg-5">
+        <div class="col-12 col-lg-8">
+
+            @* ---------- Quiénes somos (HU-009) ---------- *@
+            @if (tieneQuienes)
+            {
+                <section id="quienes-somos" class="perfil-seccion">
+                    <h2 class="h3 mb-3">Quiénes somos</h2>
+                    @if (!string.IsNullOrWhiteSpace(Model.Historia))
+                    {
+                        <div class="texto-largo mb-4">@Model.Historia</div>
+                    }
+                    <div class="row g-3">
+                        @if (!string.IsNullOrWhiteSpace(Model.Mision))
+                        {
+                            <div class="col-12 @(string.IsNullOrWhiteSpace(Model.Vision) ? "" : "col-md-6")">
+                                <div class="mu-card p-4 h-100">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <i class="bi bi-bullseye text-acento fs-5" aria-hidden="true"></i>
+                                        <h3 class="h6 fw-bold mb-0">Misión</h3>
+                                    </div>
+                                    <p class="texto-largo text-suave mb-0">@Model.Mision</p>
+                                </div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Vision))
+                        {
+                            <div class="col-12 @(string.IsNullOrWhiteSpace(Model.Mision) ? "" : "col-md-6")">
+                                <div class="mu-card p-4 h-100">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <i class="bi bi-binoculars text-principal fs-5" aria-hidden="true"></i>
+                                        <h3 class="h6 fw-bold mb-0">Visión</h3>
+                                    </div>
+                                    <p class="texto-largo text-suave mb-0">@Model.Vision</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+            else
+            {
+                <div class="alert alert-info mb-5">
+                    <i class="bi bi-info-circle" aria-hidden="true"></i>
+                    <div>@Model.Nombre está completando su perfil. Mientras tanto, puedes conocer sus documentos y apoyarla.</div>
+                </div>
+            }
+
+            @* ---------- Galería ---------- *@
+            @if (Model.Fotos.Count > 0)
+            {
+                <section id="galeria" class="perfil-seccion">
+                    <h2 class="h3 mb-3">Galería</h2>
+                    <div class="galeria">
+                        @for (var i = 0; i < Model.Fotos.Count; i++)
+                        {
+                            <button type="button" class="galeria-item" data-galeria="@Model.Fotos[i]" aria-label="Ver foto @(i + 1) de @Model.Fotos.Count">
+                                <img src="@Model.Fotos[i]" alt="Foto @(i + 1) de @Model.Nombre" loading="lazy" />
+                            </button>
+                        }
+                    </div>
+                </section>
+            }
+
+            @* ---------- Transparencia (HU-012) ---------- *@
+            <section id="transparencia" class="perfil-seccion">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h2 class="h3 mb-0">Transparencia</h2>
+                </div>
+                <p class="text-suave mb-3">Documentos que respaldan la legalidad de la fundación y el uso de las donaciones.</p>
+                @if (Model.Documentos.Count == 0)
+                {
+                    <div class="mu-card p-4 text-center text-suave">
+                        <i class="bi bi-folder2-open fs-3 d-block mb-2" aria-hidden="true"></i>
+                        Esta fundación todavía no ha publicado documentos.
+                    </div>
+                }
+                else
+                {
+                    <div class="d-grid gap-2">
+                        @foreach (var d in Model.Documentos)
+                        {
+                            <a class="documento-item mu-card mu-card-hover" href="@d.Url" target="_blank" rel="noopener">
+                                <span class="documento-icono @(d.EsPdf ? "pdf" : "")"><i class="bi @(d.EsPdf ? "bi-file-earmark-pdf" : "bi-file-earmark-image")" aria-hidden="true"></i></span>
+                                <span class="flex-grow-1 min-w-0">
+                                    <span class="d-block fw-semibold text-body">@d.Titulo</span>
+                                    <span class="d-block small text-suave">
+                                        @d.Categoria · Publicado el @Formatos.FechaCorta(d.Fecha) · @d.Tamano
+                                    </span>
+                                    @if (!string.IsNullOrEmpty(d.Descripcion))
+                                    {
+                                        <span class="d-block small text-suave mt-1">@d.Descripcion</span>
+                                    }
+                                </span>
+                                <span class="enlace-flecha d-none d-sm-inline-flex">Ver <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></span>
+                            </a>
+                        }
+                    </div>
+                }
+            </section>
+
+            @* ---------- Otras formas de ayudar (HU-016) ---------- *@
+            <section id="como-ayudar" class="perfil-seccion">
+                <h2 class="h3 mb-1">Otras formas de ayudar</h2>
+                <p class="text-suave mb-3">Elige cómo quieres apoyar a @Model.Nombre.</p>
+                <div class="row g-3">
+                    @foreach (var f in Model.FormasAyuda)
+                    {
+                        var destino = f.Url is null ? null
+                            : (f.RequiereCuenta && !autenticado ? "/Cuenta/IniciarSesion?returnUrl=" + Uri.EscapeDataString(f.Url) : f.Url);
+                        <div class="col-12 col-md-6">
+                            <div class="mu-card p-4 h-100 d-flex flex-column @(f.Disponible ? "" : "forma-pronto")">
+                                <div class="d-flex align-items-start gap-3 mb-2">
+                                    <div class="icono-circulo @f.ClaseIcono flex-shrink-0"><i class="bi @f.Icono" aria-hidden="true"></i></div>
+                                    <div>
+                                        <h3 class="h5 mb-1">@f.Titulo</h3>
+                                        @if (!f.Disponible)
+                                        {
+                                            <span class="mu-badge alerta">Muy pronto</span>
+                                        }
+                                        else if (f.RequiereCuenta)
+                                        {
+                                            <span class="small text-suave"><i class="bi bi-person-check" aria-hidden="true"></i> Requiere cuenta</span>
+                                        }
+                                    </div>
+                                </div>
+                                <p class="text-suave flex-grow-1">@f.Descripcion</p>
+                                @if (f.Disponible && f.Codigo == CodigosModulo.Voluntariado && cuentaDeFundacion)
+                                {
+                                    <p class="small text-suave mb-0"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Las cuentas de una fundación no pueden postularse como voluntarias.</p>
+                                }
+                                else if (f.Disponible && destino is not null)
+                                {
+                                    <a class="btn @(f.Codigo == CodigosModulo.Donaciones ? "btn-apoyar" : "btn-outline-primary") align-self-start" href="@destino">
+                                        @if (f.Codigo == CodigosModulo.Donaciones)
+                                        {
+                                            <text>Ver cómo donar</text>
+                                        }
+                                        else if (!autenticado)
+                                        {
+                                            <text>Inicia sesión para postularte</text>
+                                        }
+                                        else
+                                        {
+                                            <text>Postularme</text>
+                                        }
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                @if (!Model.TieneModulosApoyo)
+                {
+                    <p class="small text-suave mt-3 mb-0">
+                        <i class="bi bi-chat-heart me-1" aria-hidden="true"></i>
+                        ¿Quieres ayudar de otra forma? Escríbele a la fundación con los datos de <a href="#contacto">contacto</a>.
+                    </p>
+                }
+            </section>
+        </div>
+
+        @* ---------- Columna lateral ---------- *@
+        <aside class="col-12 col-lg-4">
+            <div class="perfil-lateral">
+                <div class="mu-card p-4 mb-3 tarjeta-donar">
+                    <div class="icono-circulo acento mb-3"><i class="bi bi-heart-fill" aria-hidden="true"></i></div>
+                    <h2 class="h5 mb-2">Apoya a @Model.Nombre</h2>
+                    <p class="small text-suave mb-3">
+                        @(Model.TieneDatosDonacion
+                            ? "Tu donación llega directo a la cuenta oficial de la fundación y recibes un comprobante cuando la confirme."
+                            : "La fundación está configurando sus datos para recibir donaciones.")
+                    </p>
+                    <a class="btn btn-apoyar w-100" href="/fundaciones/@Model.Slug/donar">Donar ahora</a>
+                </div>
+
+                <div id="contacto" class="mu-card p-4">
+                    <h2 class="h6 fw-bold mb-3">Contacto</h2>
+                    <ul class="list-unstyled d-grid gap-3 mb-0 small">
+                        <li class="d-flex gap-2">
+                            <i class="bi bi-envelope text-principal" aria-hidden="true"></i>
+                            <a href="mailto:@Model.Correo" class="text-break">@Model.Correo</a>
+                        </li>
+                        @if (!string.IsNullOrEmpty(Model.Telefono))
+                        {
+                            <li class="d-flex gap-2">
+                                <i class="bi @(whatsapp is null ? "bi-telephone" : "bi-whatsapp") text-principal" aria-hidden="true"></i>
+                                @if (whatsapp is not null)
+                                {
+                                    <a href="@whatsapp" target="_blank" rel="noopener">@Model.Telefono</a>
+                                }
+                                else
+                                {
+                                    <a href="tel:@Model.Telefono">@Model.Telefono</a>
+                                }
+                            </li>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Ciudad))
+                        {
+                            <li class="d-flex gap-2"><i class="bi bi-geo-alt text-principal" aria-hidden="true"></i>@Model.Ciudad</li>
+                        }
+                        <li class="d-flex gap-2"><i class="bi bi-calendar-check text-principal" aria-hidden="true"></i>En MunerApp desde @Formatos.FechaCorta(Model.FechaRegistro)</li>
+                    </ul>
+                    @if (Model.Redes.Count > 0)
+                    {
+                        <hr />
+                        <div class="d-flex gap-2">
+                            @foreach (var r in Model.Redes)
+                            {
+                                <a class="btn btn-suave btn-icono" href="@r.Url" target="_blank" rel="noopener" aria-label="@r.Tipo de @Model.Nombre" title="@r.Tipo">
+                                    <i class="bi @r.Icono" aria-hidden="true"></i>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>
+
+@* Visor de fotos de la galería *@
+@if (Model.Fotos.Count > 0)
+{
+    <div class="modal fade" id="visorFoto" tabindex="-1" aria-label="Foto de la galería" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content bg-transparent border-0">
+                <button type="button" class="btn-close btn-close-white ms-auto mb-2" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <img class="img-fluid rounded-4 mx-auto" alt="Foto ampliada de @Model.Nombre" data-visor-img />
+            </div>
+        </div>
+    </div>
+}

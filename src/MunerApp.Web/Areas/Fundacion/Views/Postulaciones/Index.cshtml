@@ -1,0 +1,65 @@
+@model List<PostulacionEsalItem>
+@{
+    ViewData["Title"] = "Voluntarios";
+    ViewData["Seccion"] = "Postulaciones";
+}
+<div class="container py-4 py-md-5">
+    <h1 class="h2 mb-1">Postulaciones de voluntarios</h1>
+    <p class="text-suave mb-3">Personas que quieren apoyar a la fundación con su tiempo o sus conocimientos.</p>
+
+    <partial name="_NavFundacion" />
+
+    <div class="alert alert-info small">
+        <i class="bi bi-info-circle" aria-hidden="true"></i>
+        <div>Por ahora pueden consultar las postulaciones y contactar a las personas. La aprobación dentro de la plataforma llega en el Sprint 6.</div>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo exito mb-3"><i class="bi bi-people" aria-hidden="true"></i></div>
+            <h2 class="h5">Aún no hay postulaciones</h2>
+            <p class="text-suave mb-0">Cuando alguien se postule desde el perfil público, aparecerá aquí y recibirán una notificación.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var p in Model)
+            {
+                <div class="col-12 col-lg-6">
+                    <div class="mu-card p-4 h-100">
+                        <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                            <div>
+                                <div class="fw-bold">@p.Nombre</div>
+                                <div class="small text-suave">Se postuló @Formatos.Hace(p.Fecha)</div>
+                            </div>
+                            <span class="mu-badge @(p.Tipo == TipoPostulacion.PracticanteSalud ? "acento" : "")">@Textos.De(p.Tipo)</span>
+                        </div>
+                        <ul class="list-unstyled small d-grid gap-1 mb-2">
+                            <li><i class="bi bi-envelope me-2 text-principal" aria-hidden="true"></i><a href="mailto:@p.Correo">@p.Correo</a></li>
+                            <li>
+                                <i class="bi bi-phone me-2 text-principal" aria-hidden="true"></i>
+                                @{ var wa = Formatos.WhatsApp(p.Telefono); }
+                                @if (wa is not null) { <a href="@wa" target="_blank" rel="noopener">@p.Telefono</a> } else { @p.Telefono }
+                            </li>
+                            <li><i class="bi bi-calendar-week me-2 text-principal" aria-hidden="true"></i>@p.Disponibilidad</li>
+                            @if (p.Tipo == TipoPostulacion.PracticanteSalud)
+                            {
+                                <li><i class="bi bi-mortarboard me-2 text-principal" aria-hidden="true"></i>@p.Programa · @p.Institucion · Semestre @p.Semestre</li>
+                            }
+                        </ul>
+                        @if (!string.IsNullOrEmpty(p.Motivacion))
+                        {
+                            <p class="small text-suave fst-italic mb-2">"@p.Motivacion"</p>
+                        }
+                        @if (p.TieneSoporte)
+                        {
+                            <a class="btn btn-sm btn-suave" asp-action="Soporte" asp-route-id="@p.Id" target="_blank" rel="noopener"><i class="bi bi-paperclip me-1" aria-hidden="true"></i>Soporte académico</a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

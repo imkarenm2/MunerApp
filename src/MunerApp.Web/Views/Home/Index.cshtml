@@ -1,3 +1,4 @@
+@model List<FundacionTarjeta>
 @{
     ViewData["Title"] = "Apoya a las fundaciones de tu región";
     var autenticado = User.Identity?.IsAuthenticated ?? false;
@@ -14,8 +15,7 @@
                     y elige la forma de apoyar que va contigo.
                 </p>
                 <div class="d-flex flex-column flex-sm-row gap-2">
-                    @* TODO HU-010: enlazar al listado de fundaciones *@
-                    <a class="btn btn-apoyar btn-lg" href="#fundaciones"><i class="bi bi-heart-fill me-2" aria-hidden="true"></i>Quiero ayudar</a>
+                    <a class="btn btn-apoyar btn-lg" href="/fundaciones"><i class="bi bi-heart-fill me-2" aria-hidden="true"></i>Quiero ayudar</a>
                     @if (!autenticado)
                     {
                         <a class="btn btn-outline-primary btn-lg" asp-controller="Cuenta" asp-action="Registrar">Crear mi cuenta</a>
@@ -129,6 +129,37 @@
         </div>
     </div>
 </section>
+
+@if (Model.Count > 0)
+{
+    <section class="seccion pt-0">
+        <div class="container">
+            <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
+                <div>
+                    <div class="sobretitulo mb-2">Fundaciones</div>
+                    <h2 class="h1 mb-0">Conoce a quién puedes ayudar</h2>
+                </div>
+                <a class="enlace-flecha" href="/fundaciones">Ver todas <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            </div>
+            <div class="row g-4">
+                @foreach (var f in Model)
+                {
+                    <div class="col-12 col-md-4">
+                        <a class="tarjeta-esal mu-card mu-card-hover h-100" href="/fundaciones/@f.Slug">
+                            <div class="tarjeta-esal-banda" aria-hidden="true"></div>
+                            <div class="tarjeta-esal-cuerpo">
+                                <partial name="_LogoEsal" model="new LogoEsalModel(f.Nombre, f.LogoUrl, 64)" />
+                                <h3 class="h5 mt-3 mb-1">@f.Nombre</h3>
+                                <p class="texto-recortado text-suave small mb-3">@(f.DescripcionCorta ?? f.TipoEntidad)</p>
+                                <span class="enlace-flecha">Ver perfil <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+                            </div>
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
 
 <section class="seccion pt-0" id="fundaciones">
     <div class="container">

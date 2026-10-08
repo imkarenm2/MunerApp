@@ -1,0 +1,121 @@
+@model DatosDonacionViewModel
+@{
+    ViewData["Title"] = "Datos para donar";
+    ViewData["Seccion"] = "DatosDonacion";
+    var tipos = Enum.GetValues<TipoCuentaDonacion>();
+    var llaves = Enum.GetValues<TipoLlave>();
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Datos para donar</h1>
+            <p class="text-suave mb-0">La cuenta o llave oficial donde los donantes transfieren. El dinero llega directo a la fundación.</p>
+        </div>
+        @if (Model.Configurado && Model.Slug is not null)
+        {
+            <a class="btn btn-outline-primary" href="/fundaciones/@Model.Slug/donar" target="_blank" rel="noopener"><i class="bi bi-eye me-1" aria-hidden="true"></i>Ver como donante</a>
+        }
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            <form asp-action="Index" method="post" novalidate class="mu-card p-4"
+                  data-confirmar="Desde ahora los donantes transferirán a esta cuenta. Verifica que la llave o el número estén bien escritos."
+                  data-confirmar-titulo="¿Guardar los datos para donar?" data-confirmar-boton="Sí, guardar">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label asp-for="TipoCuenta" class="form-label"></label>
+                        <select asp-for="TipoCuenta" class="form-select" data-tipo-cuenta>
+                            <option value="">Selecciona…</option>
+                            @foreach (var t in tipos)
+                            {
+                                <option value="@t" selected="@(Model.TipoCuenta == t)">@Textos.De(t)</option>
+                            }
+                        </select>
+                        <span asp-validation-for="TipoCuenta"></span>
+                    </div>
+                    <div class="col-12 col-md-6 @(Model.TipoCuenta == TipoCuentaDonacion.Llave ? "" : "d-none")" data-bloque-llave>
+                        <label asp-for="TipoLlave" class="form-label"></label>
+                        <select asp-for="TipoLlave" class="form-select" data-tipo-llave>
+                            <option value="">Selecciona…</option>
+                            @foreach (var l in llaves)
+                            {
+                                <option value="@l" selected="@(Model.TipoLlave == l)">@Textos.De(l)</option>
+                            }
+                        </select>
+                        <span asp-validation-for="TipoLlave"></span>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label asp-for="Entidad" class="form-label"></label>
+                        <input asp-for="Entidad" class="form-control" list="entidades" maxlength="100" placeholder="Bancolombia, Nequi…" />
+                        <datalist id="entidades">
+                            @foreach (var e in DatosDonacionViewModel.Bancos.Concat(DatosDonacionViewModel.Billeteras))
+                            {
+                                <option value="@e"></option>
+                            }
+                        </datalist>
+                        <span asp-validation-for="Entidad"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Numero" class="form-label" data-etiqueta-numero>Llave o número de cuenta</label>
+                        <input asp-for="Numero" class="form-control" maxlength="60" autocomplete="off" spellcheck="false" data-numero-cuenta data-nit-esal="@ValidadorCuentas.NitBase(Model.NitEsal)" />
+                        <div class="form-text" data-ayuda-numero>Primero selecciona el tipo.</div>
+                        <span asp-validation-for="Numero"></span>
+                    </div>
+                    <div class="col-12 col-md-7">
+                        <label asp-for="Titular" class="form-label"></label>
+                        <input asp-for="Titular" class="form-control" maxlength="150" />
+                        <span asp-validation-for="Titular"></span>
+                    </div>
+                    <div class="col-12 col-md-5">
+                        <label asp-for="DocumentoTitular" class="form-label"></label>
+                        <input class="form-control" value="@Model.NitEsal" readonly aria-describedby="ayudaNitTitular" />
+                        <div class="form-text" id="ayudaNitTitular">La cuenta debe estar a nombre de la fundación.</div>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Instrucciones" class="form-label"></label>
+                        <textarea asp-for="Instrucciones" class="form-control" rows="3" maxlength="500" placeholder="Ej.: en la descripción de la transferencia escribe tu nombre."></textarea>
+                        <span asp-validation-for="Instrucciones"></span>
+                    </div>
+                </div>
+                <div class="alert alert-info small mt-3 mb-0">
+                    <i class="bi bi-shield-check" aria-hidden="true"></i>
+                    <div>MunerApp no puede consultar en el banco si la cuenta o la llave existen. Antes de guardar, hagan una transferencia de prueba pequeña desde otra cuenta y verifiquen que llegue a nombre de la fundación.</div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-4" data-cargando="Guardando...">Guardar datos</button>
+            </form>
+        </div>
+        <div class="col-12 col-lg-5">
+            <div class="mu-card p-4">
+                <h2 class="h6 fw-bold mb-3">Así lo ven los donantes</h2>
+                @if (Model.Configurado)
+                {
+                    <div class="datos-cuenta">
+                        <div class="small text-suave">@(Model.TipoCuenta is null ? "" : Textos.De(Model.TipoCuenta.Value, Model.TipoLlave)) · @Model.Entidad</div>
+                        <div class="numero-cuenta my-2">@Model.Numero</div>
+                        <div class="small">Titular: <strong>@Model.Titular</strong></div>
+                        <div class="small">NIT: <strong>@Model.DocumentoTitular</strong></div>
+                    </div>
+                    @if (Model.FechaActualizacion is DateTime f)
+                    {
+                        <p class="small text-suave mt-3 mb-0"><i class="bi bi-clock-history me-1" aria-hidden="true"></i>Actualizado: @Formatos.FechaHora(f)</p>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-warning small mb-0">
+                        <i class="bi bi-info-circle" aria-hidden="true"></i>
+                        <div>Mientras no guarden estos datos, la opción "Donar" del perfil dirá que no está disponible por ahora.</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

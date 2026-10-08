@@ -1,0 +1,34 @@
+@model List<PostulacionItem>
+@{
+    ViewData["Title"] = "Mis postulaciones";
+}
+<div class="container py-4 py-md-5" style="max-width: 860px">
+    <h1 class="h2 mb-1">Mis postulaciones</h1>
+    <p class="text-suave mb-4">Las fundaciones en las que te postulaste como voluntario.</p>
+
+    @if (Model.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo exito mb-3"><i class="bi bi-people" aria-hidden="true"></i></div>
+            <h2 class="h5">Todavía no te has postulado</h2>
+            <p class="text-suave">Entra al perfil de una fundación y elige "Ser voluntario".</p>
+            <a class="btn btn-primary" href="/fundaciones">Explorar fundaciones</a>
+        </div>
+    }
+    else
+    {
+        <div class="d-grid gap-2">
+            @foreach (var p in Model)
+            {
+                <a class="fila-lista mu-card mu-card-hover" href="@(p.SlugEsal is null ? "#" : "/fundaciones/" + p.SlugEsal)">
+                    <partial name="_LogoEsal" model="new LogoEsalModel(p.NombreEsal, p.LogoUrl, 44)" />
+                    <span class="flex-grow-1 min-w-0">
+                        <span class="d-block fw-semibold text-body text-truncate">@p.NombreEsal</span>
+                        <span class="d-block small text-suave">@Textos.De(p.Tipo) · @Formatos.FechaCorta(p.Fecha)</span>
+                    </span>
+                    <span class="mu-badge @(p.Estado switch { EstadoPostulacion.Aprobada => "exito", EstadoPostulacion.Rechazada => "error", _ => "alerta" })">@Textos.De(p.Estado)</span>
+                </a>
+            }
+        </div>
+    }
+</div>

@@ -1,0 +1,55 @@
+@model RedesViewModel
+@{
+    ViewData["Title"] = "Redes sociales";
+    ViewData["Seccion"] = "Redes";
+    var redes = new[]
+    {
+        (Campo: nameof(Model.Facebook), Icono: "bi-facebook", Ejemplo: "https://facebook.com/tufundacion", Valor: Model.Facebook),
+        (Campo: nameof(Model.Instagram), Icono: "bi-instagram", Ejemplo: "https://instagram.com/tufundacion", Valor: Model.Instagram),
+        (Campo: nameof(Model.TikTok), Icono: "bi-tiktok", Ejemplo: "https://tiktok.com/@tufundacion", Valor: Model.TikTok)
+    };
+}
+<div class="container py-4 py-md-5">
+    <h1 class="h2 mb-1">Redes sociales</h1>
+    <p class="text-suave mb-3">Aparecerán en el perfil público de la fundación. Deja vacía la red que no uses.</p>
+
+    <partial name="_NavFundacion" />
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            <form asp-action="Index" method="post" novalidate class="mu-card p-4">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                @foreach (var r in redes)
+                {
+                    <div class="mb-3">
+                        <label class="form-label" for="@r.Campo">@r.Campo</label>
+                        <div class="input-icono">
+                            <i class="bi @r.Icono" aria-hidden="true"></i>
+                            <input class="form-control @(ViewData.ModelState[r.Campo]?.Errors.Count > 0 ? "input-validation-error" : "")"
+                                   id="@r.Campo" name="@r.Campo" value="@r.Valor" placeholder="@r.Ejemplo" inputmode="url" />
+                        </div>
+                        <span class="text-danger small">@ViewData.ModelState[r.Campo]?.Errors.FirstOrDefault()?.ErrorMessage</span>
+                    </div>
+                }
+                <button type="submit" class="btn btn-primary" data-cargando="Guardando...">Guardar redes</button>
+            </form>
+        </div>
+        <div class="col-12 col-lg-5">
+            <div class="mu-card p-4 h-100">
+                <h2 class="h6 fw-bold mb-3">Así se verán en el perfil</h2>
+                <div class="d-flex gap-2 flex-wrap">
+                    @foreach (var r in redes.Where(r => !string.IsNullOrWhiteSpace(r.Valor)))
+                    {
+                        <a class="btn btn-suave" href="@r.Valor" target="_blank" rel="noopener" aria-label="@r.Campo">
+                            <i class="bi @r.Icono" aria-hidden="true"></i>
+                        </a>
+                    }
+                    @if (!redes.Any(r => !string.IsNullOrWhiteSpace(r.Valor)))
+                    {
+                        <p class="text-suave small mb-0">Todavía no hay redes vinculadas.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,68 @@
+@model ReportarDonacionViewModel
+@{
+    ViewData["Title"] = "Reportar donación";
+    var hoy = DateTime.Today.ToString("yyyy-MM-dd");
+    var minimo = DateTime.Today.AddDays(-90).ToString("yyyy-MM-dd");
+}
+<div class="container py-4 py-md-5" style="max-width: 720px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Donación a")' />
+
+    <h1 class="h2 mb-1">Reporta tu donación</h1>
+    <p class="text-suave mb-4">Cuéntanos cuánto transferiste y adjunta el soporte. La fundación lo revisa y te avisamos.</p>
+
+    <form asp-action="Reportar" asp-route-slug="@Model.Slug" method="post" enctype="multipart/form-data" novalidate class="mu-card p-4 p-md-5"
+          data-confirmar="Revisa que el valor y la fecha coincidan con tu transferencia: la fundación la buscará en su cuenta con esos datos."
+          data-confirmar-titulo="¿Enviar el reporte de tu donación?" data-confirmar-boton="Sí, enviar reporte">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <div class="alert alert-info small">
+            <i class="bi bi-bank" aria-hidden="true"></i>
+            <div>Transferiste a: <strong>@Model.MedioPago</strong></div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-sm-6">
+                <label asp-for="Valor" class="form-label"></label>
+                <div class="input-icono">
+                    <i class="bi bi-currency-dollar" aria-hidden="true"></i>
+                    <input asp-for="Valor" class="form-control" inputmode="numeric" placeholder="50.000" autocomplete="off" data-moneda />
+                </div>
+                <span asp-validation-for="Valor"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="FechaTransferencia" class="form-label"></label>
+                <input asp-for="FechaTransferencia" type="date" class="form-control" max="@hoy" min="@minimo" />
+                <span asp-validation-for="FechaTransferencia"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="ReferenciaPago" class="form-label"></label>
+                <input asp-for="ReferenciaPago" class="form-control" placeholder="Ej.: M1234567" />
+                <span asp-validation-for="ReferenciaPago"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Soporte" class="form-label"></label>
+                <label class="zona-archivo" for="Soporte">
+                    <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+                    <span class="fw-semibold" data-nombre-archivo>Selecciona la captura o el PDF</span>
+                    <span class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Documento)</span>
+                </label>
+                <input asp-for="Soporte" type="file" class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Documento)" data-archivo />
+                <span asp-validation-for="Soporte"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Mensaje" class="form-label"></label>
+                <textarea asp-for="Mensaje" class="form-control" rows="3" maxlength="300" placeholder="Un mensaje de apoyo para la fundación"></textarea>
+                <span asp-validation-for="Mensaje"></span>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-apoyar btn-lg" data-cargando="Enviando...">Reportar donación</button>
+            <a class="btn btn-link" href="/fundaciones/@Model.Slug/donar">Volver a los datos para donar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

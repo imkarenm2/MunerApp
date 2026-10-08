@@ -1,0 +1,89 @@
+@model DonarViewModel
+@{
+    ViewData["Title"] = "Donar a " + Model.Nombre;
+    ViewData["Nav"] = "Fundaciones";
+}
+<div class="container py-4 py-md-5" style="max-width: 920px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.Nombre, Model.LogoUrl, 48), Model.Slug, "Volver al perfil de")' />
+
+    <h1 class="h2 mb-2">Donar a @Model.Nombre</h1>
+
+    @if (!Model.Disponible)
+    {
+        @* HU-013 escenario 3: sin datos configurados *@
+        <div class="estado-vacio mt-4">
+            <div class="icono-circulo alerta mb-3"><i class="bi bi-hourglass-split" aria-hidden="true"></i></div>
+            <h2 class="h5">La opción de donar no está disponible por ahora</h2>
+            <p class="text-suave">La fundación todavía está configurando sus datos para recibir donaciones. Vuelve pronto o apóyala de otra forma.</p>
+            <a class="btn btn-outline-primary" href="/fundaciones/@Model.Slug#como-ayudar">Ver otras formas de ayudar</a>
+        </div>
+    }
+    else
+    {
+        <p class="text-suave mb-4">Tu donación llega directo a la cuenta oficial de la fundación. Así funciona:</p>
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-7">
+                <div class="paso-donar">
+                    <span class="paso-numero">1</span>
+                    <div class="flex-grow-1">
+                        <h2 class="h5 mb-3">Transfiere desde tu banco o billetera</h2>
+                        <div class="mu-card p-4 datos-cuenta">
+                            <div class="small text-suave">@Model.TipoCuenta · @Model.Entidad</div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap my-2">
+                                <span class="numero-cuenta" id="numeroCuenta">@Model.Numero</span>
+                                <button type="button" class="btn btn-sm btn-suave" data-copiar="numeroCuenta">
+                                    <i class="bi bi-copy me-1" aria-hidden="true"></i><span>Copiar</span>
+                                </button>
+                            </div>
+                            <dl class="row small mb-0 mt-3">
+                                <dt class="col-5 text-suave fw-normal">Titular</dt>
+                                <dd class="col-7 fw-semibold">@Model.Titular</dd>
+                                <dt class="col-5 text-suave fw-normal">NIT / documento</dt>
+                                <dd class="col-7 fw-semibold mb-0">@Model.DocumentoTitular</dd>
+                            </dl>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.Instrucciones))
+                        {
+                            <div class="alert alert-info mt-3 mb-0">
+                                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                                <div class="texto-largo">@Model.Instrucciones</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="paso-donar">
+                    <span class="paso-numero">2</span>
+                    <div>
+                        <h2 class="h5 mb-1">Guarda el soporte</h2>
+                        <p class="text-suave mb-0">Toma una captura de pantalla o descarga el comprobante que te da tu banco.</p>
+                    </div>
+                </div>
+
+                <div class="paso-donar">
+                    <span class="paso-numero">3</span>
+                    <div>
+                        <h2 class="h5 mb-1">Reporta tu donación</h2>
+                        <p class="text-suave mb-3">La fundación revisa que el dinero haya llegado y te enviamos tu comprobante.</p>
+                        <a class="btn btn-apoyar btn-lg" href="/fundaciones/@Model.Slug/reportar-donacion">
+                            <i class="bi bi-upload me-2" aria-hidden="true"></i>Ya doné, reportar mi donación
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-5">
+                <div class="mu-card p-4">
+                    <h2 class="h6 fw-bold mb-3"><i class="bi bi-shield-check text-principal me-2" aria-hidden="true"></i>Tu donación es transparente</h2>
+                    <ul class="lista-check small mb-0">
+                        <li>El dinero va directo a la cuenta de la fundación: MunerApp no lo recibe ni lo maneja.</li>
+                        <li>Revisa que el titular sea la fundación antes de transferir.</li>
+                        <li>Cuando la fundación confirme tu donación, descargas tu comprobante en PDF.</li>
+                        <li>En <strong>Mis donaciones</strong> ves el estado de cada aporte.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    }
+</div>

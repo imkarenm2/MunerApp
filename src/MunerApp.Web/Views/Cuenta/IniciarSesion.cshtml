@@ -10,7 +10,15 @@
                 <h1 class="h3 mb-1">¡Hola de nuevo!</h1>
                 <p class="text-suave mb-4">Inicia sesión para seguir apoyando.</p>
 
-                @* TODO HU-003 (Santiago): botón "Continuar con Google" aquí, con separador "o" *@
+                @if (!string.IsNullOrEmpty(ViewData["ReturnUrl"] as string))
+                {
+                    <div class="alert alert-info small py-2">
+                        <i class="bi bi-person-lock" aria-hidden="true"></i>
+                        <div>Para continuar necesitas una cuenta. Inicia sesión o créala en un minuto: te llevaremos de vuelta a donde estabas.</div>
+                    </div>
+                }
+
+                <partial name="_BotonGoogle" />
 
                 <form asp-action="IniciarSesion" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" novalidate>
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2" role="alert"></div>
@@ -27,8 +35,7 @@
                     <div class="mb-2">
                         <div class="d-flex justify-content-between align-items-baseline">
                             <label asp-for="Contrasena" class="form-label"></label>
-                            @* TODO HU-004 (Santiago): asp-action="OlvideContrasena" *@
-                            <a href="#" class="small">¿Olvidaste tu contraseña?</a>
+                            <a asp-action="OlvideContrasena" class="small">¿Olvidaste tu contraseña?</a>
                         </div>
                         <div class="input-icono con-boton">
                             <i class="bi bi-lock" aria-hidden="true"></i>
@@ -49,7 +56,7 @@
                 </form>
 
                 <p class="mt-4 mb-0 text-center text-suave">
-                    ¿Aún no tienes cuenta? <a asp-action="Registrar" class="fw-semibold">Crea una aquí</a>
+                    ¿Aún no tienes cuenta? <a asp-action="Registrar" asp-route-returnUrl="@ViewData["ReturnUrl"]" class="fw-semibold">Crea una aquí</a>
                 </p>
             </div>
         </div>
