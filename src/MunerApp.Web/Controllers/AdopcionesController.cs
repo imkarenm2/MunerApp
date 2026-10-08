@@ -91,7 +91,8 @@ public class AdopcionesController : Controller
         return borrador!.SeccionesCompletadas switch
         {
             0 => RedirectToAction(nameof(Datos), new { slug }),
-            _ => RedirectToAction(nameof(Mascotas), new { slug })
+            1 => RedirectToAction(nameof(Mascotas), new { slug }),
+            _ => RedirectToAction(nameof(Hogar), new { slug })
         };
     }
 
@@ -177,7 +178,118 @@ public class AdopcionesController : Controller
     {
         var (esal, s, salida) = await AbrirSeccionAsync(slug, 2);
         if (salida is not null) return salida;
-        return View(PrepararSeccion(new SeccionAdopcionViewModel(), esal!, s!, 2));
+
+        var model = new MascotasAdopcionViewModel
+        {
+            Mascotas = s!.Mascotas,
+            TieneGato = s.TieneGato,
+            TienePerro = s.TienePerro,
+            TieneOtraMascota = s.TieneOtraMascota,
+            OtraMascota = s.OtraMascota,
+            GatoUsaArenero = s.GatoUsaArenero,
+            GatoEsterilizacion = s.GatoEsterilizacion,
+            GatoVacunas = s.GatoVacunas,
+            PerroSociabilidad = s.PerroSociabilidad,
+            QuePasoMascota = s.QuePasoMascota
+        };
+        return View(PrepararSeccion(model, esal!, s, 2));
+    }
+
+    [HttpPost("fundaciones/{slug}/adoptar/formulario/mascotas")]
+    [RequestSizeLimit(ValidadorArchivos.LimitePeticionBytes)]
+    public async Task<IActionResult> Mascotas(string slug, MascotasAdopcionViewModel model)
+    {
+        var (esal, s, salida) = await AbrirSeccionAsync(slug, 2);
+        if (salida is not null) return salida;
+
+        var tiene = model.Mascotas == TenenciaMascotas.Tengo;
+        var gato = tiene && model.TieneGato;
+        var perro = tiene && model.TienePerro;
+        var otra = tiene && model.TieneOtraMascota;
+
+        // Escenario 1: si tiene mascotas, el tipo y las preguntas de cada tipo
+        if (tiene && !model.TieneGato && !model.TienePerro && !model.TieneOtraMascota)
+            ModelState.AddModelError(nameof(model.TieneGato), "Selecciona qué mascotas tienes.");
+        if (otra && string.IsNullOrWhiteSpace(model.OtraMascota))
+            ModelState.AddModelError(nameof(model.OtraMascota), "Cuéntanos qué otra mascota tienes.");
+        if (gato)
+        {
+            if (model.GatoUsaArenero is null)
+                ModelState.AddModelError(nameof(model.GatoUsaArenero), "Indica si tu gato usa arenero.");
+            if (model.GatoEsterilizacion is null)
+                ModelState.AddModelError(nameof(model.GatoEsterilizacion), "Indica si tus gatos están esterilizados.");
+            if (model.GatoVacunas is null)
+                ModelState.AddModelError(nameof(model.GatoVacunas), "Indica si tus gatos están vacunados.");
+        }
+        if (perro && model.PerroSociabilidad is null)
+            ModelState.AddModelError(nameof(model.PerroSociabilidad), "Indica si tu perro es sociable con los gatos.");
+
+        // Escenario 3: si tuvo mascotas, qué ocurrió con ellas
+        if (model.Mascotas == TenenciaMascotas.Tuve && string.IsNullOrWhiteSpace(model.QuePasoMascota))
+            ModelState.AddModelError(nameof(model.QuePasoMascota), "Cuéntanos qué ocurrió con tu mascota.");
+
+        // Escenario 2: carné opcional, solo con vacunas completas o parciales (opciones a y c)
+        var permiteCarne = gato && MascotasAdopcionViewModel.PermiteCarne(model.GatoVacunas);
+        ArchivoValidado? carne = null;
+        if (permiteCarne && model.CarneVacunas is { Length: > 0 })
+        {
+            carne = await ValidadorArchivos.ValidarAsync(model.CarneVacunas, TipoArchivo.Documento);
+            if (!carne.Valido) ModelState.AddModelError(nameof(model.CarneVacunas), carne.Error!);
+        }
+
+        if (!ModelState.IsValid) return View(PrepararSeccion(model, esal!, s!, 2));
+
+        // El carné anterior se elimina si lo reemplaza, lo quita o ya no aplica
+        if (s!.CarneVacunasRuta is not null && (carne is not null || model.QuitarCarne || !permiteCarne))
+        {
+            await _archivos.EliminarAsync(s.CarneVacunasRuta);
+            s.CarneVacunasRuta = null;
+        }
+        if (carne is not null)
+        {
+            await using var stream = model.CarneVacunas!.OpenReadStream();
+            s.CarneVacunasRuta = await _archivos.GuardarAsync(stream, $"esal/{esal!.Id}/adopciones", carne.Extension, publico: false);
+        }
+
+        // Solo se guardan las respuestas que aplican según las preguntas anteriores
+        s.Mascotas = model.Mascotas;
+        s.TieneGato = gato;
+        s.TienePerro = perro;
+        s.TieneOtraMascota = otra;
+        s.OtraMascota = otra ? model.OtraMascota!.Trim() : null;
+        s.GatoUsaArenero = gato ? model.GatoUsaArenero : null;
+        s.GatoEsterilizacion = gato ? model.GatoEsterilizacion : null;
+        s.GatoVacunas = gato ? model.GatoVacunas : null;
+        s.PerroSociabilidad = perro ? model.PerroSociabilidad : null;
+        s.QuePasoMascota = model.Mascotas == TenenciaMascotas.Tuve ? model.QuePasoMascota!.Trim() : null;
+        s.SeccionesCompletadas = Math.Max(s.SeccionesCompletadas, 2);
+        s.FechaActualizacion = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        TempData["Mensaje"] = "Guardamos la sección de mascotas. Ya casi terminas: falta la sección de hogar y compromisos.";
+        return RedirectToAction(nameof(Hogar), new { slug });
+    }
+
+    /// <summary>El solicitante descarga el carné que adjuntó (archivo privado).</summary>
+    [HttpGet("fundaciones/{slug}/adoptar/formulario/carne")]
+    public async Task<IActionResult> Carne(string slug)
+    {
+        var (_, s, salida) = await AbrirSeccionAsync(slug, 2);
+        if (salida is not null) return salida;
+        if (s!.CarneVacunasRuta is null) return NotFound();
+
+        var stream = await _archivos.AbrirAsync(s.CarneVacunasRuta);
+        return stream is null ? NotFound() : File(stream, ValidadorArchivos.ContentTypeDe(s.CarneVacunasRuta));
+    }
+
+    // ---------- HU-032: sección 3, hogar y compromisos ----------
+
+    [HttpGet("fundaciones/{slug}/adoptar/formulario/hogar")]
+    public async Task<IActionResult> Hogar(string slug)
+    {
+        var (esal, s, salida) = await AbrirSeccionAsync(slug, 3);
+        if (salida is not null) return salida;
+        return View(PrepararSeccion(new SeccionAdopcionViewModel(), esal!, s!, 3));
     }
 
     /// <summary>
@@ -211,6 +323,8 @@ public class AdopcionesController : Controller
         model.SeccionesCompletadas = borrador.SeccionesCompletadas;
         if (model is DatosPersonalesAdopcionViewModel datos)
             datos.Correo = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name ?? "";
+        if (model is MascotasAdopcionViewModel mascotas)
+            mascotas.TieneCarne = borrador.CarneVacunasRuta is not null;
         return model;
     }
 

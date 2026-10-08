@@ -102,3 +102,52 @@ public class DatosPersonalesAdopcionViewModel : SeccionAdopcionViewModel
 
     public static readonly string[] Relaciones = { "Familiar", "Amigo(a)", "Compañero(a) de trabajo", "Vecino(a)", "Otra" };
 }
+
+/// <summary>
+/// Sección 2: mascotas, con preguntas condicionales (HU-031).
+/// Las preguntas que dependen de otra respuesta se validan en el controlador.
+/// </summary>
+public class MascotasAdopcionViewModel : SeccionAdopcionViewModel
+{
+    [Required(ErrorMessage = "Cuéntanos si tienes o has tenido mascotas.")]
+    [Display(Name = "¿Tienes o has tenido mascotas?")]
+    public TenenciaMascotas? Mascotas { get; set; }
+
+    // Escenario 1: tipo de mascota y preguntas según el tipo
+    public bool TieneGato { get; set; }
+    public bool TienePerro { get; set; }
+    public bool TieneOtraMascota { get; set; }
+
+    [StringLength(100, ErrorMessage = "Máximo {1} caracteres.")]
+    [Display(Name = "¿Qué otra mascota?")]
+    public string? OtraMascota { get; set; }
+
+    [Display(Name = "¿Tu gato usa arenero?")]
+    public bool? GatoUsaArenero { get; set; }
+
+    [Display(Name = "¿Están esterilizados?")]
+    public EsterilizacionMascotas? GatoEsterilizacion { get; set; }
+
+    [Display(Name = "¿Están vacunados?")]
+    public VacunasGato? GatoVacunas { get; set; }
+
+    /// <summary>Escenario 2: carné de vacunas opcional si las vacunas son completas o parciales.</summary>
+    [Display(Name = "Carné de vacunas (opcional)")]
+    public IFormFile? CarneVacunas { get; set; }
+
+    /// <summary>Ya adjuntó un carné antes: se conserva si no sube otro.</summary>
+    public bool TieneCarne { get; set; }
+
+    public bool QuitarCarne { get; set; }
+
+    [Display(Name = "¿Tu perro es sociable con los gatos?")]
+    public SociabilidadPerro? PerroSociabilidad { get; set; }
+
+    /// <summary>Escenario 3: si tuvo mascotas, qué ocurrió con ellas.</summary>
+    [StringLength(500, ErrorMessage = "Máximo {1} caracteres.")]
+    [Display(Name = "¿Qué ocurrió con tu mascota?")]
+    public string? QuePasoMascota { get; set; }
+
+    /// <summary>Con las opciones a) o c) de vacunas se puede adjuntar el carné.</summary>
+    public static bool PermiteCarne(VacunasGato? vacunas) => vacunas is VacunasGato.Completas or VacunasGato.Parciales;
+}

@@ -1,0 +1,128 @@
+@model MascotasAdopcionViewModel
+@{
+    ViewData["Title"] = "Solicitud de adopción · Mascotas";
+    var tiene = Model.Mascotas == TenenciaMascotas.Tengo;
+    var carneVisible = MascotasAdopcionViewModel.PermiteCarne(Model.GatoVacunas);
+
+    string Oculto(bool visible) => visible ? "" : "d-none";
+
+    // Opciones en chips: un grupo de radios con su etiqueta accesible
+    void Radios(string nombre, string etiqueta, IEnumerable<(string Valor, string Texto)> opciones, string? actual)
+    {
+        <fieldset class="mb-3">
+            <legend class="form-label">@etiqueta</legend>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var o in opciones)
+                {
+                    var id = nombre + o.Valor;
+                    <input type="radio" class="btn-check" name="@nombre" id="@id" value="@o.Valor" @(o.Valor == actual ? "checked" : "") />
+                    <label class="chip" for="@id">@o.Texto</label>
+                }
+            </div>
+            @{ var error = ViewData.ModelState[nombre]?.Errors.FirstOrDefault()?.ErrorMessage; }
+            <span class="@(error is null ? "field-validation-valid" : "field-validation-error")" data-valmsg-for="@nombre" data-valmsg-replace="true">@error</span>
+        </fieldset>
+    }
+
+    // Tipo de mascota: casilla con su valor "false" para cuando no se marca
+    void Tipo(string nombre, string texto, string icono, bool marcado)
+    {
+        <input type="checkbox" class="btn-check" name="@nombre" id="@nombre" value="true" @(marcado ? "checked" : "") />
+        <label class="chip" for="@nombre"><i class="bi @icono me-1" aria-hidden="true"></i>@texto</label>
+        <input type="hidden" name="@nombre" value="false" />
+    }
+
+    IEnumerable<(string, string)> De<T>(Func<T, string> texto) where T : struct, Enum
+        => Enum.GetValues<T>().Select(v => (v.ToString(), texto(v)));
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Adopción en")' />
+
+    <h1 class="h2 mb-1">Solicitud de adopción</h1>
+    <p class="text-suave mb-4">Tu avance se guarda al terminar cada sección. Solo la fundación verá estos datos.</p>
+
+    <partial name="_PasosAdopcion" model="Model" />
+
+    <form asp-action="Mascotas" asp-route-slug="@Model.Slug" method="post" enctype="multipart/form-data" novalidate class="mu-card p-4 p-md-5">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <h2 class="h5 mb-3">Tu experiencia con mascotas</h2>
+
+        @{ Radios(nameof(Model.Mascotas), "¿Tienes o has tenido mascotas?", De<TenenciaMascotas>(Textos.De), Model.Mascotas?.ToString()); }
+
+        @* HU-031 escenario 1: tipo de mascota y preguntas según el tipo *@
+        <div class="@Oculto(tiene)" data-mostrar-si="Mascotas=Tengo">
+            <fieldset class="mb-3">
+                <legend class="form-label">¿Qué mascotas tienes?</legend>
+                <div class="d-flex flex-wrap gap-2">
+                    @{
+                        Tipo(nameof(Model.TieneGato), "Gato", "bi-heart", Model.TieneGato);
+                        Tipo(nameof(Model.TienePerro), "Perro", "bi-heart", Model.TienePerro);
+                        Tipo(nameof(Model.TieneOtraMascota), "Otra", "bi-plus-circle", Model.TieneOtraMascota);
+                    }
+                </div>
+                <span asp-validation-for="TieneGato"></span>
+            </fieldset>
+
+            <div class="mb-3 @Oculto(Model.TieneOtraMascota)" data-mostrar-si="TieneOtraMascota=true">
+                <label asp-for="OtraMascota" class="form-label"></label>
+                <input asp-for="OtraMascota" class="form-control" maxlength="100" placeholder="Ej.: conejo, hámster, aves" />
+                <span asp-validation-for="OtraMascota"></span>
+            </div>
+
+            <div class="bloque-condicional mb-3 @Oculto(Model.TieneGato)" data-mostrar-si="TieneGato=true">
+                <h3 class="h6 fw-bold mb-3"><i class="bi bi-heart me-2 text-principal" aria-hidden="true"></i>Sobre tu gato</h3>
+                @{
+                    Radios(nameof(Model.GatoUsaArenero), "¿Tu gato usa arenero?", new[] { ("true", "Sí"), ("false", "No") },
+                        Model.GatoUsaArenero?.ToString().ToLowerInvariant());
+                    Radios(nameof(Model.GatoEsterilizacion), "¿Están esterilizados?", De<EsterilizacionMascotas>(Textos.De), Model.GatoEsterilizacion?.ToString());
+                    Radios(nameof(Model.GatoVacunas), "¿Están vacunados?", De<VacunasGato>(Textos.De), Model.GatoVacunas?.ToString());
+                }
+
+                @* HU-031 escenario 2: con las opciones a) o c) se puede adjuntar el carné *@
+                <div class="@Oculto(carneVisible)" data-mostrar-si="GatoVacunas=Completas,Parciales">
+                    <label asp-for="CarneVacunas" class="form-label"></label>
+                    @if (Model.TieneCarne)
+                    {
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2 small">
+                            <span><i class="bi bi-paperclip me-1" aria-hidden="true"></i>Ya adjuntaste tu carné.</span>
+                            <a href="/fundaciones/@Model.Slug/adoptar/formulario/carne" target="_blank" rel="noopener">Ver</a>
+                            <span class="form-check mb-0 ms-2">
+                                <input class="form-check-input" type="checkbox" name="QuitarCarne" id="QuitarCarne" value="true" />
+                                <label class="form-check-label" for="QuitarCarne">Quitarlo</label>
+                            </span>
+                        </div>
+                    }
+                    <label class="zona-archivo" for="CarneVacunas">
+                        <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+                        <span class="fw-semibold" data-nombre-archivo>@(Model.TieneCarne ? "Reemplazar el archivo" : "Selecciona el archivo")</span>
+                        <span class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Documento)</span>
+                    </label>
+                    <input asp-for="CarneVacunas" type="file" class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Documento)" data-archivo />
+                    <span asp-validation-for="CarneVacunas"></span>
+                </div>
+            </div>
+
+            <div class="bloque-condicional mb-3 @Oculto(Model.TienePerro)" data-mostrar-si="TienePerro=true">
+                <h3 class="h6 fw-bold mb-3"><i class="bi bi-heart me-2 text-principal" aria-hidden="true"></i>Sobre tu perro</h3>
+                @{ Radios(nameof(Model.PerroSociabilidad), "¿Tu perro es sociable con los gatos?", De<SociabilidadPerro>(Textos.De), Model.PerroSociabilidad?.ToString()); }
+            </div>
+        </div>
+
+        @* HU-031 escenario 3: si tuvo mascotas, qué ocurrió con ellas *@
+        <div class="mb-3 @Oculto(Model.Mascotas == TenenciaMascotas.Tuve)" data-mostrar-si="Mascotas=Tuve">
+            <label asp-for="QuePasoMascota" class="form-label"></label>
+            <textarea asp-for="QuePasoMascota" class="form-control" rows="3" maxlength="500" placeholder="Ej.: falleció de vejez, se quedó con un familiar…"></textarea>
+            <span asp-validation-for="QuePasoMascota"></span>
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-apoyar btn-lg" data-cargando="Guardando...">Guardar y continuar</button>
+            <a class="btn btn-link" href="/fundaciones/@Model.Slug/adoptar/formulario/datos">Volver a datos personales</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
