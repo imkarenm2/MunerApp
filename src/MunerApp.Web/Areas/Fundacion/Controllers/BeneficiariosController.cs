@@ -31,15 +31,15 @@ public class BeneficiariosController : Controller
     private readonly MunerAppDbContext _db;
     private readonly IEsalActual _esalActual;
     private readonly IAlmacenamientoArchivos _archivos;
-    private readonly INotificacionService _notificaciones;
+    private readonly EstadosBeneficiario _estados;
 
     public BeneficiariosController(MunerAppDbContext db, IEsalActual esalActual, IAlmacenamientoArchivos archivos,
-        INotificacionService notificaciones)
+        EstadosBeneficiario estados)
     {
         _db = db;
         _esalActual = esalActual;
         _archivos = archivos;
-        _notificaciones = notificaciones;
+        _estados = estados;
     }
 
     private const int PorPagina = 12;
@@ -321,24 +321,9 @@ public class BeneficiariosController : Controller
         }
 
         var nuevo = model.Estado.Value;
-        b.Estado = nuevo;
 
-        // Un beneficiario adoptado o fallecido ya no se ofrece para apadrinar (HU-020)
-        var retiradoDeApadrinamiento = b.Apadrinable && !PuedeApadrinarse(nuevo);
-        if (retiradoDeApadrinamiento)
-        {
-            await RetirarDeApadrinamientoAsync(b);
-            await NotificarPadrinosAsync(b, $"{b.Nombre} cambió de estado",
-                $"{b.Nombre} ahora está \"{Textos.De(nuevo)}\" y dejó de ofrecerse para apadrinar. Tu apadrinamiento sigue activo hasta que decidas cancelarlo.");
-        }
-        _db.HistorialEstadosBeneficiario.Add(new HistorialEstadoBeneficiario
-        {
-            EsalId = b.EsalId,
-            BeneficiarioId = b.Id,
-            Estado = nuevo,
-            CambiadoPorId = UsuarioId,
-            Nota = string.IsNullOrWhiteSpace(model.Nota) ? null : model.Nota.Trim()
-        });
+        // Historial con fecha; un beneficiario adoptado o fallecido ya no se ofrece para apadrinar (HU-020)
+        var retiradoDeApadrinamiento = await _estados.CambiarAsync(b, nuevo, UsuarioId, model.Nota);
         await _db.SaveChangesAsync();
 
         if (nuevo == EstadoBeneficiario.Adoptado && !await _db.AdoptantesBeneficiario.AnyAsync(a => a.BeneficiarioId == id))
@@ -438,7 +423,7 @@ public class BeneficiariosController : Controller
     {
         var b = await _db.Beneficiarios.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
         if (b is null) return NotFound();
-        if (!PuedeApadrinarse(b.Estado))
+        if (!EstadosBeneficiario.PuedeApadrinarse(b.Estado))
         {
             TempData["Error"] = $"{b.Nombre} está en estado \"{Textos.De(b.Estado)}\" y no puede ofrecerse para apadrinar.";
             return RedirectToAction(nameof(Detalle), new { id });
@@ -459,7 +444,7 @@ public class BeneficiariosController : Controller
     {
         var b = await _db.Beneficiarios.FirstOrDefaultAsync(x => x.Id == id);
         if (b is null) return NotFound();
-        if (!PuedeApadrinarse(b.Estado))
+        if (!EstadosBeneficiario.PuedeApadrinarse(b.Estado))
         {
             TempData["Error"] = $"{b.Nombre} está en estado \"{Textos.De(b.Estado)}\" y no puede ofrecerse para apadrinar.";
             return RedirectToAction(nameof(Detalle), new { id });
@@ -532,41 +517,14 @@ public class BeneficiariosController : Controller
             return RedirectToAction(nameof(Detalle), new { id });
         }
 
-        await RetirarDeApadrinamientoAsync(b);
-        var avisados = await NotificarPadrinosAsync(b, $"{b.Nombre} ya no se ofrece para apadrinar",
+        await _estados.RetirarDeApadrinamientoAsync(b);
+        var avisados = await _estados.NotificarPadrinosAsync(b, $"{b.Nombre} ya no se ofrece para apadrinar",
             $"La fundación dejó de ofrecer a {b.Nombre} para apadrinar. Tu apadrinamiento sigue activo hasta que decidas cancelarlo.");
         await _db.SaveChangesAsync();
 
         TempData["Mensaje"] = $"{b.Nombre} dejó de mostrarse al público." +
             (avisados > 0 ? $" Avisamos a {avisados} {(avisados == 1 ? "padrino" : "padrinos")}." : "");
         return RedirectToAction(nameof(Detalle), new { id });
-    }
-
-    private static bool PuedeApadrinarse(EstadoBeneficiario estado)
-        => estado is not (EstadoBeneficiario.Adoptado or EstadoBeneficiario.Fallecido);
-
-    /// <summary>Avisa a los padrinos activos del beneficiario (se guarda con el siguiente SaveChanges). Devuelve cuántos son.</summary>
-    private async Task<int> NotificarPadrinosAsync(Beneficiario b, string titulo, string mensaje)
-    {
-        var padrinos = await _db.Apadrinamientos.AsNoTracking()
-            .Where(a => a.BeneficiarioId == b.Id && a.Estado == EstadoApadrinamiento.Activo)
-            .Select(a => new { a.Id, a.PadrinoId })
-            .ToListAsync();
-        foreach (var p in padrinos)
-            _notificaciones.Agregar(p.PadrinoId, titulo, mensaje, $"/mis-apadrinamientos/{p.Id}", "bi-balloon-heart");
-        return padrinos.Count;
-    }
-
-    /// <summary>Deja de mostrarse al público; el texto y el aporte se conservan por si se vuelve a ofrecer.</summary>
-    private async Task RetirarDeApadrinamientoAsync(Beneficiario b)
-    {
-        b.Apadrinable = false;
-        b.FechaApadrinable = null;
-        if (b.FotoPublicaRuta is not null)
-        {
-            await _archivos.EliminarAsync(b.FotoPublicaRuta); // la copia pública ya no debe poder abrirse
-            b.FotoPublicaRuta = null;
-        }
     }
 
     private async Task<ApadrinamientoFormViewModel> FormularioApadrinamientoAsync(Beneficiario b, ApadrinamientoFormViewModel model)

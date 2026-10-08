@@ -22,6 +22,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IEsalActual, EsalActual>();
 builder.Services.AddScoped<InvitacionService>();
 builder.Services.AddScoped<CausasPublicas>();
+builder.Services.AddScoped<EstadosBeneficiario>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // ---- Identity (documento de diseño, sección 9) ----
