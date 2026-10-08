@@ -1,0 +1,34 @@
+@model FormularioAdopcionViewModel
+@{
+    ViewData["Title"] = "Solicitud de adopción · " + Model.NombreEsal;
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Adopción en")' />
+
+    <h1 class="h2 mb-1">Solicitud de adopción</h1>
+    <p class="text-suave mb-4">Aceptaste las recomendaciones. El formulario tiene tres secciones y tu avance se guarda en cada una.</p>
+
+    <div class="mu-card p-4 p-md-5">
+        <div class="paso-donar">
+            <span class="paso-numero">1</span>
+            <div>
+                <h2 class="h6 fw-bold mb-1">Tus datos personales y de contacto</h2>
+                <p class="small text-suave mb-0">Nombre, cédula, edad, celular, dirección, ocupación y una referencia personal.</p>
+            </div>
+        </div>
+        <div class="paso-donar">
+            <span class="paso-numero">2</span>
+            <div>
+                <h2 class="h6 fw-bold mb-1">Tu experiencia con mascotas</h2>
+                <p class="small text-suave mb-0">Si tienes o tuviste mascotas y cómo las cuidas.</p>
+            </div>
+        </div>
+        <div class="paso-donar">
+            <span class="paso-numero">3</span>
+            <div>
+                <h2 class="h6 fw-bold mb-1">Tu hogar y compromisos</h2>
+                <p class="small text-suave mb-0">Vivienda, convivientes, costos, visita de seguimiento y autorización de datos.</p>
+            </div>
+        </div>
+    </div>
+</div>

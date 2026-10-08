@@ -209,8 +209,9 @@
                 <div class="row g-3">
                     @foreach (var f in Model.FormasAyuda)
                     {
+                        // Las recomendaciones de adopción se pueden leer sin cuenta: la sesión se pide al aceptarlas (HU-029)
                         var destino = f.Url is null ? null
-                            : (f.RequiereCuenta && !autenticado ? "/Cuenta/IniciarSesion?returnUrl=" + Uri.EscapeDataString(f.Url) : f.Url);
+                            : (f.RequiereCuenta && !autenticado && f.Codigo != CodigosModulo.Adopcion ? "/Cuenta/IniciarSesion?returnUrl=" + Uri.EscapeDataString(f.Url) : f.Url);
                         <div class="col-12 col-md-6">
                             <div class="mu-card p-4 h-100 d-flex flex-column @(f.Disponible ? "" : "forma-pronto")">
                                 <div class="d-flex align-items-start gap-3 mb-2">
@@ -232,6 +233,10 @@
                                 {
                                     <p class="small text-suave mb-0"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Las cuentas de una fundación no pueden postularse como voluntarias.</p>
                                 }
+                                else if (f.Disponible && f.Codigo == CodigosModulo.Adopcion && cuentaDeFundacion)
+                                {
+                                    <p class="small text-suave mb-0"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Las cuentas de una fundación no pueden solicitar adopciones.</p>
+                                }
                                 else if (f.Disponible && destino is not null)
                                 {
                                     <a class="btn @(f.Codigo == CodigosModulo.Donaciones ? "btn-apoyar" : "btn-outline-primary") align-self-start" href="@destino">
@@ -242,6 +247,10 @@
                                         else if (f.Codigo == CodigosModulo.Beneficiarios)
                                         {
                                             <text>Conocer a los apadrinables</text>
+                                        }
+                                        else if (f.Codigo == CodigosModulo.Adopcion)
+                                        {
+                                            <text>Ver cómo adoptar</text>
                                         }
                                         else if (!autenticado)
                                         {
