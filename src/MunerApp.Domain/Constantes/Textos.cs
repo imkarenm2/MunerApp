@@ -105,4 +105,11 @@ public static class Textos
         EstadoCausa.Cerrada => "Cerrada",
         _ => e.ToString()
     };
+
+    public static string De(EstadoSolicitudAdopcion e) => e switch
+    {
+        EstadoSolicitudAdopcion.Borrador => "En diligenciamiento",
+        EstadoSolicitudAdopcion.Recibida => "Recibida",
+        _ => e.ToString()
+    };
 }

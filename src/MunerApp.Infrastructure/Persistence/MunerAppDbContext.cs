@@ -43,6 +43,10 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<Causa> Causas => Set<Causa>();
     public DbSet<FotoCausa> FotosCausa => Set<FotoCausa>();
 
+    // Sprint 5
+    public DbSet<ConfigAdopcion> ConfigAdopciones => Set<ConfigAdopcion>();
+    public DbSet<SolicitudAdopcion> SolicitudesAdopcion => Set<SolicitudAdopcion>();
+
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
     // Superadministrador, tareas internas (seed, migraciones) y usuarios sin ESAL no se filtran:
@@ -319,6 +323,28 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne(x => x.Causa).WithMany(x => x.Fotos).HasForeignKey(x => x.CausaId).OnDelete(DeleteBehavior.Cascade);
         });
 
+        // ---------------- Sprint 5 ----------------
+
+        builder.Entity<ConfigAdopcion>(e =>
+        {
+            e.ToTable("ConfigAdopcion");
+            e.HasKey(x => x.EsalId);
+            e.Property(x => x.Recomendaciones).HasMaxLength(3000).IsRequired();
+            e.HasOne(x => x.Esal).WithOne().HasForeignKey<ConfigAdopcion>(x => x.EsalId);
+        });
+
+        builder.Entity<SolicitudAdopcion>(e =>
+        {
+            e.ToTable("SolicitudAdopcion");
+            e.Property(x => x.UsuarioId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.HasIndex(x => new { x.EsalId, x.Estado });
+            // Una persona solo tiene un borrador por fundación: si vuelve, continúa el mismo
+            e.HasIndex(x => new { x.EsalId, x.UsuarioId }).IsUnique().HasFilter("[Estado] = N'Borrador'");
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
@@ -337,6 +363,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<Apadrinamiento>(builder);
         AplicarFiltroEsal<Causa>(builder);
         AplicarFiltroEsal<FotoCausa>(builder);
+        AplicarFiltroEsal<ConfigAdopcion>(builder);
+        AplicarFiltroEsal<SolicitudAdopcion>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal
