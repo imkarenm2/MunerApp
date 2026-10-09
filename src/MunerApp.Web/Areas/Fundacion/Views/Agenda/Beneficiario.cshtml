@@ -1,0 +1,79 @@
+@model AgendaBeneficiarioViewModel
+@{
+    ViewData["Title"] = "Agenda de salud de " + Model.Nombre;
+    ViewData["Seccion"] = "Agenda";
+    ViewData["Volver"] = "beneficiario"; // las acciones de cada evento regresan a esta agenda
+    var eventosPendientes = Model.Pendientes.Sum(d => d.Eventos.Count);
+}
+<div class="container py-4 py-md-5" style="max-width: 860px">
+    <a asp-controller="Beneficiarios" asp-action="Detalle" asp-route-id="@Model.BeneficiarioId" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Hoja de vida de @Model.Nombre</a>
+
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mt-2 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Agenda de salud</h1>
+            <p class="text-suave mb-0">
+                @Model.Nombre · @Formatos.Edad(Model.FechaNacimiento) · <partial name="_EstadoBeneficiario" model="Model.Estado" />
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-primary" asp-controller="HistoriaClinica" asp-action="Index" asp-route-id="@Model.BeneficiarioId"><i class="bi bi-journal-medical me-1" aria-hidden="true"></i>Historia clínica</a>
+            @if (Model.PuedeProgramar)
+            {
+                <a class="btn btn-primary" asp-action="Programar" asp-route-beneficiarioId="@Model.BeneficiarioId"><i class="bi bi-calendar-plus me-1" aria-hidden="true"></i>Programar evento</a>
+            }
+        </div>
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    @if (!Model.PuedeProgramar)
+    {
+        <div class="alert alert-info small">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+            <div>@Model.Nombre está "@Textos.De(Model.Estado)": ya no se le programan eventos de salud.</div>
+        </div>
+    }
+
+    <h2 class="h5 fw-bold mb-3">Pendientes <span class="text-suave fw-normal">(@eventosPendientes)</span></h2>
+    @if (Model.Pendientes.Count == 0)
+    {
+        <div class="estado-vacio mb-4">
+            <div class="icono-circulo mb-3"><i class="bi bi-calendar-heart" aria-hidden="true"></i></div>
+            <h3 class="h6">@Model.Nombre no tiene eventos pendientes</h3>
+            @if (Model.PuedeProgramar)
+            {
+                <p class="text-suave small">Programa su medicación, vacunas o controles para que nadie los olvide.</p>
+                <a class="btn btn-primary" asp-action="Programar" asp-route-beneficiarioId="@Model.BeneficiarioId">Programar evento</a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="mb-4">
+            @foreach (var dia in Model.Pendientes)
+            {
+                <section aria-label="@Formatos.Dia(dia.Dia)">
+                    <h3 class="dia-agenda">@Formatos.Dia(dia.Dia)</h3>
+                    <div class="d-grid gap-2">
+                        @foreach (var e in dia.Eventos)
+                        {
+                            <partial name="_EventoAgenda" model="e" />
+                        }
+                    </div>
+                </section>
+            }
+        </div>
+    }
+
+    @if (Model.Historial.Count > 0)
+    {
+        <h2 class="h5 fw-bold mb-1 mt-5">Realizados y cancelados</h2>
+        <p class="small text-suave mb-3">Los realizados quedaron registrados en la historia clínica.</p>
+        <div class="d-grid gap-2">
+            @foreach (var e in Model.Historial)
+            {
+                <partial name="_EventoAgenda" model="e" />
+            }
+        </div>
+    }
+</div>

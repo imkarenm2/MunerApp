@@ -1031,3 +1031,9 @@ details.rechazo summary::-webkit-details-marker { display: none; }
 /* Preguntas que dependen de una respuesta anterior (HU-031, HU-032) */
 .bloque-condicional { padding: 1.25rem; border-radius: var(--mu-radio); background: #FBFAF8; border: 1px solid var(--mu-borde); }
 .bloque-condicional fieldset:last-child, .bloque-condicional > div:last-child { margin-bottom: 0 !important; }
+
+/* ---------- Agenda de salud (HU-038) ---------- */
+.evento-agenda.atrasado { border-left: 4px solid var(--mu-alerta, #e0a030); }
+.dia-agenda { font-size: .95rem; font-weight: 700; margin: 1.5rem 0 .75rem; }
+.dia-agenda:first-child { margin-top: 0; }
+.vista-previa-tratamiento { background: var(--mu-acento-suave); border-radius: .75rem; padding: .75rem 1rem; }

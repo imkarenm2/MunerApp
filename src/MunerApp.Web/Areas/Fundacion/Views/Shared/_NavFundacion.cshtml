@@ -34,6 +34,10 @@
     {
         <a class="nav-link @Activa("Beneficiarios")" asp-area="Fundacion" asp-controller="Beneficiarios" asp-action="Index"><i class="bi bi-balloon-heart me-1" aria-hidden="true"></i>Beneficiarios</a>
     }
+    @if (verSalud && moduloBeneficiarios)
+    {
+        <a class="nav-link @Activa("Agenda")" asp-area="Fundacion" asp-controller="Agenda" asp-action="Index"><i class="bi bi-calendar-heart me-1" aria-hidden="true"></i>Agenda</a>
+    }
     @if (verSalud)
     {
         <a class="nav-link @Activa("Medicamentos")" asp-area="Fundacion" asp-controller="Medicamentos" asp-action="Index"><i class="bi bi-capsule me-1" aria-hidden="true"></i>Medicamentos</a>

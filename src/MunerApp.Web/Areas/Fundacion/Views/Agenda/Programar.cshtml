@@ -1,0 +1,204 @@
+@model ProgramarEventoViewModel
+@{
+    ViewData["Title"] = "Programar evento de salud";
+    ViewData["Seccion"] = "Agenda";
+    var hoy = Formatos.Local(DateTime.UtcNow).Date.ToString("yyyy-MM-dd");
+    var fijo = Model.NombreBeneficiario is not null;
+    var iconos = new Dictionary<TipoEventoClinico, string>
+    {
+        [TipoEventoClinico.Vacuna] = "bi-shield-plus",
+        [TipoEventoClinico.Tratamiento] = "bi-capsule",
+        [TipoEventoClinico.Control] = "bi-clipboard2-pulse",
+        [TipoEventoClinico.Otro] = "bi-journal-medical"
+    };
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    @if (fijo)
+    {
+        <a asp-action="Beneficiario" asp-route-id="@Model.BeneficiarioId" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Agenda de @Model.NombreBeneficiario</a>
+    }
+    else
+    {
+        <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Agenda de salud</a>
+    }
+    <h1 class="h2 mt-2 mb-1">Programar evento de salud</h1>
+    <p class="text-suave mb-4">Aparecerá en la agenda del beneficiario y en la agenda general. Al marcarlo como realizado quedará en su historia clínica.</p>
+
+    <form asp-action="Programar" method="post" novalidate class="mu-card p-4 p-md-5">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <div class="row g-3">
+            <div class="col-12">
+                @if (fijo)
+                {
+                    <span class="form-label d-block">Beneficiario</span>
+                    <p class="fw-bold mb-0">@Model.NombreBeneficiario</p>
+                    <input type="hidden" asp-for="BeneficiarioId" />
+                }
+                else
+                {
+                    <label asp-for="BeneficiarioId" class="form-label"></label>
+                    <select asp-for="BeneficiarioId" class="form-select">
+                        <option value="">Selecciona…</option>
+                        @foreach (var b in Model.Beneficiarios)
+                        {
+                            <option value="@b.Id" selected="@(Model.BeneficiarioId == b.Id)">@b.Nombre (@Textos.De(b.Estado))</option>
+                        }
+                    </select>
+                    <span asp-validation-for="BeneficiarioId"></span>
+                }
+            </div>
+
+            <div class="col-12">
+                <span class="form-label d-block" id="etiqueta-tipo">Tipo de evento</span>
+                <div class="d-flex flex-wrap gap-2" role="radiogroup" aria-labelledby="etiqueta-tipo">
+                    @foreach (var t in Enum.GetValues<TipoEventoClinico>())
+                    {
+                        <div>
+                            <input type="radio" class="btn-check" name="Tipo" id="tipo-@t" value="@t" checked="@(Model.Tipo == t)" data-val="true" data-val-required="Selecciona el tipo de evento." />
+                            <label class="chip" for="tipo-@t"><i class="bi @iconos[t] me-2" aria-hidden="true"></i>@Textos.De(t)</label>
+                        </div>
+                    }
+                </div>
+                <span asp-validation-for="Tipo"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Descripcion" class="form-label"></label>
+                <input asp-for="Descripcion" class="form-control" maxlength="300" autocomplete="off"
+                       placeholder="Ej.: Antibiótico para los ojos · Refuerzo de la triple felina · Control de peso" />
+                <span asp-validation-for="Descripcion"></span>
+            </div>
+
+            <div class="col-12 col-sm-7" data-mostrar-si="Tipo=Tratamiento,Vacuna,Otro">
+                <label asp-for="MedicamentoId" class="form-label"></label>
+                <select asp-for="MedicamentoId" class="form-select" id="MedicamentoId">
+                    <option value="">@(Model.HayInventario ? "Ninguno" : "No hay medicamentos vigentes en el inventario")</option>
+                    @foreach (var m in Model.Medicamentos)
+                    {
+                        <option value="@m.Id" selected="@(Model.MedicamentoId == m.Id)" data-dosis="@m.Dosis">@m.Nombre (@Textos.De(m.Presentacion).ToLowerInvariant())</option>
+                    }
+                </select>
+                <span asp-validation-for="MedicamentoId"></span>
+            </div>
+            <div class="col-12 col-sm-5" data-mostrar-si="Tipo=Tratamiento,Vacuna,Otro">
+                <label asp-for="Dosis" class="form-label"></label>
+                <input asp-for="Dosis" class="form-control" maxlength="150" autocomplete="off" placeholder="Ej.: 1 gota en cada ojo" />
+                <span asp-validation-for="Dosis"></span>
+            </div>
+
+            <div class="col-12">
+                <span class="form-label d-block" id="etiqueta-recurrente">¿Cuántas veces?</span>
+                <div class="d-flex flex-wrap gap-2" role="radiogroup" aria-labelledby="etiqueta-recurrente">
+                    <div>
+                        <input type="radio" class="btn-check" name="Recurrente" id="recurrente-no" value="false" checked="@(!Model.Recurrente)" />
+                        <label class="chip" for="recurrente-no"><i class="bi bi-calendar-event me-2" aria-hidden="true"></i>Una sola vez</label>
+                    </div>
+                    <div>
+                        <input type="radio" class="btn-check" name="Recurrente" id="recurrente-si" value="true" checked="@Model.Recurrente" />
+                        <label class="chip" for="recurrente-si"><i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>Tratamiento de varias dosis</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6">
+                <label asp-for="Fecha" class="form-label"><span data-mostrar-si="Recurrente=false">Fecha</span><span data-mostrar-si="Recurrente=true">Primera dosis</span></label>
+                <input asp-for="Fecha" type="date" class="form-control" min="@hoy" />
+                <span asp-validation-for="Fecha"></span>
+            </div>
+            <div class="col-6">
+                <label asp-for="Hora" class="form-label"></label>
+                <input asp-for="Hora" type="time" class="form-control" asp-format="{0:hh\:mm}" />
+                <span asp-validation-for="Hora"></span>
+            </div>
+
+            @* Escenario 3: frecuencia y duración del tratamiento *@
+            <div class="col-12" data-mostrar-si="Recurrente=true">
+                <div class="bloque-condicional">
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-7">
+                            <label asp-for="FrecuenciaCada" class="form-label">Se repite cada</label>
+                            <div class="input-group">
+                                <input asp-for="FrecuenciaCada" type="text" inputmode="numeric" class="form-control" maxlength="3" />
+                                <select asp-for="FrecuenciaUnidad" class="form-select" aria-label="Unidad de la frecuencia">
+                                    <option value="@UnidadFrecuencia.Horas" selected="@(Model.FrecuenciaUnidad == UnidadFrecuencia.Horas)">horas</option>
+                                    <option value="@UnidadFrecuencia.Dias" selected="@(Model.FrecuenciaUnidad == UnidadFrecuencia.Dias)">días</option>
+                                </select>
+                            </div>
+                            <span asp-validation-for="FrecuenciaCada"></span>
+                        </div>
+                        <div class="col-12 col-sm-5">
+                            <label asp-for="DuracionDias" class="form-label"></label>
+                            <input asp-for="DuracionDias" type="text" inputmode="numeric" class="form-control" maxlength="3" />
+                            <span asp-validation-for="DuracionDias"></span>
+                        </div>
+                        <div class="col-12">
+                            <p class="vista-previa-tratamiento small mb-0" id="vista-previa" aria-live="polite">
+                                Indica la frecuencia y la duración para ver cuántas dosis se programarán.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-calendar-plus me-1" aria-hidden="true"></i>Programar</button>
+            @if (fijo)
+            {
+                <a class="btn btn-link" asp-action="Beneficiario" asp-route-id="@Model.BeneficiarioId">Cancelar</a>
+            }
+            else
+            {
+                <a class="btn btn-link" asp-action="Index">Cancelar</a>
+            }
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Vista previa del tratamiento (HU-038 escenario 3). Usa la misma regla que el servidor
+        // (EventoAgenda.FechasDeTratamiento): dosis desde el inicio, cada intervalo, antes de cumplir la duración.
+        (function () {
+            var form = document.querySelector('form[action*="Programar"]');
+            var previa = document.getElementById('vista-previa');
+            if (!form || !previa) return;
+            var maxDosis = @MunerApp.Domain.Entities.EventoAgenda.MaxDosisPorTratamiento;
+            var formato = new Intl.DateTimeFormat('es-CO', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+
+            function valor(nombre) { var c = form.elements[nombre]; return c ? c.value : ''; }
+
+            function actualizar() {
+                var cada = parseInt(valor('FrecuenciaCada'), 10);
+                var dias = parseInt(valor('DuracionDias'), 10);
+                var fecha = valor('Fecha'), hora = valor('Hora');
+                var horas = valor('FrecuenciaUnidad') === 'Dias' ? cada * 24 : cada;
+                if (!(cada > 0) || !(dias > 0) || !fecha || !hora) {
+                    previa.textContent = 'Indica la frecuencia, la duración, la fecha y la hora para ver cuántas dosis se programarán.';
+                    return;
+                }
+                var inicio = new Date(fecha + 'T' + hora.substring(0, 5));
+                var fin = new Date(inicio.getTime() + dias * 86400000);
+                var paso = horas * 3600000, n = 0, ultima = inicio;
+                for (var t = inicio.getTime(); t < fin.getTime() && n <= maxDosis; t += paso) { n++; ultima = new Date(t); }
+                if (n > maxDosis) previa.textContent = 'Serían más de ' + maxDosis + ' dosis: revisa la frecuencia y la duración.';
+                else if (n < 2) previa.textContent = 'Con esa frecuencia y duración habría una sola dosis: prográmalo como evento único.';
+                else previa.innerHTML = '<i class="bi bi-calendar-check me-1" aria-hidden="true"></i>Se programarán <strong>' + n +
+                    ' dosis</strong>. Primera: ' + formato.format(inicio) + ' · Última: ' + formato.format(ultima);
+            }
+
+            // Al elegir un medicamento se sugiere su dosis habitual si el campo está vacío
+            var medicamento = document.getElementById('MedicamentoId');
+            var dosis = form.elements['Dosis'];
+            if (medicamento && dosis) medicamento.addEventListener('change', function () {
+                var sugerida = medicamento.selectedOptions[0] && medicamento.selectedOptions[0].getAttribute('data-dosis');
+                if (sugerida && !dosis.value.trim()) dosis.value = sugerida;
+            });
+
+            form.addEventListener('input', actualizar);
+            form.addEventListener('change', actualizar);
+            actualizar();
+        })();
+    </script>
+}

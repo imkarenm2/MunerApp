@@ -1,0 +1,101 @@
+@model RealizarEventoViewModel
+@{
+    ViewData["Title"] = "Marcar evento como realizado";
+    ViewData["Seccion"] = "Agenda";
+    var e = Model.Evento;
+    var hoy = Formatos.Local(DateTime.UtcNow).Date.ToString("yyyy-MM-dd");
+    var enBeneficiario = Model.Volver == "beneficiario";
+    var unidad = Model.Presentacion is PresentacionMedicamento p ? Textos.UnidadDe(p) : "";
+}
+<div class="container py-4 py-md-5" style="max-width: 720px">
+    @if (enBeneficiario)
+    {
+        <a asp-action="Beneficiario" asp-route-id="@e.BeneficiarioId" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Agenda de @e.Beneficiario</a>
+    }
+    else
+    {
+        <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Agenda de salud</a>
+    }
+    <h1 class="h2 mt-2 mb-1">Marcar como realizado</h1>
+    <p class="text-suave mb-4">Se registrará automáticamente en la historia clínica de <strong>@e.Beneficiario</strong>, donde no se podrá editar ni borrar.</p>
+
+    <div class="mu-card p-4 mb-3">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="fw-bold">@Textos.De(e.Tipo)</span>
+            <span class="text-suave small">· programado para el @Formatos.FechaHora(e.FechaProgramada)</span>
+            @if (e.EsRecurrente)
+            {
+                <span class="mu-badge"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Dosis @e.NumeroDosis de @e.TotalDosis</span>
+            }
+            @if (e.Atrasado)
+            {
+                <span class="mu-badge alerta"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i>Atrasado</span>
+            }
+        </div>
+        <p class="mb-1 texto-largo">@e.Descripcion</p>
+        @if (e.Medicamento is not null || e.Dosis is not null)
+        {
+            <p class="small text-suave mb-0">
+                @if (e.Medicamento is not null)
+                {
+                    <span><i class="bi bi-capsule me-1" aria-hidden="true"></i>@e.Medicamento</span>
+                }
+                @if (e.Dosis is not null)
+                {
+                    <span>@(e.Medicamento is null ? "" : " · ")Dosis: @e.Dosis</span>
+                }
+            </p>
+        }
+    </div>
+
+    <form asp-action="Realizar" asp-route-id="@Model.Id" method="post" novalidate class="mu-card p-4 p-md-5"
+          data-confirmar="Quedará en la historia clínica de @e.Beneficiario y no se podrá editar ni borrar."
+          data-confirmar-titulo="¿Marcar como realizado?" data-confirmar-boton="Sí, registrar">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <input type="hidden" asp-for="Volver" />
+        <div class="row g-3">
+            <div class="col-12 col-sm-6">
+                <label asp-for="Fecha" class="form-label"></label>
+                <input asp-for="Fecha" type="date" class="form-control" max="@hoy" />
+                <span asp-validation-for="Fecha"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="Responsable" class="form-label"></label>
+                <input asp-for="Responsable" class="form-control" maxlength="150" placeholder="Quién atendió o aplicó" autocomplete="off" />
+                <span asp-validation-for="Responsable"></span>
+            </div>
+            @if (Model.Disponible is decimal disponible)
+            {
+                <div class="col-12">
+                    <label asp-for="CantidadDescontar" class="form-label"></label>
+                    <div class="input-group" style="max-width: 320px">
+                        <input asp-for="CantidadDescontar" type="text" inputmode="decimal" class="form-control" maxlength="12" placeholder="Ej.: 1 o 0,5" autocomplete="off" />
+                        <span class="input-group-text">@unidad</span>
+                    </div>
+                    <div class="form-text">Hay @Formatos.Cantidad(disponible) @unidad de @e.Medicamento. Si lo dejas vacío, el inventario no cambia.</div>
+                    <span asp-validation-for="CantidadDescontar"></span>
+                </div>
+            }
+            <div class="col-12">
+                <label asp-for="Nota" class="form-label"></label>
+                <textarea asp-for="Nota" class="form-control" rows="3" maxlength="500" placeholder="Ej.: Lo recibió sin problema. Sin reacciones."></textarea>
+                <span asp-validation-for="Nota"></span>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-4">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-1" aria-hidden="true"></i>Marcar como realizado</button>
+            @if (enBeneficiario)
+            {
+                <a class="btn btn-link" asp-action="Beneficiario" asp-route-id="@e.BeneficiarioId">Volver</a>
+            }
+            else
+            {
+                <a class="btn btn-link" asp-action="Index">Volver</a>
+            }
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

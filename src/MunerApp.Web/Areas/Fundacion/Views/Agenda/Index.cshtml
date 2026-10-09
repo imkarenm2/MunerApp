@@ -1,0 +1,82 @@
+@model AgendaGeneralViewModel
+@{
+    ViewData["Title"] = "Agenda de salud";
+    ViewData["Seccion"] = "Agenda";
+    int Conteo(VistaAgenda v) => v switch
+    {
+        VistaAgenda.Proximos => Model.Proximos,
+        VistaAgenda.Atrasados => Model.Atrasados,
+        VistaAgenda.MasAdelante => Model.MasAdelante,
+        _ => -1
+    };
+}
+<div class="container py-4 py-md-5" style="max-width: 960px">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Agenda de salud</h1>
+            <p class="text-suave mb-0">Medicación, vacunas y controles programados de todos los beneficiarios.</p>
+        </div>
+        <a class="btn btn-primary" asp-action="Programar"><i class="bi bi-calendar-plus me-1" aria-hidden="true"></i>Programar evento</a>
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    <ul class="nav nav-tabs pestanas mb-3" role="tablist">
+        @foreach (var p in AgendaGeneralViewModel.Pestanas)
+        {
+            var activa = Model.Vista == p.Vista;
+            var conteo = Conteo(p.Vista);
+            <li class="nav-item">
+                <a class="nav-link @(activa ? "active" : "")" asp-action="Index" asp-route-vista="@p.Vista" aria-current="@(activa ? "page" : null)">
+                    <i class="bi @p.Icono me-1" aria-hidden="true"></i>@p.Texto
+                    @if (conteo >= 0)
+                    {
+                        <span class="badge rounded-pill @(p.Vista == VistaAgenda.Atrasados && conteo > 0 ? "text-bg-warning" : "text-bg-light") ms-1">@conteo</span>
+                    }
+                </a>
+            </li>
+        }
+    </ul>
+
+    @if (Model.Vista == VistaAgenda.Atrasados && Model.Atrasados > 0)
+    {
+        <div class="alert alert-warning small">
+            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+            <div>Estos eventos ya pasaron su hora y siguen pendientes. Márcalos como realizados si se hicieron, o cancélalos.</div>
+        </div>
+    }
+
+    @if (Model.Dias.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo exito mb-3"><i class="bi bi-calendar-check" aria-hidden="true"></i></div>
+            <h2 class="h5">@(Model.Vista switch
+            {
+                VistaAgenda.Atrasados => "No hay eventos atrasados.",
+                VistaAgenda.MasAdelante => "No hay eventos programados más adelante.",
+                VistaAgenda.Realizados => "Aún no se ha marcado ningún evento como realizado.",
+                _ => $"No hay eventos en los próximos {AgendaGeneralViewModel.DiasProximos} días."
+            })</h2>
+            @if (Model.Vista != VistaAgenda.Realizados)
+            {
+                <p class="text-suave">Programa la medicación, las vacunas y los controles para no olvidar ninguna fecha.</p>
+                <a class="btn btn-primary" asp-action="Programar">Programar evento</a>
+            }
+        </div>
+    }
+    else
+    {
+        @foreach (var dia in Model.Dias)
+        {
+            <section aria-label="@Formatos.Dia(dia.Dia)">
+                <h2 class="dia-agenda">@Formatos.Dia(dia.Dia) <span class="text-suave fw-normal small">· @dia.Eventos.Count @(dia.Eventos.Count == 1 ? "evento" : "eventos")</span></h2>
+                <div class="d-grid gap-2">
+                    @foreach (var e in dia.Eventos)
+                    {
+                        <partial name="_EventoAgenda" model="e" />
+                    }
+                </div>
+            </section>
+        }
+    }
+</div>

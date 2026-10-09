@@ -28,6 +28,21 @@ public static class Formatos
     /// <summary>3 de octubre de 2026, 4:35 p. m.</summary>
     public static string FechaHora(DateTime utc) => Local(utc).ToString("d 'de' MMMM 'de' yyyy, h:mm tt", Co);
 
+    /// <summary>4:35 p. m. (hora de Colombia de un momento guardado en UTC).</summary>
+    public static string Hora(DateTime utc) => Local(utc).ToString("h:mm tt", Co);
+
+    /// <summary>"Hoy", "Mañana", "Ayer" o "lunes 12 de octubre" (para agrupar una agenda por día).</summary>
+    public static string Dia(DateTime diaLocal)
+    {
+        var hoy = Local(DateTime.UtcNow).Date;
+        var dia = diaLocal.Date;
+        var nombre = dia.ToString(dia.Year == hoy.Year ? "dddd d 'de' MMMM" : "dddd d 'de' MMMM 'de' yyyy", Co);
+        if (dia == hoy) return "Hoy · " + nombre;
+        if (dia == hoy.AddDays(1)) return "Mañana · " + nombre;
+        if (dia == hoy.AddDays(-1)) return "Ayer · " + nombre;
+        return char.ToUpper(nombre[0], Co) + nombre[1..];
+    }
+
     /// <summary>"hace 5 minutos", "hace 2 días"...</summary>
     public static string Hace(DateTime utc)
     {

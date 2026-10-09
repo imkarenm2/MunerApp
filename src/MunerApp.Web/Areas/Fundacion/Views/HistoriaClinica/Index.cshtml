@@ -20,7 +20,13 @@
                 @Model.Nombre · @Formatos.Edad(Model.FechaNacimiento) · <partial name="_EstadoBeneficiario" model="Model.Estado" />
             </p>
         </div>
-        <a class="btn btn-primary" asp-action="Crear" asp-route-id="@Model.BeneficiarioId"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Registrar evento</a>
+        <div class="d-flex flex-wrap gap-2">
+            @if (Model.TieneAgenda)
+            {
+                <a class="btn btn-outline-primary" asp-controller="Agenda" asp-action="Beneficiario" asp-route-id="@Model.BeneficiarioId"><i class="bi bi-calendar-heart me-1" aria-hidden="true"></i>Agenda de salud</a>
+            }
+            <a class="btn btn-primary" asp-action="Crear" asp-route-id="@Model.BeneficiarioId"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Registrar evento</a>
+        </div>
     </div>
 
     <partial name="_NavFundacion" />
