@@ -240,7 +240,7 @@ public class BoletinController : Controller
         {
             if (model.FechaEvento is null)
                 ModelState.AddModelError(nameof(model.FechaEvento), "Indica la fecha y la hora del evento.");
-            else if (nueva && Formatos.AUtc(model.FechaEvento.Value) <= DateTime.UtcNow)
+            else if (nueva && Formatos.Utc(model.FechaEvento.Value) <= DateTime.UtcNow)
                 ModelState.AddModelError(nameof(model.FechaEvento), "La fecha del evento debe ser futura.");
             else if (model.FechaEvento > DateTime.Today.AddYears(2))
                 ModelState.AddModelError(nameof(model.FechaEvento), "La fecha del evento no puede superar los 2 años.");
@@ -278,7 +278,7 @@ public class BoletinController : Controller
         p.Categoria = model.Categoria;
         p.Resumen = string.IsNullOrWhiteSpace(model.Resumen) ? null : model.Resumen.Trim();
         p.Contenido = model.Contenido.Trim();
-        p.FechaEvento = esEvento && model.FechaEvento is DateTime f ? Formatos.AUtc(f) : null;
+        p.FechaEvento = esEvento && model.FechaEvento is DateTime f ? Formatos.Utc(f) : null;
         p.LugarEvento = esEvento ? model.LugarEvento?.Trim() : null;
         p.CausaId = model.CausaId;
     }

@@ -1,0 +1,34 @@
+@* Pasos del formulario de adopción: se puede volver a las secciones ya guardadas *@
+@model SeccionAdopcionViewModel
+@{
+    var secciones = new[]
+    {
+        (Numero: 1, Titulo: "Datos personales", Accion: "datos"),
+        (Numero: 2, Titulo: "Mascotas", Accion: "mascotas"),
+        (Numero: 3, Titulo: "Hogar y compromisos", Accion: "hogar")
+    };
+}
+<ol class="pasos-adopcion" aria-label="Secciones del formulario">
+    @foreach (var s in secciones)
+    {
+        var actual = s.Numero == Model.Seccion;
+        var completa = s.Numero <= Model.SeccionesCompletadas;
+        var clase = actual ? "actual" : completa ? "completo" : "";
+        var icono = completa && !actual ? "<i class=\"bi bi-check-lg\" aria-hidden=\"true\"></i>" : s.Numero.ToString();
+        <li>
+            @if (!actual && s.Numero <= Model.SeccionesCompletadas + 1)
+            {
+                <a class="paso @clase" href="/fundaciones/@Model.Slug/adoptar/formulario/@s.Accion">
+                    <span class="paso-icono">@Html.Raw(icono)</span><span class="paso-texto">@s.Titulo</span>
+                    @if (completa) { <span class="visually-hidden">(guardada)</span> }
+                </a>
+            }
+            else
+            {
+                <span class="paso @clase" aria-current="@(actual ? "step" : null)">
+                    <span class="paso-icono">@Html.Raw(icono)</span><span class="paso-texto">@s.Titulo</span>
+                </span>
+            }
+        </li>
+    }
+</ol>

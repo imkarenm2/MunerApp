@@ -1,0 +1,13 @@
+@model EstadoSolicitudAdopcion
+@{
+    var (clase, icono) = Model switch
+    {
+        EstadoSolicitudAdopcion.AprobadaParaCita => ("exito", "bi-house-check"),
+        EstadoSolicitudAdopcion.CitaAgendada => ("acento", "bi-calendar-check"),
+        EstadoSolicitudAdopcion.AdopcionConcretada => ("exito", "bi-heart-fill"),
+        EstadoSolicitudAdopcion.Rechazada => ("error", "bi-x-circle"),
+        EstadoSolicitudAdopcion.NoConcretada => ("error", "bi-dash-circle"),
+        _ => ("alerta", "bi-hourglass-split")
+    };
+}
+<span class="mu-badge @clase"><i class="bi @icono" aria-hidden="true"></i>@Textos.De(Model)</span>

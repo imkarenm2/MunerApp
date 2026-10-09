@@ -106,6 +106,77 @@ public static class Textos
         _ => e.ToString()
     };
 
+    public static string De(EstadoSolicitudAdopcion e) => e switch
+    {
+        EstadoSolicitudAdopcion.Borrador => "En diligenciamiento",
+        EstadoSolicitudAdopcion.Recibida => "Recibida",
+        EstadoSolicitudAdopcion.AprobadaParaCita => "Aprobada para cita",
+        EstadoSolicitudAdopcion.Rechazada => "Rechazada",
+        EstadoSolicitudAdopcion.CitaAgendada => "Cita agendada",
+        EstadoSolicitudAdopcion.AdopcionConcretada => "Adopción concretada",
+        EstadoSolicitudAdopcion.NoConcretada => "Adopción no concretada",
+        _ => e.ToString()
+    };
+
+    public static string De(OcupacionAdoptante o) => o switch
+    {
+        OcupacionAdoptante.Empleado => "Empleado",
+        OcupacionAdoptante.Independiente => "Independiente",
+        OcupacionAdoptante.Estudiante => "Estudiante",
+        OcupacionAdoptante.Pensionado => "Pensionado",
+        OcupacionAdoptante.Hogar => "Labores del hogar",
+        OcupacionAdoptante.Desempleado => "Sin empleo actualmente",
+        _ => o.ToString()
+    };
+
+    public static string De(TenenciaMascotas t) => t switch
+    {
+        TenenciaMascotas.Tengo => "Sí, tengo mascotas",
+        TenenciaMascotas.Tuve => "Sí tuve, pero ya no",
+        TenenciaMascotas.Nunca => "No, nunca he tenido",
+        _ => t.ToString()
+    };
+
+    public static string De(EsterilizacionMascotas e) => e switch
+    {
+        EsterilizacionMascotas.Todos => "Sí, todos",
+        EsterilizacionMascotas.Algunos => "Algunos",
+        EsterilizacionMascotas.Ninguno => "Ninguno",
+        _ => e.ToString()
+    };
+
+    public static string De(VacunasGato v) => v switch
+    {
+        VacunasGato.Completas => "a) Sí, tienen todas sus vacunas",
+        VacunasGato.Ninguna => "b) No están vacunados",
+        VacunasGato.Parciales => "c) Tienen algunas vacunas",
+        _ => v.ToString()
+    };
+
+    public static string De(SociabilidadPerro s) => s switch
+    {
+        SociabilidadPerro.Sociable => "Sí, es sociable con gatos",
+        SociabilidadPerro.NoSociable => "No es sociable con gatos",
+        SociabilidadPerro.NoSabe => "No sé, no ha convivido con gatos",
+        _ => s.ToString()
+    };
+
+    public static string De(TipoVivienda t) => t switch
+    {
+        TipoVivienda.Casa => "Casa",
+        TipoVivienda.Apartamento => "Apartamento",
+        TipoVivienda.Finca => "Finca",
+        TipoVivienda.Habitacion => "Habitación",
+        _ => t.ToString()
+    };
+
+    public static string De(TenenciaVivienda t) => t switch
+    {
+        TenenciaVivienda.Propia => "Propia",
+        TenenciaVivienda.Arrendada => "Arrendada",
+        TenenciaVivienda.Familiar => "Familiar",
+        _ => t.ToString()
+    };
     public static string De(EstadoProducto e) => e switch
     {
         EstadoProducto.Disponible => "Disponible",

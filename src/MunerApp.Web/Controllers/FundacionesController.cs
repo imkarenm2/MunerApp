@@ -257,7 +257,7 @@ public class FundacionesController : Controller
                 "Apoya con tu tiempo o tus conocimientos en las labores que la fundación necesita.",
                 "bi-people", "exito", $"/fundaciones/{slug}/voluntariado", true, true));
 
-        // Módulos configurables: se habilitan en los sprints 3 y 4
+        // Módulos configurables: beneficiarios (Sprint 3), adopción (Sprint 5) y tienda (Sprint 4)
         if (activos.Contains(CodigosModulo.Beneficiarios))
             formas.Add(new(CodigosModulo.Beneficiarios, "Apadrinar",
                 "Acompaña a un beneficiario con un aporte periódico y sigue sus novedades.",
@@ -266,7 +266,7 @@ public class FundacionesController : Controller
         if (activos.Contains(CodigosModulo.Adopcion))
             formas.Add(new(CodigosModulo.Adopcion, "Adoptar",
                 "Dale un hogar a uno de los peludos que la fundación tiene en adopción.",
-                "bi-house-heart", "acento", null, true, false));
+                "bi-house-heart", "acento", $"/fundaciones/{slug}/adoptar", true, true));
 
         if (activos.Contains(CodigosModulo.Tienda))
             formas.Add(new(CodigosModulo.Tienda, "Comprar en su tienda",

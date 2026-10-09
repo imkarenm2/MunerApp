@@ -4,6 +4,7 @@
 @{
     var esalId = EsalActual.EsalId;
     var moduloBeneficiarios = esalId is not null && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Beneficiarios);
+    var moduloAdopcion = esalId is not null && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Adopcion);
     var moduloTienda = esalId is not null && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Tienda);
     var slug = esalId is null ? null : Db.Esales.Where(e => e.Id == esalId).Select(e => e.Slug).FirstOrDefault();
     var seccion = ViewData["Seccion"] as string ?? "";
@@ -35,6 +36,10 @@
     {
         <a class="nav-link @Activa("Donaciones")" asp-area="Fundacion" asp-controller="Donaciones" asp-action="Index"><i class="bi bi-cash-coin me-1" aria-hidden="true"></i>Donaciones</a>
         <a class="nav-link @Activa("Causas")" asp-area="Fundacion" asp-controller="Causas" asp-action="Index"><i class="bi bi-bullseye me-1" aria-hidden="true"></i>Causas</a>
+        @if (moduloAdopcion)
+        {
+            <a class="nav-link @Activa("Adopciones")" asp-area="Fundacion" asp-controller="Adopciones" asp-action="Index"><i class="bi bi-house-heart me-1" aria-hidden="true"></i>Adopción</a>
+        }
         @if (moduloTienda)
         {
             <a class="nav-link @Activa("Tienda")" asp-area="Fundacion" asp-controller="Productos" asp-action="Index"><i class="bi bi-bag-heart me-1" aria-hidden="true"></i>Tienda</a>

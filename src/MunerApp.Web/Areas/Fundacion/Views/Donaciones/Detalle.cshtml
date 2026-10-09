@@ -41,7 +41,15 @@
                 </dl>
             </div>
 
-            @if (Model.Estado == EstadoDonacion.Pendiente)
+            @if (Model.EnLinea && Model.Estado == EstadoDonacion.Pendiente)
+            {
+                @* HU-044: las donaciones en línea se confirman solas con el aviso de Wompi *@
+                <div class="alert alert-info small">
+                    <i class="bi bi-hourglass-split" aria-hidden="true"></i>
+                    <div>Esta donación se está pagando en línea con Wompi. Se confirmará o rechazará sola cuando Wompi avise el resultado del pago.</div>
+                </div>
+            }
+            else if (Model.Estado == EstadoDonacion.Pendiente)
             {
                 <div class="mu-card p-4">
                     <h2 class="h6 fw-bold mb-2">¿Llegó el dinero a la cuenta?</h2>
@@ -72,6 +80,20 @@
             }
         </div>
 
+        @if (Model.EnLinea)
+        {
+            <div class="col-12 col-lg-6">
+                <div class="mu-card p-4">
+                    <h2 class="h6 fw-bold mb-2"><i class="bi bi-credit-card me-2 text-principal" aria-hidden="true"></i>Pago en línea con Wompi</h2>
+                    <p class="small text-suave">El donante pagó desde la plataforma, sin soporte de transferencia. El estado lo define el aviso firmado de Wompi.</p>
+                    <dl class="row datos-detalle mb-0">
+                        <dt class="col-sm-5">Transacción Wompi</dt><dd class="col-sm-7 text-break">@(Model.TransaccionPasarelaId ?? "Aún sin aviso de Wompi")</dd>
+                    </dl>
+                </div>
+            </div>
+        }
+        else
+        {
         <div class="col-12 col-lg-6">
             <div class="mu-card p-3 h-100">
                 <div class="d-flex align-items-center justify-content-between mb-2 px-1">
@@ -90,5 +112,6 @@
                 }
             </div>
         </div>
+        }
     </div>
 </div>

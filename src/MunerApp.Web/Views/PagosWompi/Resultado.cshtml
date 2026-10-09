@@ -1,0 +1,58 @@
+@model ResultadoPagoViewModel
+@{
+    ViewData["Title"] = "Resultado de tu pago";
+    var consultarDeNuevo = $"{Context.Request.Path}{Context.Request.QueryString}";
+}
+<div class="container py-4 py-md-5" style="max-width: 720px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Donación a")' />
+
+    <div class="mu-card p-4 p-md-5">
+        @switch (Model.Resultado)
+        {
+            case ResultadoPagoEnLinea.Confirmada:
+                <h1 class="h3 mb-2 text-success"><i class="bi bi-check-circle me-2" aria-hidden="true"></i>¡Donación confirmada, gracias!</h1>
+                <p class="text-suave">Tu aporte de <strong>@Formatos.Pesos(Model.Valor)</strong> a «@Model.TituloCausa» ya suma a la meta de la causa.</p>
+                break;
+            case ResultadoPagoEnLinea.AprobadoPorConfirmar:
+                <h1 class="h3 mb-2 text-success"><i class="bi bi-check-circle me-2" aria-hidden="true"></i>¡Pago aprobado, gracias!</h1>
+                <p class="text-suave">Wompi aprobó tu pago de <strong>@Formatos.Pesos(Model.Valor)</strong>. En unos momentos tu donación queda confirmada, suma a «@Model.TituloCausa» y podrás descargar tu comprobante. Te avisaremos con una notificación.</p>
+                break;
+            case ResultadoPagoEnLinea.EnProceso:
+                <h1 class="h3 mb-2"><i class="bi bi-hourglass-split me-2" aria-hidden="true"></i>Tu pago está en proceso</h1>
+                <p class="text-suave">Wompi aún no lo confirma (pasa a veces con PSE o Nequi). Cuando se apruebe, se suma a la causa. Consulta de nuevo en unos minutos.</p>
+                break;
+            case ResultadoPagoEnLinea.NoAprobado:
+                <h1 class="h3 mb-2 text-danger"><i class="bi bi-x-circle me-2" aria-hidden="true"></i>El pago no fue aprobado</h1>
+                <p class="text-suave">No se hizo ningún cobro por @Formatos.Pesos(Model.Valor). Puedes intentarlo de nuevo o donar por transferencia.</p>
+                break;
+            default:
+                <h1 class="h3 mb-2"><i class="bi bi-hourglass-split me-2" aria-hidden="true"></i>Estamos verificando tu pago</h1>
+                <p class="text-suave">No pudimos consultar tu transacción con Wompi todavía. Si ya pagaste, espera un momento y consulta de nuevo.</p>
+                break;
+        }
+
+        <dl class="row small mb-4">
+            <dt class="col-sm-5">Código de donación</dt><dd class="col-sm-7">@Model.CodigoDonacion</dd>
+            <dt class="col-sm-5">Referencia</dt><dd class="col-sm-7 text-break">@Model.Referencia</dd>
+            <dt class="col-sm-5">Medio de pago</dt><dd class="col-sm-7">@Model.MetodoPago</dd>
+        </dl>
+
+        <div class="d-flex flex-column flex-sm-row gap-2">
+            @switch (Model.Resultado)
+            {
+                case ResultadoPagoEnLinea.Confirmada:
+                    <a class="btn btn-primary" href="/mis-donaciones/@Model.CodigoDonacion/comprobante"><i class="bi bi-file-earmark-arrow-down me-2" aria-hidden="true"></i>Descargar comprobante (PDF)</a>
+                    <a class="btn btn-suave" href="@Model.UrlCausa">Volver a la causa</a>
+                    break;
+                case ResultadoPagoEnLinea.NoAprobado:
+                    <a class="btn btn-primary" href="@Model.UrlReintentar">Intentar de nuevo</a>
+                    <a class="btn btn-suave" href="/fundaciones/@Model.Slug/donar">Donar por transferencia</a>
+                    break;
+                default:
+                    <a class="btn btn-primary" href="@consultarDeNuevo">Consultar de nuevo</a>
+                    <a class="btn btn-suave" href="/mis-donaciones/@Model.CodigoDonacion">Ver en mis donaciones</a>
+                    break;
+            }
+        </div>
+    </div>
+</div>
