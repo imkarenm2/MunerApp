@@ -1,0 +1,141 @@
+@* "El periódico de MunerApp" (HU-028): portada pública con el boletín de las fundaciones y las buenas noticias de la plataforma.
+   Se usa en el inicio (con enlace al boletín completo) y arriba de /boletin. *@
+@model PeriodicoViewModel
+@{
+    var enInicio = ViewData["PeriodicoEnInicio"] as bool? ?? false;
+    var co = new System.Globalization.CultureInfo("es-CO");
+    var hoy = Formatos.Local(DateTime.UtcNow);
+    var fecha = co.TextInfo.ToTitleCase(hoy.ToString("dddd", co)) + ", " + Formatos.Fecha(hoy);
+    var t = Model.Titular;
+}
+<div class="periodico">
+    <header class="periodico-cabecera">
+        <div class="periodico-fecha">@fecha</div>
+        @if (enInicio)
+        {
+            <h2 class="periodico-nombre">El periódico de MunerApp</h2>
+        }
+        else
+        {
+            <h1 class="periodico-nombre">El periódico de MunerApp</h1>
+        }
+        <div class="periodico-lema">Lo bueno que pasa en las fundaciones, contado por ellas</div>
+    </header>
+
+    <div class="periodico-cifras" role="list" aria-label="MunerApp en cifras">
+        <div role="listitem"><span class="periodico-cifra">@Model.Fundaciones</span><span>@(Model.Fundaciones == 1 ? "fundación" : "fundaciones")</span></div>
+        <div role="listitem"><span class="periodico-cifra">@Model.Adopciones</span><span>@(Model.Adopciones == 1 ? "peludo adoptado" : "peludos adoptados")</span></div>
+        <div role="listitem"><span class="periodico-cifra">@Model.CausasCumplidas</span><span>@(Model.CausasCumplidas == 1 ? "causa cumplida" : "causas cumplidas")</span></div>
+        <div role="listitem"><span class="periodico-cifra">@Formatos.Pesos(Model.TotalDonado)</span><span>donados</span></div>
+    </div>
+
+    @if (!Model.TieneContenido)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-newspaper" aria-hidden="true"></i></div>
+            <h3 class="h5">La primera edición está por salir</h3>
+            <p class="text-suave mb-0">Cuando las fundaciones publiquen sus noticias y eventos, y cada vez que un peludo encuentre familia o una causa llegue a su meta, lo verás aquí.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-12 col-lg-8">
+                @if (t is not null)
+                {
+                    <a class="periodico-titular text-decoration-none text-body" href="@t.Url">
+                        @if (t.ImagenUrl is not null)
+                        {
+                            <img class="publicacion-imagen rounded-4 mb-3" src="@t.ImagenUrl" alt="" />
+                        }
+                        <span class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                            <partial name="_CategoriaPublicacion" model="t.Categoria" />
+                            <span class="small text-suave"><i class="bi bi-building me-1" aria-hidden="true"></i>@t.NombreEsal</span>
+                        </span>
+                        <span class="d-block periodico-titular-texto mb-2">@t.Titulo</span>
+                        @if (t.FechaEvento is DateTime ev)
+                        {
+                            <span class="d-block fw-semibold text-principal mb-2"><i class="bi bi-calendar-event me-1" aria-hidden="true"></i>@Formatos.FechaHora(ev)@(t.LugarEvento is null ? "" : " · " + t.LugarEvento)</span>
+                        }
+                        <span class="d-block lead text-suave">@t.Resumen</span>
+                        <span class="enlace-flecha mt-2">Leer la nota <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+                    </a>
+                }
+
+                @if (Model.ProximosEventos.Count > 0)
+                {
+                    <h3 class="periodico-seccion mt-4">Próximos eventos</h3>
+                    <div class="d-grid gap-2">
+                        @foreach (var e in Model.ProximosEventos)
+                        {
+                            var local = Formatos.Local(e.FechaEvento!.Value);
+                            <a class="mu-card mu-card-hover evento-proximo text-decoration-none text-body" href="@e.Url">
+                                <span class="evento-fecha" aria-hidden="true">
+                                    <span class="evento-dia">@local.Day</span>
+                                    <span class="evento-mes">@local.ToString("MMM", co).TrimEnd('.')</span>
+                                </span>
+                                <span class="flex-grow-1 min-w-0">
+                                    <span class="d-block fw-semibold">@e.Titulo</span>
+                                    <span class="d-block small text-suave">@Formatos.FechaHora(e.FechaEvento.Value) · @e.NombreEsal</span>
+                                </span>
+                                <i class="bi bi-chevron-right text-suave" aria-hidden="true"></i>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+
+            <aside class="col-12 col-lg-4" aria-label="Buenas noticias">
+                <h3 class="periodico-seccion">Buenas noticias</h3>
+                @if (Model.BuenasNoticias.Count == 0)
+                {
+                    <p class="small text-suave">Aquí aparecen solas las adopciones, las causas que llegan a su meta, las fundaciones que se unen y lo nuevo de las tiendas.</p>
+                }
+                else
+                {
+                    <ul class="list-unstyled periodico-buenas mb-0">
+                        @foreach (var n in Model.BuenasNoticias)
+                        {
+                            <li>
+                                <a class="d-flex gap-3 text-decoration-none text-body" href="@(n.Url ?? "#")">
+                                    <span class="icono-circulo @n.Clase flex-shrink-0" style="width:40px;height:40px;font-size:1.05rem"><i class="bi @n.Icono" aria-hidden="true"></i></span>
+                                    <span class="min-w-0">
+                                        <span class="d-block fw-semibold">@n.Titulo</span>
+                                        <span class="d-block small text-suave">@n.Detalle</span>
+                                        <span class="d-block small text-suave">@Formatos.Hace(n.Fecha)</span>
+                                    </span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                @if (Model.Recientes.Count > 0)
+                {
+                    <h3 class="periodico-seccion mt-4">Lo último del boletín</h3>
+                    <ul class="list-unstyled periodico-buenas mb-0">
+                        @foreach (var p in Model.Recientes)
+                        {
+                            <li>
+                                <a class="d-block text-decoration-none text-body" href="@p.Url">
+                                    <span class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                        <partial name="_CategoriaPublicacion" model="p.Categoria" />
+                                    </span>
+                                    <span class="d-block fw-semibold">@p.Titulo</span>
+                                    <span class="d-block small text-suave">@p.NombreEsal · @Formatos.FechaCorta(p.FechaPublicacion)</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+            </aside>
+        </div>
+    }
+
+    @if (enInicio)
+    {
+        <div class="text-center mt-4">
+            <a class="btn btn-outline-primary btn-lg" href="/boletin"><i class="bi bi-newspaper me-2" aria-hidden="true"></i>Leer el periódico completo</a>
+        </div>
+    }
+</div>

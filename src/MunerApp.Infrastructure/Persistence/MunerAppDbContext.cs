@@ -48,6 +48,13 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<ConfigAdopcion> ConfigAdopciones => Set<ConfigAdopcion>();
     public DbSet<SolicitudAdopcion> SolicitudesAdopcion => Set<SolicitudAdopcion>();
     public DbSet<EventoPasarela> EventosPasarela => Set<EventoPasarela>();
+    // Sprint 4
+    public DbSet<Producto> Productos => Set<Producto>();
+    public DbSet<FotoProducto> FotosProducto => Set<FotoProducto>();
+    public DbSet<ConversacionTienda> ConversacionesTienda => Set<ConversacionTienda>();
+    public DbSet<MensajeTienda> MensajesTienda => Set<MensajeTienda>();
+    public DbSet<Pedido> Pedidos => Set<Pedido>();
+    public DbSet<Publicacion> Publicaciones => Set<Publicacion>();
 
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
@@ -408,6 +415,91 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        // ---- Sprint 4: tienda (HU-023) ----
+
+        builder.Entity<Producto>(e =>
+        {
+            e.ToTable("Producto");
+            e.Property(x => x.Nombre).HasMaxLength(120).IsRequired();
+            e.Property(x => x.Descripcion).HasMaxLength(2000).IsRequired();
+            e.Property(x => x.Precio).HasPrecision(14, 2);
+            e.Property(x => x.Categoria).HasMaxLength(60);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.CreadoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.Estado });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<FotoProducto>(e =>
+        {
+            e.ToTable("FotoProducto");
+            e.Property(x => x.Ruta).HasMaxLength(300).IsRequired();
+            e.HasOne(x => x.Producto).WithMany(x => x.Fotos).HasForeignKey(x => x.ProductoId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ---- Sprint 4: chat de la tienda (HU-025) ----
+
+        builder.Entity<ConversacionTienda>(e =>
+        {
+            e.ToTable("ConversacionTienda");
+            e.Property(x => x.DonanteId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            // Una sola conversación por donante y producto
+            e.HasIndex(x => new { x.DonanteId, x.ProductoId }).IsUnique();
+            e.HasIndex(x => new { x.EsalId, x.Estado, x.FechaUltimoMensaje });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            // Un producto con conversaciones no se elimina: se oculta
+            e.HasOne(x => x.Producto).WithMany().HasForeignKey(x => x.ProductoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.DonanteId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<MensajeTienda>(e =>
+        {
+            e.ToTable("MensajeTienda");
+            e.Property(x => x.AutorId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.Texto).HasMaxLength(1000).IsRequired();
+            e.HasIndex(x => new { x.ConversacionId, x.Id });
+            e.HasOne(x => x.Conversacion).WithMany(x => x.Mensajes).HasForeignKey(x => x.ConversacionId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ---- Sprint 4: pedidos de la tienda (HU-026) ----
+
+        builder.Entity<Pedido>(e =>
+        {
+            e.ToTable("Pedido");
+            e.Property(x => x.Codigo).HasMaxLength(30).IsRequired();
+            e.HasIndex(x => x.Codigo).IsUnique();
+            e.Property(x => x.DonanteId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.PrecioUnitario).HasPrecision(14, 2);
+            e.Property(x => x.Total).HasPrecision(14, 2);
+            e.Property(x => x.Notas).HasMaxLength(500);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.Estado });
+            e.HasOne(x => x.Conversacion).WithMany().HasForeignKey(x => x.ConversacionId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Producto).WithMany().HasForeignKey(x => x.ProductoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.DonanteId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ---- Sprint 4: boletín (HU-027) ----
+
+        builder.Entity<Publicacion>(e =>
+        {
+            e.ToTable("Publicacion");
+            e.Property(x => x.Titulo).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Resumen).HasMaxLength(300);
+            e.Property(x => x.Contenido).HasMaxLength(8000).IsRequired();
+            e.Property(x => x.Categoria).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.ImagenRuta).HasMaxLength(300);
+            e.Property(x => x.LugarEvento).HasMaxLength(200);
+            e.Property(x => x.CreadaPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.Estado, x.FechaPublicacion });
+            e.HasIndex(x => new { x.Estado, x.Categoria, x.FechaEvento });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Causa).WithMany().HasForeignKey(x => x.CausaId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
@@ -428,6 +520,12 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<FotoCausa>(builder);
         AplicarFiltroEsal<ConfigAdopcion>(builder);
         AplicarFiltroEsal<SolicitudAdopcion>(builder);
+        AplicarFiltroEsal<Producto>(builder);
+        AplicarFiltroEsal<FotoProducto>(builder);
+        AplicarFiltroEsal<ConversacionTienda>(builder);
+        AplicarFiltroEsal<MensajeTienda>(builder);
+        AplicarFiltroEsal<Pedido>(builder);
+        AplicarFiltroEsal<Publicacion>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal

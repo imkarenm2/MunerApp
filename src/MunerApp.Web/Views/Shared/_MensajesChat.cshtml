@@ -1,0 +1,11 @@
+@* Burbujas de un chat de la tienda (HU-025, HU-026). También se devuelve sola para agregar los mensajes nuevos sin recargar. *@
+@model IReadOnlyList<MensajeChatItem>
+@foreach (var m in Model)
+{
+    <div class="chat-mensaje @(m.Propio ? "propio" : "")" data-mensaje-id="@m.Id">
+        <div class="chat-burbuja">
+            <div class="texto-largo">@m.Texto</div>
+        </div>
+        <div class="chat-meta">@m.Autor · <time datetime="@m.Fecha.ToString("o")" title="@Formatos.FechaHora(m.Fecha)">@Formatos.Hace(m.Fecha)</time></div>
+    </div>
+}

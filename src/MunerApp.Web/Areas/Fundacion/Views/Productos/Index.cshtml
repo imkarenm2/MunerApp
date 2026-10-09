@@ -1,0 +1,126 @@
+@model ProductosIndexViewModel
+@{
+    ViewData["Title"] = "Tienda";
+    ViewData["Seccion"] = "Tienda";
+    var pestanas = new[]
+    {
+        (Estado: (EstadoProducto?)null, Texto: "Todos", Icono: "bi-grid", Conteo: Model.Disponibles + Model.Agotados + Model.Ocultos),
+        (Estado: (EstadoProducto?)EstadoProducto.Disponible, Texto: "Disponibles", Icono: "bi-check-circle", Conteo: Model.Disponibles),
+        (Estado: (EstadoProducto?)EstadoProducto.Agotado, Texto: "Agotados", Icono: "bi-hourglass", Conteo: Model.Agotados),
+        (Estado: (EstadoProducto?)EstadoProducto.Oculto, Texto: "Ocultos", Icono: "bi-eye-slash", Conteo: Model.Ocultos)
+    };
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Tienda</h1>
+            <p class="text-suave mb-0">Productos que la fundación vende para recaudar fondos. Los visitantes los ven en tarjetas y acuerdan la compra por chat.</p>
+        </div>
+        @if (Model.PuedeGestionar)
+        {
+            <a class="btn btn-primary" asp-action="Crear"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nuevo producto</a>
+        }
+    </div>
+
+    <partial name="_NavFundacion" />
+    <partial name="_NavTienda" />
+
+    @if (!Model.PuedeGestionar)
+    {
+        <div class="alert alert-info small">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+            <div>Solo el administrador principal puede crear, editar u ocultar productos.</div>
+        </div>
+    }
+
+    <ul class="nav nav-tabs pestanas mb-3" role="tablist">
+        @foreach (var p in pestanas)
+        {
+            <li class="nav-item">
+                <a class="nav-link @(Model.Filtro == p.Estado ? "active" : "")" asp-action="Index" asp-route-estado="@p.Estado"
+                   aria-current="@(Model.Filtro == p.Estado ? "page" : null)">
+                    <i class="bi @p.Icono me-1" aria-hidden="true"></i>@p.Texto
+                    <span class="badge rounded-pill text-bg-light ms-1">@p.Conteo</span>
+                </a>
+            </li>
+        }
+    </ul>
+
+    @if (Model.Productos.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-bag-heart" aria-hidden="true"></i></div>
+            @if (Model.Filtro is null)
+            {
+                <h2 class="h5">Aún no hay productos</h2>
+                <p class="text-suave">Agrega camisetas, accesorios o lo que la fundación venda: nombre, precio, descripción y fotos.</p>
+                @if (Model.PuedeGestionar)
+                {
+                    <a class="btn btn-primary" asp-action="Crear">Agregar el primero</a>
+                }
+            }
+            else
+            {
+                <h2 class="h5">No hay productos @Textos.De(Model.Filtro.Value).ToLower()s</h2>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var p in Model.Productos)
+            {
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <div class="mu-card producto-admin @(p.Estado == EstadoProducto.Oculto ? "documento-oculto" : "")">
+                        @if (p.FotoUrl is not null)
+                        {
+                            <img class="producto-foto" src="@p.FotoUrl" alt="" loading="lazy" />
+                        }
+                        <div class="p-3 flex-grow-1 d-flex flex-column">
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                <partial name="_EstadoProducto" model="p.Estado" />
+                                @if (p.Categoria is not null)
+                                {
+                                    <span class="small text-suave">@p.Categoria</span>
+                                }
+                            </div>
+                            <h2 class="h6 mb-1">@p.Nombre</h2>
+                            <div class="fw-bold text-principal mb-3">@Formatos.Pesos(p.Precio)</div>
+                            <div class="d-flex flex-wrap gap-2 mt-auto">
+                                @if (Model.Slug is not null && p.Estado != EstadoProducto.Oculto)
+                                {
+                                    <a class="btn btn-sm btn-outline-primary" href="/fundaciones/@Model.Slug/tienda/@p.Id" target="_blank" rel="noopener" aria-label="Ver @p.Nombre en la tienda"><i class="bi bi-eye" aria-hidden="true"></i></a>
+                                }
+                                @if (Model.PuedeGestionar)
+                                {
+                                    <a class="btn btn-sm btn-suave" asp-action="Editar" asp-route-id="@p.Id"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar</a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Más</button>
+                                        <ul class="dropdown-menu">
+                                            @foreach (var estado in Enum.GetValues<EstadoProducto>().Where(e => e != p.Estado))
+                                            {
+                                                <li>
+                                                    <form asp-action="CambiarEstado" asp-route-id="@p.Id" asp-route-estado="@estado" method="post">
+                                                        <button type="submit" class="dropdown-item">Marcar como @Textos.De(estado).ToLower()</button>
+                                                    </form>
+                                                </li>
+                                            }
+                                            <li><hr class="dropdown-divider" /></li>
+                                            <li>
+                                                <form asp-action="Eliminar" asp-route-id="@p.Id" method="post"
+                                                      data-confirmar="Se borran el producto y sus fotos. Si solo quieres que no se vea, ocúltalo."
+                                                      data-confirmar-titulo="¿Eliminar &quot;@p.Nombre&quot;?" data-confirmar-boton="Sí, eliminar" data-confirmar-tipo="peligro">
+                                                    <button type="submit" class="dropdown-item text-danger">Eliminar</button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

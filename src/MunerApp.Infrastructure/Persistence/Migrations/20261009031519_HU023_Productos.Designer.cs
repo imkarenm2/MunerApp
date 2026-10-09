@@ -12,8 +12,8 @@ using MunerApp.Infrastructure.Persistence;
 namespace MunerApp.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(MunerAppDbContext))]
-    [Migration("20261008220953_HU036_AprobacionVoluntarios")]
-    partial class HU036_AprobacionVoluntarios
+    [Migration("20261009031519_HU023_Productos")]
+    partial class HU023_Productos
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -390,38 +390,6 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Causa", (string)null);
                 });
 
-            modelBuilder.Entity("MunerApp.Domain.Entities.ConfigAdopcion", b =>
-                {
-                    b.Property<int>("EsalId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("FechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ImagenToxoplasmosisRuta")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<string>("MensajeToxoplasmosis")
-                        .HasMaxLength(1500)
-                        .HasColumnType("nvarchar(1500)");
-
-                    b.Property<string>("Recomendaciones")
-                        .IsRequired()
-                        .HasMaxLength(3000)
-                        .HasColumnType("nvarchar(3000)");
-
-                    b.Property<decimal>("ValorAporte")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(14, 2)
-                        .HasColumnType("decimal(14,2)")
-                        .HasDefaultValue(100000m);
-
-                    b.HasKey("EsalId");
-
-                    b.ToTable("ConfigAdopcion", (string)null);
-                });
-
             modelBuilder.Entity("MunerApp.Domain.Entities.ConfigPasarela", b =>
                 {
                     b.Property<int>("EsalId")
@@ -621,18 +589,7 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
-                    b.Property<string>("Origen")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)")
-                        .HasDefaultValue("Manual");
-
                     b.Property<string>("ReferenciaPago")
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
-
-                    b.Property<string>("ReferenciaPasarela")
                         .HasMaxLength(60)
                         .HasColumnType("nvarchar(60)");
 
@@ -644,10 +601,6 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
-
-                    b.Property<string>("TransaccionPasarelaId")
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
 
                     b.Property<decimal>("Valor")
                         .HasPrecision(14, 2)
@@ -663,14 +616,6 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.HasIndex("DonanteId");
-
-                    b.HasIndex("ReferenciaPasarela")
-                        .IsUnique()
-                        .HasFilter("[ReferenciaPasarela] IS NOT NULL");
-
-                    b.HasIndex("TransaccionPasarelaId")
-                        .IsUnique()
-                        .HasFilter("[TransaccionPasarelaId] IS NOT NULL");
 
                     b.HasIndex("EsalId", "Estado");
 
@@ -828,63 +773,6 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EventoClinico", (string)null);
                 });
 
-            modelBuilder.Entity("MunerApp.Domain.Entities.EventoPasarela", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Cuerpo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Detalle")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<int?>("DonacionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("EsalId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("EstadoTransaccion")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("Evento")
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
-
-                    b.Property<DateTime>("FechaRecepcion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Referencia")
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
-
-                    b.Property<string>("Resultado")
-                        .IsRequired()
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
-
-                    b.Property<string>("TransaccionId")
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DonacionId");
-
-                    b.HasIndex("TransaccionId");
-
-                    b.HasIndex("EsalId", "FechaRecepcion");
-
-                    b.ToTable("EventoPasarela", (string)null);
-                });
-
             modelBuilder.Entity("MunerApp.Domain.Entities.FotoCausa", b =>
                 {
                     b.Property<int>("Id")
@@ -973,6 +861,38 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("EventoClinicoId");
 
                     b.ToTable("FotoEventoClinico", (string)null);
+                });
+
+            modelBuilder.Entity("MunerApp.Domain.Entities.FotoProducto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("EsalId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaCarga")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Ruta")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductoId");
+
+                    b.ToTable("FotoProducto", (string)null);
                 });
 
             modelBuilder.Entity("MunerApp.Domain.Entities.HistorialEstadoBeneficiario", b =>
@@ -1171,9 +1091,6 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("FechaRespuesta")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("FechaRetiro")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Institucion")
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
@@ -1182,17 +1099,9 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("MotivoRechazo")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
                     b.Property<string>("Programa")
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("RevisadoPorId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int?>("Semestre")
                         .HasColumnType("int");
@@ -1225,6 +1134,57 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PostulacionVoluntario", (string)null);
                 });
 
+            modelBuilder.Entity("MunerApp.Domain.Entities.Producto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Categoria")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("CreadoPorId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("EsalId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("FechaActualizacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<decimal>("Precio")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("decimal(14,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EsalId", "Estado");
+
+                    b.ToTable("Producto", (string)null);
+                });
+
             modelBuilder.Entity("MunerApp.Domain.Entities.RedSocial", b =>
                 {
                     b.Property<int>("Id")
@@ -1252,227 +1212,6 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("RedSocial", (string)null);
-                });
-
-            modelBuilder.Entity("MunerApp.Domain.Entities.SolicitudAdopcion", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("AceptaContrato")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AceptaRequisito")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("AceptaVisita")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("ArrendadorPermiteMascotas")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AutorizaDatos")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("BeneficiarioAdoptadoId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CarneVacunasRuta")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<string>("Cedula")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("Celular")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("Ciudad")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Codigo")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int?>("Convivientes")
-                        .HasColumnType("int");
-
-                    b.Property<bool?>("ConvivientesDeAcuerdo")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("DetalleOcupacion")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("Direccion")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("Edad")
-                        .HasColumnType("int");
-
-                    b.Property<bool?>("EmbarazoEnHogar")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("EsalId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Estado")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime>("FechaAceptacionRecomendaciones")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaAutorizacionDatos")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaCita")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaEnvio")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaResultado")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaRevision")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("GatoEsterilizacion")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<bool?>("GatoUsaArenero")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("GatoVacunas")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("IndicacionesCita")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<string>("LugarCita")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Mascotas")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("MotivoRechazo")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<bool?>("NinosEnCasa")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("NinosInteractuanMascotas")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("NombreCompleto")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("ObservacionesResultado")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Ocupacion")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("OtraMascota")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("PerroSociabilidad")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<bool?>("PuedeCubrirCostos")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("QuePasoMascota")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ReferenciaCelular")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("ReferenciaNombre")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("ReferenciaRelacion")
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
-
-                    b.Property<int>("Reprogramaciones")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RevisadoPorId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("SeccionesCompletadas")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TenenciaVivienda")
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
-
-                    b.Property<bool>("TieneGato")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("TieneOtraMascota")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("TienePerro")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("TipoVivienda")
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
-
-                    b.Property<string>("UsuarioId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BeneficiarioAdoptadoId");
-
-                    b.HasIndex("Codigo")
-                        .IsUnique()
-                        .HasFilter("[Codigo] IS NOT NULL");
-
-                    b.HasIndex("UsuarioId");
-
-                    b.HasIndex("EsalId", "Estado");
-
-                    b.HasIndex("EsalId", "UsuarioId")
-                        .IsUnique()
-                        .HasFilter("[Estado] = N'Borrador'");
-
-                    b.ToTable("SolicitudAdopcion", (string)null);
                 });
 
             modelBuilder.Entity("MunerApp.Infrastructure.Identity.Usuario", b =>
@@ -1674,17 +1413,6 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.Navigation("Esal");
                 });
 
-            modelBuilder.Entity("MunerApp.Domain.Entities.ConfigAdopcion", b =>
-                {
-                    b.HasOne("MunerApp.Domain.Entities.Esal", "Esal")
-                        .WithOne()
-                        .HasForeignKey("MunerApp.Domain.Entities.ConfigAdopcion", "EsalId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Esal");
-                });
-
             modelBuilder.Entity("MunerApp.Domain.Entities.ConfigPasarela", b =>
                 {
                     b.HasOne("MunerApp.Domain.Entities.Esal", "Esal")
@@ -1779,20 +1507,6 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.Navigation("Beneficiario");
                 });
 
-            modelBuilder.Entity("MunerApp.Domain.Entities.EventoPasarela", b =>
-                {
-                    b.HasOne("MunerApp.Domain.Entities.Donacion", null)
-                        .WithMany()
-                        .HasForeignKey("DonacionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MunerApp.Domain.Entities.Esal", null)
-                        .WithMany()
-                        .HasForeignKey("EsalId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("MunerApp.Domain.Entities.FotoCausa", b =>
                 {
                     b.HasOne("MunerApp.Domain.Entities.Causa", "Causa")
@@ -1824,6 +1538,17 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Evento");
+                });
+
+            modelBuilder.Entity("MunerApp.Domain.Entities.FotoProducto", b =>
+                {
+                    b.HasOne("MunerApp.Domain.Entities.Producto", "Producto")
+                        .WithMany("Fotos")
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Producto");
                 });
 
             modelBuilder.Entity("MunerApp.Domain.Entities.HistorialEstadoBeneficiario", b =>
@@ -1863,6 +1588,17 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.Navigation("Esal");
                 });
 
+            modelBuilder.Entity("MunerApp.Domain.Entities.Producto", b =>
+                {
+                    b.HasOne("MunerApp.Domain.Entities.Esal", "Esal")
+                        .WithMany()
+                        .HasForeignKey("EsalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Esal");
+                });
+
             modelBuilder.Entity("MunerApp.Domain.Entities.RedSocial", b =>
                 {
                     b.HasOne("MunerApp.Domain.Entities.Esal", "Esal")
@@ -1870,30 +1606,6 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                         .HasForeignKey("EsalId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Esal");
-                });
-
-            modelBuilder.Entity("MunerApp.Domain.Entities.SolicitudAdopcion", b =>
-                {
-                    b.HasOne("MunerApp.Domain.Entities.Beneficiario", "BeneficiarioAdoptado")
-                        .WithMany()
-                        .HasForeignKey("BeneficiarioAdoptadoId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MunerApp.Domain.Entities.Esal", "Esal")
-                        .WithMany()
-                        .HasForeignKey("EsalId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MunerApp.Infrastructure.Identity.Usuario", null)
-                        .WithMany()
-                        .HasForeignKey("UsuarioId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("BeneficiarioAdoptado");
 
                     b.Navigation("Esal");
                 });
@@ -1936,6 +1648,11 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("MunerApp.Domain.Entities.EventoClinico", b =>
+                {
+                    b.Navigation("Fotos");
+                });
+
+            modelBuilder.Entity("MunerApp.Domain.Entities.Producto", b =>
                 {
                     b.Navigation("Fotos");
                 });
