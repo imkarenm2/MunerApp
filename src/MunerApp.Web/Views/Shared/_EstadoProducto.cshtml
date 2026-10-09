@@ -1,0 +1,13 @@
+@model EstadoProducto
+@switch (Model)
+{
+    case EstadoProducto.Agotado:
+        <span class="mu-badge alerta"><i class="bi bi-hourglass" aria-hidden="true"></i>Agotado</span>
+        break;
+    case EstadoProducto.Oculto:
+        <span class="mu-badge"><i class="bi bi-eye-slash" aria-hidden="true"></i>Oculto</span>
+        break;
+    default:
+        <span class="mu-badge exito"><i class="bi bi-check-circle" aria-hidden="true"></i>Disponible</span>
+        break;
+}

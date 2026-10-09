@@ -177,4 +177,29 @@ public static class Textos
         TenenciaVivienda.Familiar => "Familiar",
         _ => t.ToString()
     };
+    public static string De(EstadoProducto e) => e switch
+    {
+        EstadoProducto.Disponible => "Disponible",
+        EstadoProducto.Agotado => "Agotado",
+        EstadoProducto.Oculto => "Oculto",
+        _ => e.ToString()
+    };
+
+    public static string De(CategoriaPublicacion c) => c switch
+    {
+        CategoriaPublicacion.Noticia => "Noticia",
+        CategoriaPublicacion.Evento => "Evento",
+        CategoriaPublicacion.Logro => "Logro",
+        CategoriaPublicacion.RendicionCuentas => "Rendición de cuentas",
+        _ => c.ToString()
+    };
+
+    public static string De(EstadoPedido e) => e switch
+    {
+        EstadoPedido.Acordado => "Acordado",
+        EstadoPedido.Pagado => "Pagado",
+        EstadoPedido.Entregado => "Entregado",
+        EstadoPedido.Cancelado => "Cancelado",
+        _ => e.ToString()
+    };
 }

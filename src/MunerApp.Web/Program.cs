@@ -25,6 +25,7 @@ builder.Services.AddScoped<InvitacionService>();
 builder.Services.AddScoped<CausasPublicas>();
 builder.Services.AddScoped<EstadosBeneficiario>();
 builder.Services.AddScoped<ConfirmacionPagosWompi>();
+builder.Services.AddScoped<PeriodicoMunerApp>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // ---- Identity (documento de diseño, sección 9) ----

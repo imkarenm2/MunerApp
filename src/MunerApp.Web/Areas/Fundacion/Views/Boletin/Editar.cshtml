@@ -1,0 +1,30 @@
+@model PublicacionFormViewModel
+@{
+    ViewData["Title"] = "Editar publicación";
+    ViewData["Seccion"] = "Boletin";
+}
+<div class="container py-4 py-md-5" style="max-width: 820px">
+    <a asp-action="Index" asp-route-estado="@Model.Estado" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Boletín</a>
+    <h1 class="h2 mt-2 mb-1">Editar publicación</h1>
+    <p class="text-suave mb-4">
+        @(Model.Estado == EstadoPublicacion.Publicada ? "Está publicada: los cambios se ven de inmediato en el boletín." : "Es un borrador: solo lo ve el equipo de la fundación.")
+    </p>
+
+    <form asp-action="Editar" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" novalidate class="mu-card p-4 p-md-5">
+        <partial name="_Formulario" model="Model" />
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-primary" data-cargando="Guardando...">Guardar cambios</button>
+            <a asp-action="Index" asp-route-estado="@Model.Estado" class="btn btn-link">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@if (Model.ImagenActualUrl is not null)
+{
+    <form id="quitar-imagen" asp-action="QuitarImagen" asp-route-id="@Model.Id" method="post"
+          data-confirmar="La publicación quedará sin imagen." data-confirmar-titulo="¿Quitar la imagen?" data-confirmar-boton="Sí, quitar" data-confirmar-tipo="peligro"></form>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

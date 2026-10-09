@@ -1,0 +1,98 @@
+@* Filtro por categoría, próximos eventos y publicaciones. Lo usan el boletín general y el de cada fundación (HU-028). *@
+@model BoletinPublicoViewModel
+@{
+    var accion = Model.Slug is null ? "/boletin" : $"/fundaciones/{Model.Slug}/boletin";
+    string Url(CategoriaPublicacion? c, int pagina = 1)
+    {
+        var partes = new List<string>();
+        if (c is not null) partes.Add("categoria=" + c);
+        if (pagina > 1) partes.Add("pagina=" + pagina);
+        return partes.Count == 0 ? accion : accion + "?" + string.Join("&", partes);
+    }
+    var categorias = Enum.GetValues<CategoriaPublicacion>();
+}
+<nav class="d-flex flex-wrap gap-2 mb-4" aria-label="Categorías del boletín">
+    <a class="chip text-decoration-none @(Model.Categoria is null ? "activo" : "")" href="@Url(null)" aria-current="@(Model.Categoria is null ? "page" : null)">Todo</a>
+    @foreach (var c in categorias)
+    {
+        <a class="chip text-decoration-none @(Model.Categoria == c ? "activo" : "")" href="@Url(c)" aria-current="@(Model.Categoria == c ? "page" : null)">@Textos.De(c)</a>
+    }
+</nav>
+
+@if (Model.ProximosEventos.Count > 0)
+{
+    <section class="mb-5" aria-labelledby="titulo-proximos">
+        <h2 id="titulo-proximos" class="h5 mb-3"><i class="bi bi-calendar-event me-2 text-principal" aria-hidden="true"></i>Próximos eventos</h2>
+        <div class="d-grid gap-2">
+            @foreach (var e in Model.ProximosEventos)
+            {
+                var local = Formatos.Local(e.FechaEvento!.Value);
+                <a class="mu-card mu-card-hover evento-proximo text-decoration-none text-body" href="@e.Url">
+                    <span class="evento-fecha" aria-hidden="true">
+                        <span class="evento-dia">@local.Day</span>
+                        <span class="evento-mes">@local.ToString("MMM", new System.Globalization.CultureInfo("es-CO")).TrimEnd('.')</span>
+                    </span>
+                    <span class="flex-grow-1 min-w-0">
+                        <span class="d-block fw-semibold">@e.Titulo</span>
+                        <span class="d-block small text-suave"><i class="bi bi-clock me-1" aria-hidden="true"></i>@Formatos.FechaHora(e.FechaEvento.Value)</span>
+                        @if (e.LugarEvento is not null)
+                        {
+                            <span class="d-block small text-suave text-truncate"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>@e.LugarEvento</span>
+                        }
+                        @if (e.MostrarFundacion)
+                        {
+                            <span class="d-block small text-suave"><i class="bi bi-building me-1" aria-hidden="true"></i>@e.NombreEsal</span>
+                        }
+                    </span>
+                    <i class="bi bi-chevron-right text-suave" aria-hidden="true"></i>
+                </a>
+            }
+        </div>
+    </section>
+}
+
+@if (Model.Publicaciones.Count == 0 && Model.ProximosEventos.Count == 0)
+{
+    <div class="estado-vacio">
+        <div class="icono-circulo mb-3"><i class="bi bi-newspaper" aria-hidden="true"></i></div>
+        <h2 class="h5">@(Model.Categoria is null ? "Aún no hay publicaciones" : "No hay publicaciones en esta categoría")</h2>
+        <p class="text-suave">@(Model.Slug is null ? "Las fundaciones aún no han publicado noticias ni eventos." : "La fundación aún no ha publicado noticias ni eventos. Vuelve pronto.")</p>
+        @if (Model.Categoria is not null)
+        {
+            <a class="btn btn-outline-primary" href="@Url(null)">Ver todo el boletín</a>
+        }
+    </div>
+}
+else if (Model.Publicaciones.Count > 0)
+{
+    @if (Model.ProximosEventos.Count > 0)
+    {
+        <h2 class="h5 mb-3">Publicaciones</h2>
+    }
+    <div class="row g-4">
+        @foreach (var p in Model.Publicaciones)
+        {
+            <div class="col-12 col-md-6 col-lg-4">
+                <partial name="_TarjetaPublicacion" model="p" />
+            </div>
+        }
+    </div>
+
+    @if (Model.Pagina > 1 || Model.HayMas)
+    {
+        <nav class="d-flex justify-content-between mt-4" aria-label="Páginas del boletín">
+            @if (Model.Pagina > 1)
+            {
+                <a class="btn btn-outline-primary" href="@Url(Model.Categoria, Model.Pagina - 1)"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Más recientes</a>
+            }
+            else
+            {
+                <span></span>
+            }
+            @if (Model.HayMas)
+            {
+                <a class="btn btn-outline-primary" href="@Url(Model.Categoria, Model.Pagina + 1)">Anteriores<i class="bi bi-arrow-right ms-1" aria-hidden="true"></i></a>
+            }
+        </nav>
+    }
+}
