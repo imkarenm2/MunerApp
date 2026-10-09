@@ -23,18 +23,23 @@ public class BoletinController : Controller
 
     private readonly MunerAppDbContext _db;
     private readonly IAlmacenamientoArchivos _archivos;
+    private readonly PeriodicoMunerApp _periodico;
 
-    public BoletinController(MunerAppDbContext db, IAlmacenamientoArchivos archivos)
+    public BoletinController(MunerAppDbContext db, IAlmacenamientoArchivos archivos, PeriodicoMunerApp periodico)
     {
         _db = db;
         _archivos = archivos;
+        _periodico = periodico;
     }
 
     [HttpGet("boletin")]
     public async Task<IActionResult> General(CategoriaPublicacion? categoria, int pagina = 1)
     {
-        var modelo = await BoletinAsync(null, categoria, pagina);
+        // En la portada del periódico los próximos eventos ya salen arriba: aquí no se destacan otra vez
+        var conPortada = categoria is null && pagina <= 1;
+        var modelo = await BoletinAsync(null, categoria, pagina, destacarEventos: !conPortada);
         foreach (var p in modelo.Publicaciones.Concat(modelo.ProximosEventos)) p.MostrarFundacion = true;
+        if (conPortada) modelo.Periodico = await _periodico.ArmarAsync();
         return View(modelo);
     }
 
@@ -82,7 +87,7 @@ public class BoletinController : Controller
         => _db.Publicaciones.IgnoreQueryFilters().AsNoTracking()
             .Where(p => p.Estado == EstadoPublicacion.Publicada && p.Esal!.Activa && p.Esal.Slug != null);
 
-    private async Task<BoletinPublicoViewModel> BoletinAsync(int? esalId, CategoriaPublicacion? categoria, int pagina)
+    private async Task<BoletinPublicoViewModel> BoletinAsync(int? esalId, CategoriaPublicacion? categoria, int pagina, bool destacarEventos = true)
     {
         var visibles = Visibles();
         if (esalId is int id) visibles = visibles.Where(p => p.EsalId == id);
@@ -91,7 +96,7 @@ public class BoletinController : Controller
 
         // Escenario 2: próximos eventos, el más cercano primero (solo en la primera página y sin filtro, o filtrando eventos)
         var ahora = DateTime.UtcNow;
-        var proximos = pagina == 1 && (categoria is null || categoria == CategoriaPublicacion.Evento)
+        var proximos = destacarEventos && pagina == 1 && (categoria is null || categoria == CategoriaPublicacion.Evento)
             ? await visibles.Include(p => p.Esal)
                 .Where(p => p.Categoria == CategoriaPublicacion.Evento && p.FechaEvento >= ahora)
                 .OrderBy(p => p.FechaEvento).Take(6).ToListAsync()

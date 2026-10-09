@@ -37,6 +37,9 @@ public class BoletinPublicoViewModel
     public IReadOnlyList<PublicacionTarjeta> Publicaciones { get; set; } = Array.Empty<PublicacionTarjeta>();
     public int Pagina { get; set; } = 1;
     public bool HayMas { get; set; }
+
+    /// <summary>Portada del periódico: solo en la primera página del boletín general sin filtros.</summary>
+    public PeriodicoViewModel? Periodico { get; set; }
 }
 
 public class PublicacionDetalleViewModel

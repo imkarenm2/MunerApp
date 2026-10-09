@@ -1033,3 +1033,20 @@ details.rechazo summary::-webkit-details-marker { display: none; }
 .evento-fecha { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; width: 60px; height: 64px; border-radius: var(--mu-radio-sm); background: var(--mu-principal); color: #fff; line-height: 1; }
 .evento-dia { font-size: 1.5rem; font-weight: 700; }
 .evento-mes { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; margin-top: .2rem; }
+
+/* ---------- El periódico de MunerApp (HU-028) ---------- */
+.periodico-cabecera { text-align: center; border-top: 4px double var(--mu-texto, #1F1D1A); border-bottom: 1px solid var(--mu-borde, #E7E2DA); padding: 1rem 0 1.1rem; margin-bottom: 1.25rem; }
+.periodico-fecha { font-size: .8rem; text-transform: uppercase; letter-spacing: .12em; color: var(--mu-texto-suave, #6B665E); }
+.periodico-nombre { font-family: Georgia, "Times New Roman", serif; font-weight: 700; font-size: clamp(2rem, 5vw, 3.2rem); letter-spacing: -.01em; margin: .25rem 0; }
+.periodico-lema { font-family: Georgia, "Times New Roman", serif; font-style: italic; color: var(--mu-texto-suave, #6B665E); }
+.periodico-cifras { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; margin-bottom: 2rem; }
+.periodico-cifras > div { display: flex; flex-direction: column; align-items: center; text-align: center; padding: .9rem .5rem; border-radius: var(--mu-radio-sm); background: #fff; border: 1px solid var(--mu-borde, #E7E2DA); font-size: .85rem; color: var(--mu-texto-suave, #6B665E); }
+.periodico-cifra { font-size: clamp(1.15rem, 2.6vw, 1.6rem); font-weight: 700; color: var(--mu-principal); }
+@media (max-width: 575.98px) { .periodico-cifras { grid-template-columns: repeat(2, 1fr); } }
+.periodico-titular { display: block; }
+.periodico-titular:hover .periodico-titular-texto { text-decoration: underline; }
+.periodico-titular-texto { font-family: Georgia, "Times New Roman", serif; font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 700; line-height: 1.15; }
+.periodico-seccion { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; border-bottom: 2px solid var(--mu-texto, #1F1D1A); padding-bottom: .4rem; margin-bottom: 1rem; }
+.periodico-buenas li { padding: .75rem 0; border-bottom: 1px solid var(--mu-borde, #E7E2DA); }
+.periodico-buenas li:last-child { border-bottom: 0; }
+.periodico-buenas a:hover .fw-semibold { text-decoration: underline; }
