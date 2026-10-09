@@ -46,6 +46,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     // Sprint 4
     public DbSet<Producto> Productos => Set<Producto>();
     public DbSet<FotoProducto> FotosProducto => Set<FotoProducto>();
+    public DbSet<ConversacionTienda> ConversacionesTienda => Set<ConversacionTienda>();
+    public DbSet<MensajeTienda> MensajesTienda => Set<MensajeTienda>();
 
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
@@ -345,6 +347,31 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne(x => x.Producto).WithMany(x => x.Fotos).HasForeignKey(x => x.ProductoId).OnDelete(DeleteBehavior.Cascade);
         });
 
+        // ---- Sprint 4: chat de la tienda (HU-025) ----
+
+        builder.Entity<ConversacionTienda>(e =>
+        {
+            e.ToTable("ConversacionTienda");
+            e.Property(x => x.DonanteId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            // Una sola conversación por donante y producto
+            e.HasIndex(x => new { x.DonanteId, x.ProductoId }).IsUnique();
+            e.HasIndex(x => new { x.EsalId, x.Estado, x.FechaUltimoMensaje });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            // Un producto con conversaciones no se elimina: se oculta
+            e.HasOne(x => x.Producto).WithMany().HasForeignKey(x => x.ProductoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.DonanteId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<MensajeTienda>(e =>
+        {
+            e.ToTable("MensajeTienda");
+            e.Property(x => x.AutorId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.Texto).HasMaxLength(1000).IsRequired();
+            e.HasIndex(x => new { x.ConversacionId, x.Id });
+            e.HasOne(x => x.Conversacion).WithMany(x => x.Mensajes).HasForeignKey(x => x.ConversacionId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
@@ -365,6 +392,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<FotoCausa>(builder);
         AplicarFiltroEsal<Producto>(builder);
         AplicarFiltroEsal<FotoProducto>(builder);
+        AplicarFiltroEsal<ConversacionTienda>(builder);
+        AplicarFiltroEsal<MensajeTienda>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal

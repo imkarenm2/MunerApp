@@ -232,3 +232,40 @@ document.querySelectorAll('[data-contador][maxlength]').forEach(function (campo)
     numero.addEventListener('input', filtrar);
     aplicar();
 })();
+
+// ---------- Chat de la tienda (HU-025 / HU-026): baja al último mensaje y trae los nuevos cada 8 segundos ----------
+(function () {
+    const caja = document.querySelector('[data-chat]');
+    if (!caja) return;
+    const url = caja.getAttribute('data-chat-url');
+    const abajo = () => { caja.scrollTop = caja.scrollHeight; };
+    abajo();
+
+    let consultando = false;
+    async function traer() {
+        if (consultando || document.hidden) return;
+        consultando = true;
+        try {
+            const ultimo = caja.getAttribute('data-chat-ultimo') || '0';
+            const r = await fetch(`${url}?despues=${encodeURIComponent(ultimo)}`, { headers: { 'X-Requested-With': 'fetch' } });
+            if (!r.ok) return;
+            const html = (await r.text()).trim();
+            if (!html) return;
+            const estabaAbajo = caja.scrollHeight - caja.scrollTop - caja.clientHeight < 80;
+            caja.insertAdjacentHTML('beforeend', html);
+            const mensajes = caja.querySelectorAll('[data-mensaje-id]');
+            caja.setAttribute('data-chat-ultimo', mensajes[mensajes.length - 1].getAttribute('data-mensaje-id'));
+            if (estabaAbajo) abajo();
+        } catch { /* sin conexión: se intenta en la siguiente vuelta */ }
+        finally { consultando = false; }
+    }
+    setInterval(traer, 8000);
+
+    // Enter envía; Shift+Enter hace un salto de línea
+    document.querySelectorAll('[data-enviar-con-enter]').forEach(t => t.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey && t.value.trim()) {
+            e.preventDefault();
+            t.form.requestSubmit();
+        }
+    }));
+})();
