@@ -85,6 +85,13 @@ public class PagosWompiController : Controller
             ModelState.AddModelError(nameof(model.Valor), $"Para donaciones de más de {Formatos.Pesos(ValorMaximo)} comunícate directamente con la fundación.");
         if (!ModelState.IsValid) return View(Modelo(causa.Detalle, model.Valor));
 
+        // Wompi bloquea (403) el checkout si la dirección de regreso es local
+        if (Request.Host.Host is "localhost" or "127.0.0.1" or "::1" or "[::1]")
+        {
+            ModelState.AddModelError(string.Empty, "Wompi no acepta volver a una dirección local (localhost). Abre la página desde un túnel público (Dev Tunnels de Visual Studio o ngrok) para probar el pago.");
+            return View(Modelo(causa.Detalle, model.Valor));
+        }
+
         var config = await _db.ConfigPasarelas.IgnoreQueryFilters().AsNoTracking()
             .FirstAsync(p => p.EsalId == causa.EsalId && p.Activa);
 

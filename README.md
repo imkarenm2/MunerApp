@@ -154,6 +154,7 @@ Las páginas públicas (`/fundaciones/...`), "Mis donaciones" y "Mis postulacion
 - Al volver del checkout (`/pagos/resultado/{referencia}?id=...`), la página consulta la transacción en el API de Wompi y **solo muestra** el resultado; no cambia la donación. La confirmación oficial, la suma a la causa y el comprobante llegan con el aviso de Wompi (HU-044).
 - En **Mis donaciones**, una donación en línea no tiene soporte; mientras está pendiente muestra "Consultar el pago".
 - Si el donante abandona el checkout, la donación se queda en Pendiente y nunca suma a la causa.
+- **Probar en local:** Wompi responde 403 si la dirección de regreso es `localhost` o `127.0.0.1`. Abre la app desde un túnel público (Dev Tunnels de Visual Studio, ngrok o cloudflared). En Development la app lee `X-Forwarded-Host` para armar la dirección de regreso con el dominio del túnel. El mismo túnel sirve como URL de eventos de HU-044.
 
 ## Sprint 5: estado del código
 
