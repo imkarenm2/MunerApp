@@ -1011,4 +1011,5 @@ details.rechazo summary::-webkit-details-marker { display: none; }
 .producto-admin { display: flex; flex-direction: column; overflow: hidden; height: 100%; }
 .producto-foto { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #EDEAE5; }
 .tarjeta-producto { display: block; overflow: hidden; height: 100%; }
-.tarjeta-producto.agotado .producto-foto { filter: grayscale(.85); }
+.tarjeta-producto.agotado .producto-foto, .galeria-item.agotado img { filter: grayscale(.85); }
+.chip.activo { background: var(--mu-principal); border-color: var(--mu-principal); color: #fff; }
