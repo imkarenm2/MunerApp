@@ -1,0 +1,38 @@
+@model IniciarChatViewModel
+@{
+    ViewData["Title"] = "Escribir a la fundación";
+    ViewData["Nav"] = "Tienda";
+}
+<div class="container py-4 py-md-5" style="max-width: 720px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.SlugEsal, "Tienda de")' />
+
+    <h1 class="h2 mb-1">Escribe a @Model.NombreEsal</h1>
+    <p class="text-suave mb-4">Pregunta lo que necesites y acuerda con la fundación la forma de pago y la entrega.</p>
+
+    <a class="mu-card mu-card-hover d-flex align-items-center gap-3 p-3 mb-3 text-decoration-none text-body" href="/fundaciones/@Model.SlugEsal/tienda/@Model.ProductoId">
+        @if (Model.FotoUrl is not null)
+        {
+            <img class="chat-producto-foto" src="@Model.FotoUrl" alt="" />
+        }
+        <span>
+            <span class="d-block fw-semibold">@Model.NombreProducto</span>
+            <span class="d-block fw-bold text-principal">@Formatos.Pesos(Model.Precio)</span>
+        </span>
+    </a>
+
+    <form method="post" novalidate class="mu-card p-4 p-md-5">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <label asp-for="Texto" class="form-label">Tu mensaje</label>
+        <textarea asp-for="Texto" class="form-control" rows="4" maxlength="1000"></textarea>
+        <span asp-validation-for="Texto"></span>
+        <div class="form-text">Puedes contar cuántas unidades quieres, la talla o el color, y en qué ciudad estás.</div>
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-apoyar" data-cargando="Enviando..."><i class="bi bi-send me-2" aria-hidden="true"></i>Enviar mensaje</button>
+            <a class="btn btn-link" href="/fundaciones/@Model.SlugEsal/tienda/@Model.ProductoId">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

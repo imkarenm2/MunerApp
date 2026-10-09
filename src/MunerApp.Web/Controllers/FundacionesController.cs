@@ -103,6 +103,8 @@ public class FundacionesController : Controller
         var activos = (await _modulos.ObtenerActivosAsync(esal.Id)).Select(m => m.Codigo).ToHashSet();
         var hayApadrinables = activos.Contains(CodigosModulo.Beneficiarios)
             && await _db.Beneficiarios.IgnoreQueryFilters().AnyAsync(b => b.EsalId == esal.Id && b.Apadrinable);
+        var hayProductos = activos.Contains(CodigosModulo.Tienda)
+            && await _db.Productos.IgnoreQueryFilters().AnyAsync(p => p.EsalId == esal.Id && p.Estado != EstadoProducto.Oculto);
 
         var modelo = new PerfilPublicoViewModel
         {
@@ -127,8 +129,12 @@ public class FundacionesController : Controller
                 d.Extension, d.FechaPublicacion, d.TamanoBytes)).ToList(),
             TieneDatosDonacion = tieneDatos,
             TieneModulosApoyo = activos.Overlaps(new[] { CodigosModulo.Beneficiarios, CodigosModulo.Adopcion, CodigosModulo.Tienda }),
-            FormasAyuda = ConstruirFormasAyuda(esal, activos, hayApadrinables),
-            Causas = await _causas.ListarAsync(esal.Id)
+            FormasAyuda = ConstruirFormasAyuda(esal, activos, hayApadrinables, hayProductos),
+            Causas = await _causas.ListarAsync(esal.Id),
+            Boletin = (await _db.Publicaciones.IgnoreQueryFilters().AsNoTracking().Include(p => p.Esal)
+                    .Where(p => p.EsalId == esal.Id && p.Estado == EstadoPublicacion.Publicada)
+                    .OrderByDescending(p => p.FechaPublicacion).Take(2).ToListAsync())
+                .Select(p => TarjetasBoletin.Desde(p, _archivos)).ToList()
         };
 
         return View(modelo);
@@ -236,7 +242,7 @@ public class FundacionesController : Controller
     };
 
     /// <summary>HU-016: las opciones dependen de los módulos activos de la fundación.</summary>
-    private List<FormaAyuda> ConstruirFormasAyuda(Esal esal, ISet<string> activos, bool hayApadrinables)
+    private List<FormaAyuda> ConstruirFormasAyuda(Esal esal, ISet<string> activos, bool hayApadrinables, bool hayProductos)
     {
         var slug = esal.Slug!;
         var formas = new List<FormaAyuda>
@@ -265,7 +271,7 @@ public class FundacionesController : Controller
         if (activos.Contains(CodigosModulo.Tienda))
             formas.Add(new(CodigosModulo.Tienda, "Comprar en su tienda",
                 "Productos de la fundación: cada compra también ayuda.",
-                "bi-bag-heart", "alerta", null, false, false));
+                "bi-bag-heart", "alerta", $"/fundaciones/{slug}/tienda", false, hayProductos));
 
         return formas;
     }

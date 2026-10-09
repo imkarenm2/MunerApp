@@ -1,0 +1,79 @@
+@model ProductoDetalleViewModel
+@{
+    ViewData["Title"] = Model.Nombre;
+    ViewData["Nav"] = "Tienda";
+    ViewData["Descripcion"] = $"{Model.Nombre}: {Formatos.Pesos(Model.Precio)}. Cada compra ayuda a {Model.NombreEsal}.";
+}
+<div class="container py-4 py-md-5" style="max-width: 1040px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.SlugEsal, "Producto de")' />
+
+    <a href="/fundaciones/@Model.SlugEsal/tienda" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Toda la tienda</a>
+
+    <div class="row g-4 g-lg-5 mt-1">
+        <div class="col-12 col-md-6">
+            @if (Model.Fotos.Count > 0)
+            {
+                <button type="button" class="galeria-item d-block w-100 mb-2 @(Model.Agotado ? "agotado" : "")" data-galeria="@Model.Fotos[0]" style="aspect-ratio: 1" aria-label="Ver la foto principal en grande">
+                    <img src="@Model.Fotos[0]" alt="Foto de @Model.Nombre" />
+                </button>
+                @if (Model.Fotos.Count > 1)
+                {
+                    <div class="galeria mb-3">
+                        @for (var i = 1; i < Model.Fotos.Count; i++)
+                        {
+                            <button type="button" class="galeria-item" data-galeria="@Model.Fotos[i]" aria-label="Ver foto @(i + 1) de @Model.Fotos.Count">
+                                <img src="@Model.Fotos[i]" alt="Foto @(i + 1) de @Model.Nombre" loading="lazy" />
+                            </button>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="producto-foto beneficiario-sin-foto rounded-4" aria-hidden="true"><i class="bi bi-bag-heart"></i></div>
+            }
+        </div>
+
+        <div class="col-12 col-md-6">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <partial name="_EstadoProducto" model="Model.Estado" />
+                @if (Model.Categoria is not null)
+                {
+                    <a class="small text-suave" href="/fundaciones/@Model.SlugEsal/tienda?categoria=@Uri.EscapeDataString(Model.Categoria)">@Model.Categoria</a>
+                }
+            </div>
+            <h1 class="h2 mb-2">@Model.Nombre</h1>
+            <div class="display-6 fw-bold text-principal mb-3">@Formatos.Pesos(Model.Precio)</div>
+            <div class="texto-largo mb-4">@Model.Descripcion</div>
+
+            <div class="mu-card p-4">
+                <partial name="_ComprarProducto" model="Model" />
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Relacionados.Count > 0)
+    {
+        <h2 class="h5 mt-5 mb-3">Más productos de @Model.NombreEsal</h2>
+        <div class="row g-3 g-md-4">
+            @foreach (var p in Model.Relacionados)
+            {
+                <div class="col-6 col-md-3">
+                    <partial name="_TarjetaProducto" model="p" />
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@if (Model.Fotos.Count > 0)
+{
+    <div class="modal fade" id="visorFoto" tabindex="-1" aria-label="Foto del producto" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content bg-transparent border-0">
+                <button type="button" class="btn-close btn-close-white ms-auto mb-2" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <img class="img-fluid rounded-4 mx-auto" alt="Foto ampliada de @Model.Nombre" data-visor-img />
+            </div>
+        </div>
+    </div>
+}

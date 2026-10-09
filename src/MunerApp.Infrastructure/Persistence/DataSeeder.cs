@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MunerApp.Application.Interfaces;
 using MunerApp.Domain.Common;
 using MunerApp.Domain.Constantes;
 using MunerApp.Infrastructure.Identity;
@@ -27,6 +28,11 @@ public static class DataSeeder
             }
 
             await AsignarSlugsAsync(scope.ServiceProvider.GetRequiredService<MunerAppDbContext>());
+
+            // Publicaciones ficticias para que el boletín no se vea vacío en desarrollo y en las demos (HU-028)
+            if (config.GetValue<bool>("Seed:BoletinDemo"))
+                await BoletinDemo.SembrarAsync(scope.ServiceProvider.GetRequiredService<MunerAppDbContext>(),
+                    scope.ServiceProvider.GetRequiredService<IAlmacenamientoArchivos>());
 
             var email = config["Seed:SuperAdmin:Email"];
             var password = config["Seed:SuperAdmin:Password"];

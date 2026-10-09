@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Models.Publico;
+using MunerApp.Web.Servicios;
 
 namespace MunerApp.Web.Controllers;
 
@@ -11,12 +12,14 @@ public class HomeController : Controller
     private readonly IWebHostEnvironment _entorno;
     private readonly MunerAppDbContext _db;
     private readonly IAlmacenamientoArchivos _archivos;
+    private readonly PeriodicoMunerApp _periodico;
 
-    public HomeController(IWebHostEnvironment entorno, MunerAppDbContext db, IAlmacenamientoArchivos archivos)
+    public HomeController(IWebHostEnvironment entorno, MunerAppDbContext db, IAlmacenamientoArchivos archivos, PeriodicoMunerApp periodico)
     {
         _entorno = entorno;
         _db = db;
         _archivos = archivos;
+        _periodico = periodico;
     }
 
     public async Task<IActionResult> Index()
@@ -28,6 +31,9 @@ public class HomeController : Controller
             .Take(3)
             .Select(e => new { e.Slug, e.Nombre, e.TipoEntidad, e.DescripcionCorta, e.Ciudad, e.LogoRuta })
             .ToListAsync();
+
+        // HU-028: "El periódico de MunerApp" con lo bueno que pasa en las fundaciones, visible sin cuenta
+        ViewData["Periodico"] = await _periodico.ArmarAsync(recientes: 3);
 
         return View(esales.Select(e => new FundacionTarjeta
         {
