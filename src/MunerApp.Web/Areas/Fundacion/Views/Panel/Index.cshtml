@@ -14,7 +14,7 @@
         [CodigosModulo.Salud] = "bi-capsule"
     };
     // Módulos que ya funcionan (Sprints 2 a 4)
-    var disponibles = new HashSet<string> { CodigosModulo.Perfil, CodigosModulo.Donaciones, CodigosModulo.Voluntariado, CodigosModulo.Beneficiarios, CodigosModulo.Tienda };
+    var disponibles = new HashSet<string> { CodigosModulo.Perfil, CodigosModulo.Donaciones, CodigosModulo.Voluntariado, CodigosModulo.Beneficiarios, CodigosModulo.Tienda, CodigosModulo.Boletin };
     var rolTexto = Model.EsAdmin
         ? (Model.EsAdminPrincipal ? "Administrador principal" : "Administrador de consulta")
         : (Model.Perfil == Perfiles.Salud ? "Voluntario de salud" : "Voluntario");

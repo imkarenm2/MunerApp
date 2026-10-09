@@ -1,0 +1,92 @@
+@model PublicacionFormViewModel
+@{
+    var categorias = new[]
+    {
+        (CategoriaPublicacion.Noticia, "bi-newspaper"),
+        (CategoriaPublicacion.Evento, "bi-calendar-event"),
+        (CategoriaPublicacion.Logro, "bi-trophy"),
+        (CategoriaPublicacion.RendicionCuentas, "bi-clipboard-data")
+    };
+    var minimo = DateTime.Today.ToString("yyyy-MM-ddT00:00");
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+<div class="row g-3">
+    <div class="col-12">
+        <span class="form-label d-block">Categoría</span>
+        <div class="d-flex flex-wrap gap-2" role="radiogroup" aria-label="Categoría">
+            @foreach (var (c, icono) in categorias)
+            {
+                <input type="radio" class="btn-check" asp-for="Categoria" value="@c" id="categoria-@c" />
+                <label class="chip" for="categoria-@c"><i class="bi @icono me-1" aria-hidden="true"></i>@Textos.De(c)</label>
+            }
+        </div>
+        <span asp-validation-for="Categoria"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Titulo" class="form-label"></label>
+        <input asp-for="Titulo" class="form-control" maxlength="150" placeholder="Ej.: Jornada de esterilización en el barrio Manrique" autocomplete="off" />
+        <span asp-validation-for="Titulo"></span>
+    </div>
+
+    <div class="col-12" data-visible-si="Categoria=Evento">
+        <div class="row g-3">
+            <div class="col-12 col-sm-6">
+                <label asp-for="FechaEvento" class="form-label"></label>
+                <input asp-for="FechaEvento" type="datetime-local" class="form-control" min="@minimo" />
+                <div class="form-text">Hora de Colombia.</div>
+                <span asp-validation-for="FechaEvento"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="LugarEvento" class="form-label"></label>
+                <input asp-for="LugarEvento" class="form-control" maxlength="200" placeholder="Dirección, o el enlace si es virtual" />
+                <span asp-validation-for="LugarEvento"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <label asp-for="Resumen" class="form-label"></label>
+        <input asp-for="Resumen" class="form-control" maxlength="300" placeholder="Una o dos frases que se ven en la tarjeta del boletín" />
+        <span asp-validation-for="Resumen"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Contenido" class="form-label"></label>
+        <textarea asp-for="Contenido" class="form-control" rows="10" maxlength="8000"></textarea>
+        <div class="form-text">Los saltos de línea se respetan al publicarla.</div>
+        <span asp-validation-for="Contenido"></span>
+    </div>
+
+    @if (Model.Causas.Count > 0)
+    {
+        <div class="col-12 col-md-8">
+            <label asp-for="CausaId" class="form-label"></label>
+            <select asp-for="CausaId" class="form-select">
+                <option value="">Ninguna</option>
+                @foreach (var c in Model.Causas)
+                {
+                    <option value="@c.Id">@c.Titulo</option>
+                }
+            </select>
+            <div class="form-text">Por ejemplo, para rendir cuentas de una causa o contar cómo va.</div>
+        </div>
+    }
+    <span asp-validation-for="CausaId" class="col-12"></span>
+
+    <div class="col-12">
+        <label class="form-label" for="Imagen">Imagen principal (opcional)</label>
+        @if (Model.ImagenActualUrl is not null)
+        {
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <img class="chat-producto-foto" src="@Model.ImagenActualUrl" alt="Imagen actual" style="width:96px;height:96px" />
+                <button type="submit" form="quitar-imagen" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1" aria-hidden="true"></i>Quitar imagen</button>
+            </div>
+        }
+        <label class="zona-archivo" for="Imagen">
+            <i class="bi bi-image" aria-hidden="true"></i>
+            <span class="fw-semibold" data-nombre-archivo>@(Model.ImagenActualUrl is null ? "Selecciona una imagen" : "Reemplazar la imagen")</span>
+            <span class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Imagen) Será pública.</span>
+        </label>
+        <input asp-for="Imagen" type="file" class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Imagen)" data-archivo />
+        <span asp-validation-for="Imagen"></span>
+    </div>
+</div>
