@@ -1,0 +1,16 @@
+@model EstadoPedido
+@switch (Model)
+{
+    case EstadoPedido.Pagado:
+        <span class="mu-badge acento"><i class="bi bi-cash-coin" aria-hidden="true"></i>Pagado</span>
+        break;
+    case EstadoPedido.Entregado:
+        <span class="mu-badge exito"><i class="bi bi-bag-check" aria-hidden="true"></i>Entregado</span>
+        break;
+    case EstadoPedido.Cancelado:
+        <span class="mu-badge error"><i class="bi bi-x-circle" aria-hidden="true"></i>Cancelado</span>
+        break;
+    default:
+        <span class="mu-badge alerta"><i class="bi bi-clipboard-check" aria-hidden="true"></i>Acordado</span>
+        break;
+}

@@ -26,6 +26,25 @@
             }
         </div>
 
+        @if (Model.Pedidos.Count > 0)
+        {
+            <div class="px-3 pt-3 d-grid gap-2">
+                @foreach (var p in Model.Pedidos)
+                {
+                    <div class="border rounded-3 p-3 d-flex flex-wrap align-items-center gap-2">
+                        <i class="bi bi-receipt text-principal" aria-hidden="true"></i>
+                        <span class="fw-semibold">Pedido @p.Codigo</span>
+                        <span class="small">@p.Cantidad × @Formatos.Pesos(p.PrecioUnitario) = <strong>@Formatos.Pesos(p.Total)</strong></span>
+                        <span class="ms-auto"><partial name="_EstadoPedido" model="p.Estado" /></span>
+                        @if (p.Notas is not null)
+                        {
+                            <div class="w-100 small text-suave">@p.Notas</div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
         <div class="chat-mensajes" data-chat data-chat-url="/mis-chats/@Model.Id/mensajes" data-chat-ultimo="@ultimo" aria-live="polite">
             <partial name="_MensajesChat" model="Model.Mensajes" />
         </div>

@@ -55,4 +55,7 @@ public class ChatDonanteViewModel
     public string? LogoUrl { get; set; }
     public IReadOnlyList<MensajeChatItem> Mensajes { get; set; } = Array.Empty<MensajeChatItem>();
     public MensajeChatForm Nuevo { get; set; } = new();
+
+    /// <summary>Pedidos que la fundación registró en este chat (HU-026).</summary>
+    public IReadOnlyList<PedidoItem> Pedidos { get; set; } = Array.Empty<PedidoItem>();
 }
