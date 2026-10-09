@@ -88,7 +88,7 @@ public class PagosWompiController : Controller
         // Wompi bloquea (403) el checkout si la dirección de regreso es local
         if (Request.Host.Host is "localhost" or "127.0.0.1" or "::1" or "[::1]")
         {
-            ModelState.AddModelError(string.Empty, "Wompi no acepta volver a una dirección local (localhost). Abre la página desde un túnel público (Dev Tunnels de Visual Studio o ngrok) para probar el pago.");
+            ModelState.AddModelError(string.Empty, "Wompi no acepta volver a una dirección local (localhost). Abre la app desde la URL pública de tu túnel (cloudflared, ngrok o Dev Tunnels de Visual Studio) y no desde localhost para probar el pago.");
             return View(Modelo(causa.Detalle, model.Valor));
         }
 
