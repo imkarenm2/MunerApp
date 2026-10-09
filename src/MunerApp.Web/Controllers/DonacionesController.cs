@@ -199,6 +199,8 @@ public class DonacionesController : Controller
             MotivoRechazo = d.MotivoRechazo,
             FechaRevision = d.FechaRevision,
             SoporteEsPdf = d.SoporteRuta.EndsWith(".pdf"),
+            EnLinea = d.Origen == OrigenDonacion.Wompi,
+            ReferenciaPasarela = d.ReferenciaPasarela,
             ApadrinamientoId = d.ApadrinamientoId,
             Apadrinado = d.Apadrinamiento?.Beneficiario?.Nombre
         });
@@ -208,7 +210,7 @@ public class DonacionesController : Controller
     public async Task<IActionResult> Soporte(string codigo)
     {
         var d = await BuscarPropiaAsync(codigo);
-        if (d is null) return NotFound();
+        if (d is null || string.IsNullOrEmpty(d.SoporteRuta)) return NotFound();
         var stream = await _archivos.AbrirAsync(d.SoporteRuta);
         if (stream is null) return NotFound();
         return File(stream, ValidadorArchivos.ContentTypeDe(d.SoporteRuta));

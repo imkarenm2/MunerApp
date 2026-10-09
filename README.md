@@ -141,6 +141,20 @@ Al arrancar, las fundaciones que ya existían reciben su dirección pública (`s
 
 Las páginas públicas (`/fundaciones/...`), "Mis donaciones" y "Mis postulaciones" consultan con `IgnoreQueryFilters()` y **siempre** filtran explícitamente por la fundación consultada o por el usuario autenticado. Así un administrador de una fundación también ve completo el perfil de otra, y un donante ve sus donaciones a varias fundaciones.
 
+## Sprint 4: estado del código
+
+| HU | Historia | Dónde está |
+|---|---|---|
+| 043 | Donación en línea a una causa con Wompi | `Controllers/PagosWompiController.cs` (`/fundaciones/{slug}/causas/{id}/donar-en-linea`, `/pagos/resultado/{referencia}`) · `Infrastructure/Servicios/WompiService.cs` |
+
+### Donación en línea con Wompi (HU-043)
+
+- En el detalle de una causa que recibe donaciones, si la fundación tiene **Pagos en línea** activos, aparece "Donar en línea". Si no, queda el flujo por transferencia.
+- El donante escribe el valor (de $5.000 a $50.000.000, constantes en el controlador). Se crea la `Donacion` en **Pendiente** con el contrato de HU-044 y se envía al Web Checkout de Wompi con la firma de integridad: SHA256 de `referencia + montoEnCentavos + moneda + secretoIntegridad` (el secreto se descifra con `ISecretosService`).
+- Al volver del checkout (`/pagos/resultado/{referencia}?id=...`), la página consulta la transacción en el API de Wompi y **solo muestra** el resultado; no cambia la donación. La confirmación oficial, la suma a la causa y el comprobante llegan con el aviso de Wompi (HU-044).
+- En **Mis donaciones**, una donación en línea no tiene soporte; mientras está pendiente muestra "Consultar el pago".
+- Si el donante abandona el checkout, la donación se queda en Pendiente y nunca suma a la causa.
+
 ## Sprint 5: estado del código
 
 | HU | Historia | Dónde está |

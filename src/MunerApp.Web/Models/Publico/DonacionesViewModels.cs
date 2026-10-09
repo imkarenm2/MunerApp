@@ -61,6 +61,10 @@ public class DonacionDetalleViewModel : DonacionItem
     public DateTime? FechaRevision { get; set; }
     public bool SoporteEsPdf { get; set; }
     public int? ApadrinamientoId { get; set; }
+
+    /// <summary>Pagada en línea con Wompi (HU-043): no tiene soporte y la confirma el aviso de Wompi (HU-044).</summary>
+    public bool EnLinea { get; set; }
+    public string? ReferenciaPasarela { get; set; }
 }
 
 public class PostulacionViewModel
