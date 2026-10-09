@@ -49,6 +49,7 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<ConversacionTienda> ConversacionesTienda => Set<ConversacionTienda>();
     public DbSet<MensajeTienda> MensajesTienda => Set<MensajeTienda>();
     public DbSet<Pedido> Pedidos => Set<Pedido>();
+    public DbSet<Publicacion> Publicaciones => Set<Publicacion>();
 
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
@@ -392,6 +393,25 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.DonanteId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        // ---- Sprint 4: boletín (HU-027) ----
+
+        builder.Entity<Publicacion>(e =>
+        {
+            e.ToTable("Publicacion");
+            e.Property(x => x.Titulo).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Resumen).HasMaxLength(300);
+            e.Property(x => x.Contenido).HasMaxLength(8000).IsRequired();
+            e.Property(x => x.Categoria).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.ImagenRuta).HasMaxLength(300);
+            e.Property(x => x.LugarEvento).HasMaxLength(200);
+            e.Property(x => x.CreadaPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.Estado, x.FechaPublicacion });
+            e.HasIndex(x => new { x.Estado, x.Categoria, x.FechaEvento });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Causa).WithMany().HasForeignKey(x => x.CausaId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
@@ -415,6 +435,7 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<ConversacionTienda>(builder);
         AplicarFiltroEsal<MensajeTienda>(builder);
         AplicarFiltroEsal<Pedido>(builder);
+        AplicarFiltroEsal<Publicacion>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal

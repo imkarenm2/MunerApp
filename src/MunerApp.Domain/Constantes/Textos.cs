@@ -114,6 +114,15 @@ public static class Textos
         _ => e.ToString()
     };
 
+    public static string De(CategoriaPublicacion c) => c switch
+    {
+        CategoriaPublicacion.Noticia => "Noticia",
+        CategoriaPublicacion.Evento => "Evento",
+        CategoriaPublicacion.Logro => "Logro",
+        CategoriaPublicacion.RendicionCuentas => "Rendición de cuentas",
+        _ => c.ToString()
+    };
+
     public static string De(EstadoPedido e) => e switch
     {
         EstadoPedido.Acordado => "Acordado",

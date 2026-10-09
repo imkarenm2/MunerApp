@@ -269,3 +269,19 @@ document.querySelectorAll('[data-contador][maxlength]').forEach(function (campo)
         }
     }));
 })();
+
+// ---------- Boletín (HU-027): <div data-visible-si="Campo=Valor"> solo se ve si el radio "Campo" tiene ese valor ----------
+// El servidor valida lo mismo: ocultar un campo nunca reemplaza la validación.
+(function () {
+    const bloques = document.querySelectorAll('[data-visible-si]');
+    if (bloques.length === 0) return;
+    function aplicar() {
+        bloques.forEach(b => {
+            const [campo, valor] = b.getAttribute('data-visible-si').split('=');
+            const marcado = document.querySelector(`input[name="${campo}"]:checked`);
+            b.classList.toggle('d-none', !marcado || marcado.value !== valor);
+        });
+    }
+    document.addEventListener('change', e => { if (e.target.matches('input[type=radio]')) aplicar(); });
+    aplicar();
+})();
