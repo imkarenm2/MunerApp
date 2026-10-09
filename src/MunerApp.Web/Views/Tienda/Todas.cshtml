@@ -1,0 +1,13 @@
+@model CatalogoViewModel
+@{
+    ViewData["Title"] = "Tienda solidaria";
+    ViewData["Nav"] = "Tienda";
+    ViewData["Descripcion"] = "Productos de las fundaciones de MunerApp: cada compra ayuda a su causa.";
+}
+<div class="container py-4 py-md-5">
+    <span class="mu-badge acento mb-2"><i class="bi bi-bag-heart" aria-hidden="true"></i>Tienda solidaria</span>
+    <h1 class="h2 mb-2">Compra y ayuda</h1>
+    <p class="text-suave mb-4">Productos de las fundaciones. Lo que pagas llega directo a la fundación que lo vende.</p>
+
+    <partial name="_Catalogo" model="Model" />
+</div>

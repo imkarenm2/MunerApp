@@ -29,6 +29,7 @@
                     <ul class="navbar-nav mx-lg-auto my-3 my-lg-0 gap-lg-1">
                         <li class="nav-item"><a class="nav-link @(ViewData["Nav"] as string == "Fundaciones" ? "active" : "")" href="/fundaciones">Fundaciones</a></li>
                         <li class="nav-item"><a class="nav-link @(ViewData["Nav"] as string == "Causas" ? "active" : "")" href="/causas">Causas</a></li>
+                        <li class="nav-item"><a class="nav-link @(ViewData["Nav"] as string == "Tienda" ? "active" : "")" href="/tienda">Tienda</a></li>
                         <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar">Cómo ayudar</a></li>
                         <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="transparencia">Transparencia</a></li>
                     </ul>
@@ -76,6 +77,7 @@
                     <ul class="list-unstyled d-grid gap-2 mb-0">
                         <li><a href="/fundaciones">Fundaciones</a></li>
                         <li><a href="/causas">Causas</a></li>
+                        <li><a href="/tienda">Tienda solidaria</a></li>
                         <li><a asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar">Cómo ayudar</a></li>
                         <li><a asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="transparencia">Transparencia</a></li>
                     </ul>
