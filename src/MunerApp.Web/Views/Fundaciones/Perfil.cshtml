@@ -165,6 +165,28 @@
                 </section>
             }
 
+            @* ---------- Boletín (HU-028) ---------- *@
+            @if (Model.Boletin.Count > 0)
+            {
+                <section id="boletin" class="perfil-seccion">
+                    <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
+                        <div>
+                            <h2 class="h3 mb-1">Boletín</h2>
+                            <p class="text-suave mb-0">Noticias, eventos y logros de la fundación.</p>
+                        </div>
+                        <a class="small fw-semibold" href="/fundaciones/@Model.Slug/boletin">Ver todo el boletín <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                    </div>
+                    <div class="row g-3">
+                        @foreach (var p in Model.Boletin)
+                        {
+                            <div class="col-12 col-md-6">
+                                <partial name="_TarjetaPublicacion" model="p" />
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
             @* ---------- Transparencia (HU-012) ---------- *@
             <section id="transparencia" class="perfil-seccion">
                 <div class="d-flex align-items-center gap-2 mb-1">
