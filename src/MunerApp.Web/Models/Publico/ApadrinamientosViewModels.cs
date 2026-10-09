@@ -45,6 +45,9 @@ public class ApadrinamientoDetalleViewModel : ApadrinamientoItem
 {
     public int BeneficiarioId { get; set; }
 
+    /// <summary>Si el beneficiario fue adoptado o falleció, el apadrinamiento terminó por eso (no lo canceló el padrino).</summary>
+    public MunerApp.Domain.Enums.EstadoBeneficiario EstadoBeneficiario { get; set; }
+
     /// <summary>true si el beneficiario todavía se ofrece al público (se puede abrir su ficha).</summary>
     public bool BeneficiarioVisible { get; set; }
 

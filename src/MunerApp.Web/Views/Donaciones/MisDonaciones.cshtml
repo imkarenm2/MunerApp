@@ -36,7 +36,7 @@
                     <partial name="_LogoEsal" model="new LogoEsalModel(d.NombreEsal, d.LogoUrl, 44)" />
                     <span class="flex-grow-1 min-w-0">
                         <span class="d-block fw-semibold text-body text-truncate">@d.NombreEsal</span>
-                        <span class="d-block small text-suave">@d.Codigo · @Formatos.Fecha(d.FechaTransferencia)@(d.Apadrinado is null ? "" : " · Apadrinamiento de " + d.Apadrinado)</span>
+                        <span class="d-block small text-suave">@d.Codigo · @Formatos.Fecha(d.FechaTransferencia)@(d.Apadrinado is null ? "" : " · Apadrinamiento de " + d.Apadrinado)@(d.Causa is null ? "" : " · Causa: " + d.Causa)</span>
                     </span>
                     <span class="text-end">
                         <span class="d-block fw-bold text-body">@Formatos.Pesos(d.Valor)</span>

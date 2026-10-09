@@ -8,7 +8,7 @@
     var whatsapp = Formatos.WhatsApp(Model.Telefono);
     // Cuentas de una fundación (administradores y voluntarios) o superadministrador
     var esalUsuario = User.FindFirst(MunerAppClaims.EsalId)?.Value;
-    var cuentaDeFundacion = esalUsuario is not null || User.IsInRole(Roles.SuperAdministrador);
+    var cuentaDeFundacion = MunerApp.Web.Seguridad.Politicas.EsCuentaInstitucional(User);
     var esMiFundacion = esalUsuario == Model.Id.ToString();
 }
 
@@ -230,7 +230,7 @@
                                 <p class="text-suave flex-grow-1">@f.Descripcion</p>
                                 @if (f.Disponible && f.Codigo == CodigosModulo.Voluntariado && cuentaDeFundacion)
                                 {
-                                    <p class="small text-suave mb-0"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Las cuentas de una fundación no pueden postularse como voluntarias.</p>
+                                    <p class="small text-suave mb-0"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Las cuentas de una fundación o de la plataforma no pueden postularse.</p>
                                 }
                                 else if (f.Disponible && destino is not null)
                                 {

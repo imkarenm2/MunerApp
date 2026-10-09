@@ -1,0 +1,17 @@
+﻿@* Layout del panel de la fundación. El menú lateral se despliega con el botón "Menú" y se oculta solo. *@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Panel"] = true;
+}
+@section Estilos {
+    @await RenderSectionAsync("Estilos", required: false)
+}
+<partial name="_NavFundacion" />
+
+<div class="panel-principal">
+    <partial name="_Alertas" />
+    @RenderBody()
+</div>
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
+}

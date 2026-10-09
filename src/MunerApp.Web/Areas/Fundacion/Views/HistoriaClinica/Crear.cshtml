@@ -8,8 +8,12 @@
         [TipoEventoClinico.Vacuna] = "bi-shield-plus",
         [TipoEventoClinico.Tratamiento] = "bi-capsule",
         [TipoEventoClinico.Control] = "bi-clipboard2-pulse",
-        [TipoEventoClinico.Otro] = "bi-journal-medical"
+        [TipoEventoClinico.Otro] = "bi-journal-medical",
+        [TipoEventoClinico.Desparasitacion] = "bi-bug",
+        [TipoEventoClinico.PruebaViral] = "bi-virus",
+        [TipoEventoClinico.Cirugia] = "bi-scissors"
     };
+    var orden = new[] { TipoEventoClinico.Vacuna, TipoEventoClinico.Desparasitacion, TipoEventoClinico.PruebaViral, TipoEventoClinico.Control, TipoEventoClinico.Tratamiento, TipoEventoClinico.Cirugia, TipoEventoClinico.Otro };
 }
 <div class="container py-4 py-md-5" style="max-width: 720px">
     <a asp-action="Index" asp-route-id="@Model.BeneficiarioId" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Historia clínica de @Model.NombreBeneficiario</a>
@@ -24,10 +28,10 @@
             <div class="col-12">
                 <span class="form-label d-block" id="etiqueta-tipo">Tipo de evento</span>
                 <div class="d-flex flex-wrap gap-2" role="radiogroup" aria-labelledby="etiqueta-tipo">
-                    @foreach (var t in Enum.GetValues<TipoEventoClinico>())
+                    @foreach (var t in orden)
                     {
                         <div>
-                            <input type="radio" class="btn-check" name="Tipo" id="tipo-@t" value="@t" checked="@(Model.Tipo == t)" data-val="true" data-val-required="Selecciona el tipo de evento." />
+                            <input type="radio" class="btn-check" name="Tipo" id="tipo-@t" value="@t" checked="@(Model.Tipo == t)" data-val="true" data-val-required="Selecciona el tipo de evento." data-tipo-evento />
                             <label class="chip" for="tipo-@t"><i class="bi @iconos[t] me-2" aria-hidden="true"></i>@Textos.De(t)</label>
                         </div>
                     }
@@ -43,6 +47,43 @@
                 <label asp-for="Responsable" class="form-label"></label>
                 <input asp-for="Responsable" class="form-control" maxlength="150" placeholder="Quién atendió o aplicó" autocomplete="off" />
                 <span asp-validation-for="Responsable"></span>
+            </div>
+            <div class="col-12 col-sm-6" data-campo-evento="Vacuna Desparasitacion PruebaViral Tratamiento Cirugia">
+                <label asp-for="Producto" class="form-label" data-etiqueta-producto>Vacuna, desparasitante o prueba</label>
+                <input asp-for="Producto" class="form-control" maxlength="100" list="productos-clinicos" autocomplete="off" />
+                <datalist id="productos-clinicos">
+                    @foreach (var v in Etograma.Vacunas) { <option value="@v"></option> }
+                    <option value="Galgocal 200"></option>
+                    <option value="VIF (inmunodeficiencia felina)"></option>
+                    <option value="FeLV (leucemia felina)"></option>
+                    <option value="OVH (esterilización)"></option>
+                    <option value="Orquiectomía (castración)"></option>
+                </datalist>
+                <span asp-validation-for="Producto"></span>
+            </div>
+            <div class="col-12 col-sm-6" data-campo-evento="Vacuna">
+                <label asp-for="Laboratorio" class="form-label"></label>
+                <input asp-for="Laboratorio" class="form-control" maxlength="100" list="laboratorios" placeholder="Ej.: Feligen, Virbac" autocomplete="off" />
+                <datalist id="laboratorios"><option value="Feligen"></option><option value="Virbac"></option><option value="Zoetis"></option><option value="MSD"></option></datalist>
+                <span asp-validation-for="Laboratorio"></span>
+            </div>
+            <div class="col-12 col-sm-6" data-campo-evento="Desparasitacion Control Tratamiento">
+                <label asp-for="Peso" class="form-label"></label>
+                <div class="input-group">
+                    <input asp-for="Peso" class="form-control" inputmode="decimal" placeholder="3,5" autocomplete="off" />
+                    <span class="input-group-text">kg</span>
+                </div>
+                <span asp-validation-for="Peso"></span>
+            </div>
+            <div class="col-12 col-sm-6" data-campo-evento="PruebaViral">
+                <label asp-for="Resultado" class="form-label"></label>
+                <select asp-for="Resultado" class="form-select">
+                    <option value="">Selecciona…</option>
+                    <option value="Negativo">Negativo</option>
+                    <option value="Positivo">Positivo</option>
+                    <option value="No concluyente">No concluyente</option>
+                </select>
+                <span asp-validation-for="Resultado"></span>
             </div>
             <div class="col-12">
                 <label asp-for="Descripcion" class="form-label"></label>

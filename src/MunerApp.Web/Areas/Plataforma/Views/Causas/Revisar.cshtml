@@ -1,0 +1,111 @@
+@model RevisarCausaViewModel
+@{
+    ViewData["Title"] = "Revisar causa";
+    var pct = Formatos.Porcentaje(Model.Recaudado, Model.Meta);
+}
+<div class="container-fluid panel-contenido py-4" style="max-width: 1100px">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Causas</a>
+    <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mb-1">
+        <h1 class="h2 mb-0">@Model.Titulo</h1>
+        @if (Model.Estado == EstadoCausa.PorAprobar)
+        {
+            <span class="mu-badge alerta"><i class="bi bi-hourglass-split" aria-hidden="true"></i>Por aprobar</span>
+        }
+        else if (Model.Estado == EstadoCausa.Rechazada)
+        {
+            <span class="mu-badge acento"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>Devuelta a la fundación</span>
+        }
+        else
+        {
+            <span class="mu-badge exito">@(Model.Cerrada ? "Cerrada" : Textos.De(Model.Estado))</span>
+        }
+    </div>
+    <p class="text-suave mb-4">
+        @Model.Fundacion · @(Model.CreadaPor is null ? "" : $"propuesta por {Model.CreadaPor} · ")@Formatos.FechaHora(Model.FechaCreacion)
+    </p>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            @if (Model.Fotos.Count > 0)
+            {
+                <div class="evento-fotos mb-3">
+                    @foreach (var f in Model.Fotos)
+                    {
+                        <a class="evento-foto" href="@f" target="_blank" rel="noopener"><img src="@f" alt="Foto de la causa" /></a>
+                    }
+                </div>
+            }
+            <section class="mu-card p-4 mb-4">
+                <h2 class="h6 text-suave text-uppercase mb-2">Justificación de la fundación</h2>
+                <p class="mb-0" style="white-space: pre-line">@(Model.Justificacion ?? "Creada directamente por MunerApp, sin justificación.")</p>
+            </section>
+            <section class="mu-card p-4">
+                <h2 class="h6 text-suave text-uppercase mb-2">Descripción pública</h2>
+                <p class="mb-0" style="white-space: pre-line">@Model.Descripcion</p>
+            </section>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <section class="mu-card p-4 mb-4">
+                <dl class="row small mb-0">
+                    <dt class="col-6 text-suave fw-normal">Meta</dt><dd class="col-6 text-end fw-bold">@Formatos.Pesos(Model.Meta)</dd>
+                    <dt class="col-6 text-suave fw-normal">Fecha límite</dt><dd class="col-6 text-end">@Formatos.Fecha(Model.FechaLimite)</dd>
+                    @if (!Model.EnRevision)
+                    {
+                        <dt class="col-6 text-suave fw-normal">Recaudado</dt><dd class="col-6 text-end">@Formatos.Pesos(Model.Recaudado) (@pct %)</dd>
+                    }
+                    <dt class="col-6 text-suave fw-normal">Ciudad</dt><dd class="col-6 text-end">@(Model.CiudadFundacion ?? "—")</dd>
+                    <dt class="col-6 text-suave fw-normal">Causas publicadas antes</dt><dd class="col-6 text-end">@Model.CausasAnteriores</dd>
+                    <dt class="col-6 text-suave fw-normal">Datos para donar</dt>
+                    <dd class="col-6 text-end">@(Model.FundacionTieneDatosDonacion ? "Configurados" : "Sin configurar")</dd>
+                </dl>
+                @if (!Model.FundacionActiva)
+                {
+                    <div class="alert alert-warning small mt-3 mb-0"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i><div>La fundación está desactivada.</div></div>
+                }
+            </section>
+
+            @if (Model.Estado == EstadoCausa.PorAprobar)
+            {
+                <section class="mu-card p-4 mb-4">
+                    <h2 class="h5 mb-3">Tu decisión</h2>
+                    <form asp-action="Aprobar" asp-route-id="@Model.Id" method="post" class="mb-4"
+                          data-confirmar="Se publicará en el perfil de la fundación y empezará a recibir donaciones."
+                          data-confirmar-titulo="¿Aprobar la causa?" data-confirmar-boton="Sí, aprobar">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>Aprobar y publicar</button>
+                    </form>
+                    <form asp-action="Rechazar" asp-route-id="@Model.Id" method="post" novalidate>
+                        <label asp-for="Motivo" class="form-label"></label>
+                        <textarea asp-for="Motivo" class="form-control mb-1" rows="3" maxlength="500"
+                                  placeholder="Ej.: la meta parece alta para lo descrito; adjunten la cotización del veterinario."></textarea>
+                        <span asp-validation-for="Motivo"></span>
+                        <button type="submit" class="btn btn-outline-secondary w-100 mt-2"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Devolver con observaciones</button>
+                    </form>
+                </section>
+            }
+            else if (Model.Estado == EstadoCausa.Rechazada)
+            {
+                <section class="mu-card p-4 mb-4">
+                    <h2 class="h6 text-suave text-uppercase mb-2">Observaciones enviadas</h2>
+                    <p class="mb-1">@Model.MotivoRechazo</p>
+                    <p class="small text-suave mb-0">@(Model.RevisadaPor is null ? "" : Model.RevisadaPor + " · ")@(Model.FechaRevision is DateTime f ? Formatos.FechaHora(f) : "")</p>
+                    <p class="small text-suave mt-2 mb-0">Cuando la fundación la corrija, volverá a "Por aprobar".</p>
+                </section>
+            }
+            else
+            {
+                <section class="mu-card p-4 mb-4">
+                    <p class="small text-suave mb-3">Aprobada@(Model.RevisadaPor is null ? "" : " por " + Model.RevisadaPor)@(Model.FechaRevision is DateTime f2 ? " el " + Formatos.FechaHora(f2) : "").</p>
+                    @if (Model.SlugFundacion is not null)
+                    {
+                        <a class="btn btn-outline-primary w-100" href="/fundaciones/@Model.SlugFundacion/causas/@Model.Id" target="_blank" rel="noopener"><i class="bi bi-eye me-1" aria-hidden="true"></i>Ver la causa publicada</a>
+                    }
+                </section>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

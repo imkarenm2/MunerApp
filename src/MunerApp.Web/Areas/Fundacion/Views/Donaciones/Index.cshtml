@@ -22,7 +22,6 @@
         </div>
     </div>
 
-    <partial name="_NavFundacion" />
 
     <ul class="nav nav-tabs pestanas mb-3" role="tablist">
         @foreach (var p in pestanas)
@@ -72,6 +71,10 @@
                                     @if (d.Apadrinado is not null)
                                     {
                                         <span class="mu-badge acento mt-1"><i class="bi bi-balloon-heart" aria-hidden="true"></i>Apadrinamiento de @d.Apadrinado</span>
+                                    }
+                                    @if (d.Causa is not null)
+                                    {
+                                        <span class="mu-badge exito mt-1"><i class="bi bi-bullseye" aria-hidden="true"></i>Causa: @d.Causa</span>
                                     }
                                 </td>
                                 <td class="small">@Formatos.Fecha(d.FechaTransferencia)</td>

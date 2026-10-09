@@ -1,0 +1,8 @@
+@model (IReadOnlyList<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> Fundaciones, string Accion)
+<form method="get" asp-action="@Model.Accion" class="d-flex flex-wrap align-items-center gap-2 mb-4" role="search">
+    <label for="esal" class="small fw-semibold">Fundación</label>
+    <select id="esal" name="esal" class="form-select form-select-sm w-auto" asp-items="Model.Fundaciones" onchange="this.form.submit()">
+        <option value="">Todas las fundaciones</option>
+    </select>
+    <noscript><button type="submit" class="btn btn-sm btn-primary">Ver</button></noscript>
+</form>

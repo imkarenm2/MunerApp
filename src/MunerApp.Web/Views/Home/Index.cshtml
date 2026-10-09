@@ -1,51 +1,191 @@
-@model List<FundacionTarjeta>
+@model HomeViewModel
 @{
-    ViewData["Title"] = "Apoya a las fundaciones de tu región";
+    ViewData["Title"] = "Apoya a las fundaciones de Sabana de Occidente";
+    ViewData["Descripcion"] = "MunerApp: conoce las fundaciones de Sabana de Occidente, mira en qué se usan las donaciones y elige cómo ayudar.";
     var autenticado = User.Identity?.IsAuthenticated ?? false;
+    var conFundacion = Model.Municipios.Count(m => m.Fundaciones > 0);
+}
+
+@if (Model.Donante is { } d)
+{
+    <section class="banda-donante">
+        <div class="container d-flex flex-wrap align-items-center gap-3">
+            <span class="fw-bold">Hola, @d.Nombre</span>
+            <span class="text-suave small flex-grow-1">
+                @if (d.DonacionesConfirmadas > 0)
+                {
+                    <span>Has aportado <strong>@Formatos.Pesos(d.TotalDonado)</strong> en @d.DonacionesConfirmadas @(d.DonacionesConfirmadas == 1 ? "donación" : "donaciones").</span>
+                }
+                else
+                {
+                    <span>Aún no has hecho tu primera donación. ¡Hoy puede ser el día!</span>
+                }
+                @if (d.DonacionesPendientes > 0)
+                {
+                    <span> @d.DonacionesPendientes por confirmar.</span>
+                }
+                @if (d.Apadrinamientos > 0)
+                {
+                    <span> Apadrinas a @d.Apadrinamientos @(d.Apadrinamientos == 1 ? "gato" : "gatos").</span>
+                }
+            </span>
+            <a class="btn btn-sm btn-suave" href="/mis-donaciones">Mis donaciones</a>
+            @if (d.Apadrinamientos > 0)
+            {
+                <a class="btn btn-sm btn-suave" href="/mis-apadrinamientos">Mis apadrinamientos</a>
+            }
+        </div>
+    </section>
 }
 
 <section class="hero">
     <div class="container">
         <div class="row align-items-center gy-5">
             <div class="col-12 col-lg-6">
-                <span class="hero-etiqueta mb-3"><i class="bi bi-shield-check" aria-hidden="true"></i> Ayuda transparente</span>
+                <span class="hero-etiqueta mb-3"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i> Por ahora, solo en Sabana de Occidente</span>
                 <h1 class="mb-3">Tu ayuda llega.<br /><span class="text-principal">Y puedes verlo.</span></h1>
                 <p class="lead mb-4">
-                    Conoce a las fundaciones de tu región, mira en qué se usa cada donación
-                    y elige la forma de apoyar que va contigo.
+                    Conoce a las fundaciones de Facatativá, Madrid, Mosquera, Funza y sus vecinos.
+                    Mira en qué se usa cada donación y elige cómo ayudar a los gatos que rescatan.
                 </p>
                 <div class="d-flex flex-column flex-sm-row gap-2">
-                    <a class="btn btn-apoyar btn-lg" href="/fundaciones"><i class="bi bi-heart-fill me-2" aria-hidden="true"></i>Quiero ayudar</a>
+                    <a class="btn btn-apoyar btn-lg" href="@(Model.Causas.Count > 0 ? "/causas" : "/fundaciones")"><i class="bi bi-heart-fill me-2" aria-hidden="true"></i>Quiero ayudar</a>
                     @if (!autenticado)
                     {
                         <a class="btn btn-outline-primary btn-lg" asp-controller="Cuenta" asp-action="Registrar">Crear mi cuenta</a>
                     }
+                    else
+                    {
+                        <a class="btn btn-outline-primary btn-lg" href="/fundaciones">Ver fundaciones</a>
+                    }
                 </div>
             </div>
             <div class="col-12 col-lg-6">
-                <div class="hero-panel mx-auto" style="max-width: 460px" aria-hidden="true">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="icono-circulo acento"><i class="bi bi-house-heart"></i></div>
-                        <div>
-                            <div class="fw-bold">Causa de ejemplo</div>
-                            <div class="small text-suave">Así se ve una causa en MunerApp</div>
-                        </div>
-                        <span class="mu-badge exito ms-auto">Activa</span>
+                @if (Model.FotosHero.Count > 0)
+                {
+                    <div class="hero-collage hero-collage-@Model.FotosHero.Count" aria-hidden="true">
+                        @foreach (var f in Model.FotosHero)
+                        {
+                            <img src="@f" alt="" loading="eager" />
+                        }
+                        <div class="hero-collage-sello"><i class="bi bi-shield-check"></i> Ayuda transparente</div>
                     </div>
-                    <div class="d-flex justify-content-between small mb-2">
-                        <span class="fw-semibold">Recaudado</span>
-                        <span class="text-suave">65 %</span>
+                }
+                else
+                {
+                    <div class="hero-ilustracion" aria-hidden="true"><partial name="_IlustracionGatos" /></div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@* ---------- Cifras reales de la plataforma ---------- *@
+<section class="cifras">
+    <div class="container">
+        <div class="cifras-grilla">
+            <div class="cifra">
+                <span class="cifra-valor">@Model.FundacionesPublicadas</span>
+                <span class="cifra-texto">@(Model.FundacionesPublicadas == 1 ? "fundación" : "fundaciones") en la plataforma</span>
+            </div>
+            <div class="cifra">
+                <span class="cifra-valor">@Model.GatosCuidados</span>
+                <span class="cifra-texto">gatos bajo su cuidado hoy</span>
+            </div>
+            <div class="cifra">
+                <span class="cifra-valor">@Model.GatosConHogar</span>
+                <span class="cifra-texto">gatos ya encontraron hogar</span>
+            </div>
+            <div class="cifra">
+                <span class="cifra-valor">@Formatos.Pesos(Model.Donado)</span>
+                <span class="cifra-texto">donados y confirmados</span>
+            </div>
+        </div>
+        <p class="small text-suave text-center mt-3 mb-0">Cifras reales, calculadas en este momento a partir de lo que registran las fundaciones.</p>
+    </div>
+</section>
+
+@if (Model.Causas.Count > 0)
+{
+    <section class="seccion">
+        <div class="container">
+            <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
+                <div>
+                    <div class="sobretitulo mb-2">Causas abiertas</div>
+                    <h2 class="h1 mb-0">Necesitan tu ayuda ahora</h2>
+                </div>
+                <a class="enlace-flecha" href="/causas">Ver las @Model.CausasAbiertas causas <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            </div>
+            <div class="row g-4">
+                @foreach (var c in Model.Causas)
+                {
+                    <div class="col-12 col-md-6 col-lg-4"><partial name="_TarjetaCausa" model="c" /></div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@if (Model.Gatos.Count > 0)
+{
+    <section class="seccion seccion-blanca">
+        <div class="container">
+            <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
+                <div>
+                    <div class="sobretitulo mb-2">Apadrina</div>
+                    <h2 class="h1 mb-0">Buscan un padrino</h2>
+                    <p class="text-suave mb-0 mt-2">Con un aporte mensual cubres su comida y su salud, y recibes noticias de cómo va.@(Model.Padrinos > 0 ? $" Ya hay {Model.Padrinos} padrinos." : "")</p>
+                </div>
+            </div>
+            <div class="row g-4">
+                @foreach (var g in Model.Gatos)
+                {
+                    <div class="col-6 col-lg-3">
+                        <a class="mu-card mu-card-hover gato-home h-100 text-decoration-none text-body" href="/fundaciones/@g.Slug/apadrinar/@g.Id">
+                            @if (g.FotoUrl is not null)
+                            {
+                                <img src="@g.FotoUrl" alt="Foto de @g.Nombre" loading="lazy" />
+                            }
+                            <span class="p-3 d-block">
+                                <span class="h5 d-block mb-1">@g.Nombre</span>
+                                <span class="small text-suave d-block">@g.Fundacion</span>
+                            </span>
+                        </a>
                     </div>
-                    <div class="mu-progreso mb-3"><span style="width: 65%"></span></div>
-                    <div class="row g-2 text-center small">
-                        <div class="col-4"><div class="mu-card py-2"><i class="bi bi-cash-coin text-principal"></i><div>Donar</div></div></div>
-                        <div class="col-4"><div class="mu-card py-2"><i class="bi bi-balloon-heart text-acento"></i><div>Apadrinar</div></div></div>
-                        <div class="col-4"><div class="mu-card py-2"><i class="bi bi-people text-principal"></i><div>Voluntariado</div></div></div>
-                    </div>
-                    <div class="alert alert-info small mt-3 mb-0">
-                        <i class="bi bi-receipt" aria-hidden="true"></i>
-                        <div>Cada donación confirmada genera un comprobante.</div>
-                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@* ---------- Dónde estamos ---------- *@
+<section class="seccion" id="donde-estamos">
+    <div class="container">
+        <div class="region mu-card p-4 p-md-5">
+            <div class="row g-4 align-items-center">
+                <div class="col-12 col-lg-5">
+                    <div class="sobretitulo mb-2">Dónde estamos</div>
+                    <h2 class="h1 mb-3">Empezamos por Sabana de Occidente</h2>
+                    <p class="text-suave mb-0">
+                        MunerApp nació en la Universidad de Cundinamarca, extensión Facatativá. Por ahora trabajamos con fundaciones
+                        de los ocho municipios de la provincia de Sabana de Occidente, en Cundinamarca. Más adelante llegaremos a otras regiones.
+                    </p>
+                </div>
+                <div class="col-12 col-lg-7">
+                    <ul class="municipios">
+                        @foreach (var m in Model.Municipios)
+                        {
+                            <li class="@(m.Fundaciones > 0 ? "con-fundacion" : "")">
+                                <i class="bi @(m.Fundaciones > 0 ? "bi-geo-alt-fill" : "bi-geo-alt")" aria-hidden="true"></i>
+                                <span class="fw-semibold">@m.Nombre</span>
+                                <span class="small">@(m.Fundaciones == 0 ? "Próximamente" : m.Fundaciones == 1 ? "1 fundación" : $"{m.Fundaciones} fundaciones")</span>
+                            </li>
+                        }
+                    </ul>
+                    @if (conFundacion == 0)
+                    {
+                        <p class="small text-suave mt-3 mb-0">Las primeras fundaciones se están sumando. ¿Conoces una? Cuéntale de MunerApp.</p>
+                    }
                 </div>
             </div>
         </div>
@@ -130,7 +270,7 @@
     </div>
 </section>
 
-@if (Model.Count > 0)
+@if (Model.Fundaciones.Count > 0)
 {
     <section class="seccion pt-0">
         <div class="container">
@@ -142,7 +282,7 @@
                 <a class="enlace-flecha" href="/fundaciones">Ver todas <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
             </div>
             <div class="row g-4">
-                @foreach (var f in Model)
+                @foreach (var f in Model.Fundaciones)
                 {
                     <div class="col-12 col-md-4">
                         <a class="tarjeta-esal mu-card mu-card-hover h-100" href="/fundaciones/@f.Slug">
@@ -168,12 +308,11 @@
                 <div class="col-12 col-lg-8">
                     <h2 class="mb-2">¿Eres una fundación?</h2>
                     <p class="mb-0 opacity-75">
-                        Construimos MunerApp contigo: levantamos tus necesidades y activamos solo los módulos que te sirven.
+                        Si tu fundación trabaja en Sabana de Occidente, construimos MunerApp contigo: levantamos tus necesidades y activamos solo los módulos que te sirven.
                     </p>
                 </div>
                 <div class="col-12 col-lg-4 text-lg-end">
-                    @* TODO: enlace a la solicitud de ingreso de ESAL (Sprint 2 en adelante) *@
-                    <a class="btn btn-light btn-lg fw-bold text-principal" href="#">Quiero participar</a>
+                    <a class="btn btn-light btn-lg fw-bold text-principal" href="/participar">Quiero participar</a>
                 </div>
             </div>
         </div>

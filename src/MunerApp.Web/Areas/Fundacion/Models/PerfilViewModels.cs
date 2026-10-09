@@ -36,7 +36,7 @@ public class PerfilEsalViewModel
     public string? Vision { get; set; }
 
     [StringLength(100)]
-    [Display(Name = "Ciudad o municipio")]
+    [Display(Name = "Municipio")]
     public string? Ciudad { get; set; }
 
     [RegularExpression(@"^\+?[0-9 ]{7,16}$", ErrorMessage = "Escribe solo números, por ejemplo 3001234567.")]
@@ -157,6 +157,9 @@ public class DonacionEsalItem
 {
     /// <summary>Si es un aporte de apadrinamiento (HU-021), el nombre del apadrinado.</summary>
     public string? Apadrinado { get; set; }
+
+    /// <summary>Si es una donación para una causa, su título.</summary>
+    public string? Causa { get; set; }
 
     public int Id { get; set; }
     public string Codigo { get; set; } = string.Empty;

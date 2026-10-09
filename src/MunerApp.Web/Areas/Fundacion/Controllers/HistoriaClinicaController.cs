@@ -6,6 +6,8 @@ using MunerApp.Application.Interfaces;
 using MunerApp.Application.Seguridad;
 using MunerApp.Domain.Constantes;
 using MunerApp.Domain.Entities;
+using MunerApp.Domain.Enums;
+using MunerApp.Web.Servicios;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Areas.Fundacion.Models;
 using MunerApp.Web.Filtros;
@@ -16,8 +18,8 @@ namespace MunerApp.Web.Areas.Fundacion.Controllers;
 
 /// <summary>
 /// HU-019: historia clínica de cada beneficiario (vacunas, tratamientos, controles y fotos).
-/// Solo la ven y la registran los administradores y los voluntarios de salud (practicantes) de la ESAL;
-/// el voluntario general no tiene acceso. Las fotos son privadas y se entregan por esta clase.
+/// La ven los administradores (principal y de consulta) y los voluntarios de salud (practicantes);
+/// la registran el administrador principal y los voluntarios de salud. El voluntario general no tiene acceso. Las fotos son privadas y se entregan por esta clase.
 /// Los eventos no se editan ni se borran: la historia clínica se conserva completa.
 /// </summary>
 [Area("Fundacion")]
@@ -59,6 +61,10 @@ public class HistoriaClinicaController : Controller
                                  Fecha = e.Fecha,
                                  Descripcion = e.Descripcion,
                                  Responsable = e.Responsable,
+                                 Producto = e.Producto,
+                                 Laboratorio = e.Laboratorio,
+                                 PesoKg = e.PesoKg,
+                                 Resultado = e.Resultado,
                                  RegistradoPor = u == null ? null : u.NombreCompleto,
                                  FechaRegistro = e.FechaRegistro,
                                  FotoIds = e.Fotos.OrderBy(f => f.Id).Select(f => f.Id).ToList()
@@ -71,13 +77,15 @@ public class HistoriaClinicaController : Controller
             Estado = b.Estado,
             FechaNacimiento = b.FechaNacimiento,
             TieneFoto = b.FotoRuta is not null,
-            Eventos = eventos
+            Eventos = eventos,
+            PuedeRegistrar = Politicas.PuedeRegistrarClinica(User)
         });
     }
 
     // ---------- Escenario 1: registrar un evento ----------
 
     [HttpGet]
+    [Authorize(Policy = Politicas.RegistroClinico)]
     public async Task<IActionResult> Crear(int id)
     {
         var nombre = await _db.Beneficiarios.AsNoTracking().Where(b => b.Id == id).Select(b => b.Nombre).FirstOrDefaultAsync();
@@ -93,6 +101,7 @@ public class HistoriaClinicaController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = Politicas.RegistroClinico)]
     [RequestSizeLimit(LimitePeticion)]
     public async Task<IActionResult> Crear(int id, EventoClinicoFormViewModel model)
     {
@@ -103,6 +112,27 @@ public class HistoriaClinicaController : Controller
 
         if (model.Fecha is DateTime fecha && fecha.Date > DateTime.Today)
             ModelState.AddModelError(nameof(model.Fecha), "La fecha no puede ser futura.");
+
+        // Campos según el tipo (formato de la fundación: vacunación, desparasitación y pruebas virales)
+        var usaProducto = model.Tipo is TipoEventoClinico.Vacuna or TipoEventoClinico.Desparasitacion or TipoEventoClinico.PruebaViral
+                                     or TipoEventoClinico.Tratamiento or TipoEventoClinico.Cirugia;
+        if (model.Tipo is TipoEventoClinico.Vacuna or TipoEventoClinico.Desparasitacion or TipoEventoClinico.PruebaViral
+            && string.IsNullOrWhiteSpace(model.Producto))
+            ModelState.AddModelError(nameof(model.Producto), model.Tipo switch
+            {
+                TipoEventoClinico.Vacuna => "Indica qué vacuna se aplicó.",
+                TipoEventoClinico.Desparasitacion => "Indica el desparasitante.",
+                _ => "Indica la prueba (VIF o FeLV)."
+            });
+        if (model.Tipo == TipoEventoClinico.PruebaViral && string.IsNullOrWhiteSpace(model.Resultado))
+            ModelState.AddModelError(nameof(model.Resultado), "Selecciona el resultado de la prueba.");
+        decimal? peso = null;
+        if (!string.IsNullOrWhiteSpace(model.Peso))
+        {
+            peso = Formatos.LeerDecimal(model.Peso);
+            if (peso is null || peso <= 0 || peso > 100)
+                ModelState.AddModelError(nameof(model.Peso), "Escribe el peso en kilos, por ejemplo 3,5.");
+        }
 
         // Escenario 2: las fotos deben tener un formato permitido
         var fotos = (model.Fotos ?? new List<IFormFile>()).Where(f => f.Length > 0).ToList();
@@ -131,6 +161,10 @@ public class HistoriaClinicaController : Controller
             Fecha = model.Fecha!.Value.Date,
             Descripcion = model.Descripcion.Trim(),
             Responsable = model.Responsable.Trim(),
+            Producto = usaProducto && !string.IsNullOrWhiteSpace(model.Producto) ? model.Producto.Trim() : null,
+            Laboratorio = model.Tipo == TipoEventoClinico.Vacuna && !string.IsNullOrWhiteSpace(model.Laboratorio) ? model.Laboratorio.Trim() : null,
+            PesoKg = peso,
+            Resultado = model.Tipo == TipoEventoClinico.PruebaViral ? model.Resultado?.Trim() : null,
             RegistradoPorId = UsuarioId
         };
         foreach (var (archivo, info) in validadas)

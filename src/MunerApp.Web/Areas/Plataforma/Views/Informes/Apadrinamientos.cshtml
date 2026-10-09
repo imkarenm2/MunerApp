@@ -1,0 +1,106 @@
+@model InformeApadrinamientosViewModel
+@{
+    ViewData["Title"] = "Informe de apadrinamientos";
+}
+<div class="container-fluid panel-contenido py-4">
+    <h1 class="h2 mb-1">Informe de apadrinamientos</h1>
+    <p class="text-suave mb-3">Cuántos gatos tienen padrino y cuánto aportan al mes. Los nombres de los padrinos solo los ve su fundación.</p>
+
+    <partial name="_FiltroFundacion" model="(Model.Fundaciones, nameof(InformesController.Apadrinamientos))" />
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3">
+            <div class="kpi alerta">
+                <span class="kpi-icono"><i class="bi bi-heart-fill" aria-hidden="true"></i></span>
+                <span class="kpi-valor">@Model.Activos</span>
+                <span class="kpi-titulo">Apadrinamientos activos</span>
+                <span class="kpi-detalle">@Model.PadrinosDistintos padrinos · @Model.Cancelados cancelados</span>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="kpi">
+                <span class="kpi-icono"><i class="bi bi-balloon-heart" aria-hidden="true"></i></span>
+                <span class="kpi-valor">@Model.GatosApadrinados</span>
+                <span class="kpi-titulo">Gatos con padrino</span>
+                <span class="kpi-detalle">@Model.GatosApadrinables publicados para apadrinar</span>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="kpi acento">
+                <span class="kpi-icono"><i class="bi bi-calendar-heart" aria-hidden="true"></i></span>
+                <span class="kpi-valor">@Formatos.Pesos(Model.AporteMensual)</span>
+                <span class="kpi-titulo">Aporte comprometido</span>
+                <span class="kpi-detalle">Al mes, entre todos los padrinos</span>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="kpi exito">
+                <span class="kpi-icono"><i class="bi bi-check2-circle" aria-hidden="true"></i></span>
+                <span class="kpi-valor">@Formatos.Pesos(Model.AporteRecibidoMes)</span>
+                <span class="kpi-titulo">Recibido este mes</span>
+                <span class="kpi-detalle">Aportes de padrinos ya confirmados</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-xl-6">
+            <section class="mu-card p-4 h-100">
+                <h2 class="h5 mb-1">Nuevos apadrinamientos por mes</h2>
+                <p class="small text-suave mb-3">Aporte mensual que sumó cada mes.</p>
+                <partial name="_BarrasMes" model='(Model.NuevosPorMes, "apadrinamientos")' />
+            </section>
+        </div>
+        <div class="col-12 col-xl-6">
+            <section class="mu-card overflow-hidden h-100">
+                <h2 class="h5 p-4 pb-2 mb-0">Por fundación</h2>
+                @if (Model.PorFundacion.Count == 0)
+                {
+                    <p class="small text-suave px-4 pb-4 mb-0">Aún no hay gatos para apadrinar.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table tabla-mu align-middle mb-0">
+                            <thead><tr><th scope="col">Fundación</th><th scope="col" class="text-center">Activos</th><th scope="col" class="text-center">Apadrinables</th><th scope="col" class="text-end">Al mes</th></tr></thead>
+                            <tbody>
+                                @foreach (var f in Model.PorFundacion)
+                                {
+                                    <tr><td>@f.Fundacion</td><td class="text-center">@f.Activos</td><td class="text-center">@f.Apadrinables</td><td class="text-end fw-semibold">@Formatos.Pesos(f.AporteMensual)</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </section>
+        </div>
+    </div>
+
+    <section class="mu-card overflow-hidden">
+        <h2 class="h5 p-4 pb-2 mb-0">Últimos apadrinamientos</h2>
+        @if (Model.Recientes.Count == 0)
+        {
+            <p class="small text-suave px-4 pb-4 mb-0">Sin apadrinamientos todavía.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table tabla-mu align-middle mb-0">
+                    <thead><tr><th scope="col">Gato</th><th scope="col">Fundación</th><th scope="col" class="text-end">Aporte mensual</th><th scope="col">Estado</th><th scope="col">Desde</th></tr></thead>
+                    <tbody>
+                        @foreach (var a in Model.Recientes)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@a.Gato</td>
+                                <td>@a.Fundacion</td>
+                                <td class="text-end">@Formatos.Pesos(a.ValorMensual)</td>
+                                <td><span class="mu-badge @(a.Estado == EstadoApadrinamiento.Activo ? "exito" : "")">@Textos.De(a.Estado)</span></td>
+                                <td class="small text-suave">@Formatos.FechaCorta(a.FechaInicio)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>

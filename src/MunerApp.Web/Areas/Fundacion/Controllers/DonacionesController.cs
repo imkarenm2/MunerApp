@@ -25,14 +25,16 @@ public class DonacionesController : Controller
     private readonly IAlmacenamientoArchivos _archivos;
     private readonly INotificacionService _notificaciones;
     private readonly IComprobanteService _comprobantes;
+    private readonly AvisosCorreo _avisos;
 
     public DonacionesController(MunerAppDbContext db, IAlmacenamientoArchivos archivos,
-        INotificacionService notificaciones, IComprobanteService comprobantes)
+        INotificacionService notificaciones, IComprobanteService comprobantes, AvisosCorreo avisos)
     {
         _db = db;
         _archivos = archivos;
         _notificaciones = notificaciones;
         _comprobantes = comprobantes;
+        _avisos = avisos;
     }
 
     [HttpGet]
@@ -57,7 +59,8 @@ public class DonacionesController : Controller
                                     FechaTransferencia = d.FechaTransferencia,
                                     FechaReporte = d.FechaReporte,
                                     Estado = d.Estado,
-                                    Apadrinado = d.Apadrinamiento != null ? d.Apadrinamiento.Beneficiario!.Nombre : null
+                                    Apadrinado = d.Apadrinamiento != null ? d.Apadrinamiento.Beneficiario!.Nombre : null,
+                                    Causa = d.Causa != null ? d.Causa.Titulo : null
                                 }).Take(200).ToListAsync();
 
         return View(new DonacionesEsalViewModel
@@ -72,7 +75,7 @@ public class DonacionesController : Controller
     [HttpGet]
     public async Task<IActionResult> Detalle(int id)
     {
-        var d = await _db.Donaciones.AsNoTracking().Include(x => x.Apadrinamiento!).ThenInclude(a => a.Beneficiario).FirstOrDefaultAsync(x => x.Id == id);
+        var d = await _db.Donaciones.AsNoTracking().Include(x => x.Causa).Include(x => x.Apadrinamiento!).ThenInclude(a => a.Beneficiario).FirstOrDefaultAsync(x => x.Id == id);
         if (d is null) return NotFound();
 
         var donante = await _db.Users.AsNoTracking().FirstAsync(u => u.Id == d.DonanteId);
@@ -90,6 +93,7 @@ public class DonacionesController : Controller
             FechaReporte = d.FechaReporte,
             Estado = d.Estado,
             Apadrinado = d.Apadrinamiento?.Beneficiario?.Nombre,
+            Causa = d.Causa?.Titulo,
             MedioPago = d.MedioPago,
             ReferenciaPago = d.ReferenciaPago,
             Mensaje = d.Mensaje,
@@ -115,6 +119,11 @@ public class DonacionesController : Controller
     {
         var d = await _db.Donaciones.Include(x => x.Esal).FirstOrDefaultAsync(x => x.Id == id);
         if (d is null) return NotFound();
+        if (d.DonanteId == User.FindFirstValue(ClaimTypes.NameIdentifier))
+        {
+            TempData["Error"] = "No puedes revisar una donación que reportaste tú mismo. Debe hacerlo otro administrador.";
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
         if (d.Estado != EstadoDonacion.Pendiente)
         {
             TempData["Error"] = $"La donación {d.Codigo} ya había sido {(d.Estado == EstadoDonacion.Confirmada ? "confirmada" : "rechazada")}.";
@@ -131,6 +140,11 @@ public class DonacionesController : Controller
             $"/mis-donaciones/{d.Codigo}", "bi-check-circle");
         await _db.SaveChangesAsync();
 
+        await _avisos.EnviarAUsuarioAsync(d.DonanteId, $"Tu donación {d.Codigo} fue confirmada",
+            "¡Gracias por tu donación!",
+            $"{d.Esal!.Nombre} confirmó que recibió tu donación {d.Codigo} por {Formatos.Pesos(d.Valor)}. Ya puedes descargar tu comprobante.",
+            "Ver mi donación", $"/mis-donaciones/{d.Codigo}");
+
         TempData["Mensaje"] = $"Confirmaste la donación {d.Codigo}. El donante ya puede descargar su comprobante.";
         return RedirectToAction(nameof(Index));
     }
@@ -141,6 +155,11 @@ public class DonacionesController : Controller
     {
         var d = await _db.Donaciones.Include(x => x.Esal).FirstOrDefaultAsync(x => x.Id == id);
         if (d is null) return NotFound();
+        if (d.DonanteId == User.FindFirstValue(ClaimTypes.NameIdentifier))
+        {
+            TempData["Error"] = "No puedes revisar una donación que reportaste tú mismo. Debe hacerlo otro administrador.";
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
         if (d.Estado != EstadoDonacion.Pendiente)
         {
             TempData["Error"] = $"La donación {d.Codigo} ya había sido revisada.";
@@ -163,6 +182,11 @@ public class DonacionesController : Controller
             $"{d.Esal!.Nombre} no confirmó tu donación {d.Codigo}. Motivo: {d.MotivoRechazo}",
             $"/mis-donaciones/{d.Codigo}", "bi-x-circle");
         await _db.SaveChangesAsync();
+
+        await _avisos.EnviarAUsuarioAsync(d.DonanteId, $"Tu donación {d.Codigo} no pudo confirmarse",
+            "Tu donación no pudo confirmarse",
+            $"{d.Esal!.Nombre} no encontró tu donación {d.Codigo} por {Formatos.Pesos(d.Valor)}. Motivo: {d.MotivoRechazo}. Si crees que es un error, comunícate con la fundación.",
+            "Ver el detalle", $"/mis-donaciones/{d.Codigo}");
 
         TempData["Mensaje"] = $"Rechazaste la donación {d.Codigo}. El donante verá el motivo.";
         return RedirectToAction(nameof(Index));

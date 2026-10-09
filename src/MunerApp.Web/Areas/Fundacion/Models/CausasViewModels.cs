@@ -31,6 +31,17 @@ public class CausaFormViewModel
     [Display(Name = "Fotos")]
     public List<IFormFile>? Fotos { get; set; }
 
+    /// <summary>Por qué necesitan la causa: la lee el superadministrador antes de aprobarla.</summary>
+    [StringLength(1000, ErrorMessage = "La justificación puede tener máximo {1} caracteres.")]
+    [Display(Name = "¿Por qué necesitan esta causa?")]
+    public string? Justificacion { get; set; }
+
+    /// <summary>true cuando la causa la crea o corrige la fundación y debe pasar por aprobación.</summary>
+    public bool PideJustificacion { get; set; }
+
+    /// <summary>Si el superadministrador la rechazó, el motivo (para que la fundación la corrija).</summary>
+    public string? MotivoRechazo { get; set; }
+
     // Solo lectura al editar (no se envían)
     public decimal Recaudado { get; set; }
     public IReadOnlyList<FotoCausaItem> FotosActuales { get; set; } = Array.Empty<FotoCausaItem>();
@@ -50,6 +61,8 @@ public class CausaItem
     public int Porcentaje { get; set; }
     public int DiasRestantes { get; set; }
     public string? FotoUrl { get; set; }
+    public string? MotivoRechazo { get; set; }
+    public bool EnRevision => Estado is EstadoCausa.PorAprobar or EstadoCausa.Rechazada;
 }
 
 public class CausasIndexViewModel

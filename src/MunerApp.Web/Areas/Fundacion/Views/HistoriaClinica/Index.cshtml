@@ -7,7 +7,10 @@
         [TipoEventoClinico.Vacuna] = "bi-shield-plus",
         [TipoEventoClinico.Tratamiento] = "bi-capsule",
         [TipoEventoClinico.Control] = "bi-clipboard2-pulse",
-        [TipoEventoClinico.Otro] = "bi-journal-medical"
+        [TipoEventoClinico.Otro] = "bi-journal-medical",
+        [TipoEventoClinico.Desparasitacion] = "bi-bug",
+        [TipoEventoClinico.PruebaViral] = "bi-virus",
+        [TipoEventoClinico.Cirugia] = "bi-scissors"
     };
 }
 <div class="container py-4 py-md-5" style="max-width: 860px">
@@ -20,14 +23,16 @@
                 @Model.Nombre · @Formatos.Edad(Model.FechaNacimiento) · <partial name="_EstadoBeneficiario" model="Model.Estado" />
             </p>
         </div>
-        <a class="btn btn-primary" asp-action="Crear" asp-route-id="@Model.BeneficiarioId"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Registrar evento</a>
+        @if (Model.PuedeRegistrar)
+        {
+            <a class="btn btn-primary" asp-action="Crear" asp-route-id="@Model.BeneficiarioId"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Registrar evento</a>
+        }
     </div>
 
-    <partial name="_NavFundacion" />
 
     <div class="alert alert-info small">
         <i class="bi bi-shield-lock" aria-hidden="true"></i>
-        <div>Información interna: solo la ven los administradores y los voluntarios de salud de la fundación. Los eventos no se editan ni se borran, para conservar el historial completo.</div>
+        <div>Información interna: la ven los administradores y los voluntarios de salud de la fundación, y la registran el administrador principal y los voluntarios de salud. Los eventos no se editan ni se borran, para conservar el historial completo.</div>
     </div>
 
     @if (Model.Eventos.Count == 0)
@@ -35,8 +40,11 @@
         <div class="estado-vacio">
             <div class="icono-circulo mb-3"><i class="bi bi-journal-medical" aria-hidden="true"></i></div>
             <h2 class="h5">@Model.Nombre aún no tiene eventos clínicos</h2>
-            <p class="text-suave">Registra la primera vacuna, tratamiento o control para empezar su historial.</p>
-            <a class="btn btn-primary" asp-action="Crear" asp-route-id="@Model.BeneficiarioId">Registrar el primero</a>
+            @if (Model.PuedeRegistrar)
+            {
+                <p class="text-suave">Registra la primera vacuna, tratamiento o control para empezar su historial.</p>
+                <a class="btn btn-primary" asp-action="Crear" asp-route-id="@Model.BeneficiarioId">Registrar el primero</a>
+            }
         </div>
     }
     else
@@ -51,6 +59,15 @@
                         <span class="fw-bold">@Textos.De(e.Tipo)</span>
                         <span class="text-suave small ms-md-auto">@Formatos.Fecha(e.Fecha)</span>
                     </div>
+                    @if (e.Producto is not null || e.Laboratorio is not null || e.PesoKg is not null || e.Resultado is not null)
+                    {
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            @if (e.Producto is not null) { <span class="mu-badge">@e.Producto</span> }
+                            @if (e.Laboratorio is not null) { <span class="mu-badge">Laboratorio: @e.Laboratorio</span> }
+                            @if (e.Resultado is not null) { <span class="mu-badge @(e.Resultado == "Negativo" ? "exito" : e.Resultado == "Positivo" ? "error" : "alerta")">Resultado: @e.Resultado</span> }
+                            @if (e.PesoKg is decimal pk) { <span class="mu-badge">Peso: @Formatos.Numero(pk) kg</span> }
+                        </div>
+                    }
                     <p class="texto-largo mb-2">@e.Descripcion</p>
                     <p class="small text-suave mb-0">
                         Responsable: <strong class="text-body">@e.Responsable</strong>

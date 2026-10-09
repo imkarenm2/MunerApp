@@ -179,6 +179,14 @@ public class EsalesController : Controller
         esal.Activa = !esal.Activa;
         await _db.SaveChangesAsync();
 
+        // Al desactivarla se cierran de inmediato las sesiones abiertas de sus usuarios (en máximo 1 minuto)
+        if (!esal.Activa)
+        {
+            var usuarios = await _db.Users.Where(u => u.EsalId == esal.Id).ToListAsync();
+            foreach (var usuario in usuarios)
+                await _userManager.UpdateSecurityStampAsync(usuario);
+        }
+
         TempData["Mensaje"] = esal.Activa
             ? $"{esal.Nombre} quedó activa."
             : $"{esal.Nombre} quedó desactivada: su perfil no es visible y sus usuarios no pueden ingresar.";

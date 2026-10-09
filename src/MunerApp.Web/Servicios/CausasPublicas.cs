@@ -26,8 +26,9 @@ public class CausasPublicas
     /// <summary>Causas de una fundación (o de todas si <paramref name="esalId"/> es null), abiertas primero.</summary>
     public async Task<CausasPublicasViewModel> ListarAsync(int? esalId, int maxCerradas = 6)
     {
+        var publicos = Causa.EstadosPublicos;
         var consulta = _db.Causas.IgnoreQueryFilters().AsNoTracking()
-            .Where(c => c.Esal!.Activa && c.Esal.Slug != null);
+            .Where(c => c.Esal!.Activa && c.Esal.Slug != null && publicos.Contains(c.Estado));
         if (esalId is int id) consulta = consulta.Where(c => c.EsalId == id);
 
         var causas = await consulta
@@ -49,9 +50,11 @@ public class CausasPublicas
 
     public async Task<CausaDetalleViewModel?> ObtenerAsync(int esalId, int causaId)
     {
+        var publicos = Causa.EstadosPublicos;
         var c = await _db.Causas.IgnoreQueryFilters().AsNoTracking()
             .Include(x => x.Esal).Include(x => x.Fotos)
-            .FirstOrDefaultAsync(x => x.Id == causaId && x.EsalId == esalId && x.Esal!.Activa && x.Esal.Slug != null);
+            .FirstOrDefaultAsync(x => x.Id == causaId && x.EsalId == esalId && x.Esal!.Activa && x.Esal.Slug != null
+                && publicos.Contains(x.Estado));
         if (c is null) return null;
 
         var recaudado = (await RecaudadoAsync(new List<int> { c.Id })).GetValueOrDefault(c.Id);

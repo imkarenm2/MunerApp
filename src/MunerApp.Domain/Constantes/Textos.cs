@@ -79,6 +79,8 @@ public static class Textos
         EstadoBeneficiario.Adoptable => "Adoptable",
         EstadoBeneficiario.Adoptado => "Adoptado",
         EstadoBeneficiario.Fallecido => "Fallecido",
+        EstadoBeneficiario.Liberado => "Liberado",
+        EstadoBeneficiario.EncontroSuHogar => "Encontró su hogar",
         _ => e.ToString()
     };
 
@@ -88,8 +90,31 @@ public static class Textos
         TipoEventoClinico.Tratamiento => "Tratamiento",
         TipoEventoClinico.Control => "Control",
         TipoEventoClinico.Otro => "Otro",
+        TipoEventoClinico.Desparasitacion => "Desparasitación",
+        TipoEventoClinico.PruebaViral => "Prueba viral (VIF / FeLV)",
+        TipoEventoClinico.Cirugia => "Cirugía",
         _ => t.ToString()
     };
+
+    public static string De(Procedencia p) => p == Procedencia.Rural ? "Rural" : "Urbana";
+
+    public static string De(EstadoReproductivo e) => e switch
+    {
+        EstadoReproductivo.Castrado => "Castrado",
+        EstadoReproductivo.Gestacion => "Gestación",
+        EstadoReproductivo.Lactancia => "Lactancia",
+        _ => "Sin operar"
+    };
+
+    public static string De(EstadoConciencia e) => e switch
+    {
+        EstadoConciencia.Deprimido => "Deprimido",
+        EstadoConciencia.Letargo => "Letargo",
+        EstadoConciencia.Estupor => "Estupor",
+        _ => "Alerta"
+    };
+
+    public static string De(MomentoEtograma m) => m == MomentoEtograma.PreCastracion ? "Antes de la castración" : "Después de la castración";
 
     public static string De(EstadoApadrinamiento e) => e switch
     {
@@ -103,6 +128,8 @@ public static class Textos
         EstadoCausa.Activa => "Activa",
         EstadoCausa.Pausada => "En pausa",
         EstadoCausa.Cerrada => "Cerrada",
+        EstadoCausa.PorAprobar => "Por aprobar",
+        EstadoCausa.Rechazada => "Rechazada",
         _ => e.ToString()
     };
 }

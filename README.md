@@ -101,6 +101,13 @@ Si el SMTP no está configurado, en **desarrollo** la plataforma muestra en pant
 1. En Google Cloud Console crear un proyecto → **APIs y servicios → Pantalla de consentimiento OAuth** (tipo Externo) → **Credenciales → Crear ID de cliente de OAuth** (aplicación web).
 2. URI de redireccionamiento autorizado: `https://localhost:7180/signin-google` (y luego la de Azure: `https://<app>.azurewebsites.net/signin-google`).
 3. Guardar el Client ID y el Client Secret con `dotnet user-secrets` (ver arriba).
+4. Mientras no estén configurados, en desarrollo el botón "Continuar con Google" sale deshabilitado con un aviso; en producción no aparece.
+
+### Confirmación del correo
+
+Las cuentas de donante se activan solo después de confirmar el correo (`SignIn.RequireConfirmedEmail`). Al registrarse se envía un enlace que vence en 1 hora; si vence, al intentar entrar se ofrece enviar otro. Restablecer la contraseña también confirma el correo.
+Las cuentas que crean el superadministrador o una fundación ya quedan confirmadas, porque la persona crea su contraseña desde el enlace que le llega al correo.
+Si alguien entra con Google con el correo de una cuenta sin confirmar, se confirma con Google y se borra la contraseña anterior, por si la cuenta la creó otra persona con ese correo.
 
 ### Probar Wompi (sandbox)
 
@@ -140,6 +147,74 @@ Al arrancar, las fundaciones que ya existían reciben su dirección pública (`s
 ### Páginas públicas y el filtro por ESAL
 
 Las páginas públicas (`/fundaciones/...`), "Mis donaciones" y "Mis postulaciones" consultan con `IgnoreQueryFilters()` y **siempre** filtran explícitamente por la fundación consultada o por el usuario autenticado. Así un administrador de una fundación también ve completo el perfil de otra, y un donante ve sus donaciones a varias fundaciones.
+
+## Roles y permisos
+
+| Rol | Quién es |
+|---|---|
+| Visitante | Persona sin sesión |
+| Donante | Cuenta personal; se crea al registrarse o al entrar con Google |
+| Voluntario general | Del equipo de una fundación, sin formación en salud |
+| Voluntario de salud | Practicante veterinario de la fundación |
+| Administrador de consulta | Del equipo de la fundación: consulta y aprueba, no configura |
+| Administrador principal | Responsable de la fundación en la plataforma |
+| Superadministrador | Equipo de MunerApp |
+
+| Acción | Visitante | Donante | Vol. general | Vol. salud | Admin consulta | Admin principal | Superadmin |
+|---|---|---|---|---|---|---|---|
+| Ver fundaciones, perfiles, causas y apadrinables | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Donar, reportar aportes y apadrinar | Pide cuenta | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Postularse como voluntario | Pide cuenta | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Panel de la fundación | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Ver listado y hoja de vida de beneficiarios | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Registrar, editar y cambiar estado de beneficiarios | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Ver datos del adoptante y padrinos | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Ver historia clínica | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| Registrar eventos clínicos | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ❌ |
+| Confirmar o rechazar donaciones | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Ver causas y postulaciones de la fundación | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Crear, editar y pausar causas | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Perfil, transparencia, datos para donar, redes, Wompi | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Ver el equipo | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Crear, editar y desactivar usuarios del equipo | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Registrar fundaciones, activarlas y elegir módulos | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+
+Reglas adicionales:
+
+- Nadie confirma ni rechaza una donación que reportó él mismo.
+- Las cuentas de fundación y el superadministrador no donan, no apadrinan y no se postulan: así una fundación no se puede reportar y confirmar donaciones a sí misma. Para apoyar a título personal se usa otra cuenta.
+- Cada usuario de una fundación solo ve datos de su fundación (filtro global por ESAL).
+- Si se desactiva un usuario, se le cambia el rol o se desactiva su fundación, su sesión se cierra en máximo 1 minuto.
+- Los permisos están en `src/MunerApp.Web/Seguridad/Politicas.cs`. Antes de crear una pantalla nueva, revisen esta tabla y protejan la acción con `[Authorize(...)]`.
+
+## Reglas de los flujos
+
+- **Directorio:** una fundación aparece en `/fundaciones` y en el inicio solo si está activa y tiene descripción corta y misión. Mientras tanto su página se abre con el enlace y el panel le avisa qué le falta.
+- **Aprobación de causas:** la fundación propone la causa con una justificación y queda "Por aprobar". El superadministrador la revisa en *Administración → Causas*: si la aprueba se publica; si la devuelve, deja un motivo y la fundación la corrige (vuelve a revisión). Mientras no esté aprobada no se ve en las páginas públicas ni recibe donaciones. El superadministrador también puede crear una causa para una fundación, que se publica de una vez.
+- **Causas:** para proponer una causa la fundación debe tener configurados los datos para donar. El botón "Donar a esta causa" lleva el número de la causa hasta el reporte (`?causa=`); cuando la fundación confirma la donación, suma a la barra. Una causa pausada o cerrada no recibe reportes.
+- **Apadrinar:** para ofrecer un beneficiario se necesitan los datos para donar. Si el beneficiario es adoptado o fallece, sus apadrinamientos terminan solos y se avisa a cada padrino.
+- **Estados del beneficiario** (`Domain/Constantes/ReglasBeneficiario.cs`): "Fallecido" es final; un adoptado solo puede volver a "En la fundación" o pasar a "Fallecido"; de "En tratamiento" no se pasa directo a "Adoptado".
+- **Avisos:** además de la notificación en la plataforma, al confirmar o rechazar una donación se envía un correo al donante. Si el correo no está configurado, la acción se hace igual.
+- **Región:** por ahora MunerApp funciona solo en Sabana de Occidente. El municipio de la fundación se elige de la lista de `Domain/Constantes/Region.cs` (perfil y `/participar`), y el inicio muestra cuántas fundaciones hay en cada municipio.
+- **Al iniciar sesión:** el superadministrador entra a *Administración → Resumen* y el equipo de una fundación a su panel. Si ya tienen sesión y abren el inicio, también los lleva a su panel. Los donantes ven el inicio con un resumen de sus aportes.
+- **Superadministrador:** ve cifras e informes de donaciones y apadrinamientos de toda la plataforma, sin datos de los donantes ni de los padrinos: esos los ve solo la fundación que recibe el aporte.
+- **Quiero participar:** `/participar` envía la solicitud de una fundación al superadministrador, por notificación y por correo.
+- **Voluntarios (decisión para el Sprint 6, HU-036):** al aprobar una postulación, la misma cuenta de la persona pasa a ser voluntaria de esa fundación y deja de poder donar con ella.
+
+## Hoja de vida del beneficiario (formato de El Reino de los Gatos)
+
+La hoja de vida sigue el formato "Historia clínica e ingreso" que usa la fundación en Excel:
+
+| Sección del formato | Dónde está en MunerApp | Quién la registra |
+|---|---|---|
+| Reseña del paciente: ingreso, edad o fecha de nacimiento, peso, sexo, procedencia, color, raza, estado reproductivo, señales particulares, detalles de procedencia | Registrar o editar la hoja de vida | Admin principal |
+| Examen semiológico: FR, FC, TLLC, RPC, T°, condición corporal, mucosas, estado de conciencia y observaciones | Hoja de vida → Examen de ingreso | Admin principal o voluntario de salud |
+| Vacunación (vacuna, laboratorio, responsable, fecha), desparasitación (desparasitante, peso) y pruebas virales VIF/FeLV | Historia clínica → Registrar evento | Admin principal o voluntario de salud |
+| Fin de reseña: adoptado, liberado, encontró su hogar o falleció | Cambiar estado | Admin principal |
+| Datos del adoptante: nombre, teléfono, ciudad, fecha, No. de formulario y quién elaboró | Hoja de vida → Adoptante | Admin principal |
+| Etograma antes y después de la castración | Hoja de vida → Comportamiento | Admin principal o voluntario de salud |
+
+El examen de ingreso es información clínica: solo lo ven los administradores y los voluntarios de salud.
 
 ## Cómo se protege un módulo
 

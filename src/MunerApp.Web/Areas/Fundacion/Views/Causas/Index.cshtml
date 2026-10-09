@@ -7,21 +7,20 @@
     <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
         <div>
             <h1 class="h2 mb-1">Causas de recaudación</h1>
-            <p class="text-suave mb-0">Campañas con meta, fecha límite y barra de progreso para reunir dinero para una necesidad concreta.</p>
+            <p class="text-suave mb-0">Campañas con meta, fecha límite y barra de progreso para reunir dinero para una necesidad concreta. El equipo de MunerApp aprueba cada una antes de publicarla.</p>
         </div>
         @if (Model.PuedeGestionar)
         {
-            <a class="btn btn-primary" asp-action="Crear"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nueva causa</a>
+            <a class="btn btn-primary" asp-action="Crear"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Proponer causa</a>
         }
     </div>
 
-    <partial name="_NavFundacion" />
 
     @if (!Model.PuedeGestionar)
     {
         <div class="alert alert-info small">
             <i class="bi bi-info-circle" aria-hidden="true"></i>
-            <div>Solo el administrador principal puede publicar, editar o pausar causas.</div>
+            <div>Solo el administrador principal puede proponer, editar o pausar causas.</div>
         </div>
     }
 
@@ -50,7 +49,15 @@
                         }
                         <div class="p-4 flex-grow-1 d-flex flex-column">
                             <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                                @if (c.Cerrada)
+                                @if (c.Estado == EstadoCausa.PorAprobar)
+                                {
+                                    <span class="mu-badge alerta"><i class="bi bi-hourglass-split" aria-hidden="true"></i>Por aprobar</span>
+                                }
+                                else if (c.Estado == EstadoCausa.Rechazada)
+                                {
+                                    <span class="mu-badge acento"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>Necesita cambios</span>
+                                }
+                                else if (c.Cerrada)
                                 {
                                     <span class="mu-badge"><i class="bi bi-flag" aria-hidden="true"></i>Cerrada</span>
                                 }
@@ -65,6 +72,14 @@
                                 <span class="small text-suave">@(c.Cerrada ? "Terminó el " + Formatos.Fecha(c.FechaLimite) : Formatos.DiasRestantes(c.DiasRestantes))</span>
                             </div>
                             <h2 class="h5 mb-2">@c.Titulo</h2>
+                            @if (c.Estado == EstadoCausa.Rechazada && !string.IsNullOrEmpty(c.MotivoRechazo))
+                            {
+                                <p class="small mb-2"><strong>Motivo:</strong> @c.MotivoRechazo</p>
+                            }
+                            else if (c.Estado == EstadoCausa.PorAprobar)
+                            {
+                                <p class="small text-suave mb-2">El equipo de MunerApp la está revisando. Aún no es pública.</p>
+                            }
                             <div class="mu-progreso mb-2" role="progressbar" aria-valuenow="@c.Porcentaje" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso de la causa">
                                 <span style="width: @(c.Porcentaje)%"></span>
                             </div>
@@ -73,7 +88,7 @@
                                 <span class="text-suave">@c.Porcentaje % de @Formatos.Pesos(c.Meta)</span>
                             </div>
                             <div class="d-flex flex-wrap gap-2 mt-auto">
-                                @if (Model.Slug is not null)
+                                @if (Model.Slug is not null && !c.EnRevision)
                                 {
                                     <a class="btn btn-sm btn-outline-primary" href="/fundaciones/@Model.Slug/causas/@c.Id" target="_blank" rel="noopener"><i class="bi bi-eye me-1" aria-hidden="true"></i>Ver pública</a>
                                 }
@@ -88,7 +103,7 @@
                                             <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pause-circle me-1" aria-hidden="true"></i>Pausar</button>
                                         </form>
                                     }
-                                    else
+                                    else if (c.Estado == EstadoCausa.Pausada)
                                     {
                                         <form asp-action="Reanudar" asp-route-id="@c.Id" method="post"
                                               data-confirmar="Volverá a recibir donaciones."

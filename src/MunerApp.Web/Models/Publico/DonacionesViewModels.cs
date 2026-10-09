@@ -15,6 +15,10 @@ public class ReportarDonacionViewModel
     public int? ApadrinamientoId { get; set; }
     public string? NombreApadrinado { get; set; }
 
+    /// <summary>Si la donación es para una causa (HU-041/042): al confirmarse suma a su barra de progreso.</summary>
+    public int? CausaId { get; set; }
+    public string? NombreCausa { get; set; }
+
     /// <summary>Se recibe como texto para aceptar "50.000" o "$ 50,000" (pesos sin decimales).</summary>
     [Required(ErrorMessage = "Ingresa el valor que donaste.")]
     [Display(Name = "Valor donado")]
@@ -42,6 +46,9 @@ public class DonacionItem
     /// <summary>Si es un aporte de apadrinamiento (HU-021), el nombre del apadrinado.</summary>
     public string? Apadrinado { get; set; }
 
+    /// <summary>Si es una donación para una causa, su título.</summary>
+    public string? Causa { get; set; }
+
     public string Codigo { get; set; } = string.Empty;
     public string NombreEsal { get; set; } = string.Empty;
     public string? SlugEsal { get; set; }
@@ -61,6 +68,7 @@ public class DonacionDetalleViewModel : DonacionItem
     public DateTime? FechaRevision { get; set; }
     public bool SoporteEsPdf { get; set; }
     public int? ApadrinamientoId { get; set; }
+    public int? CausaId { get; set; }
 }
 
 public class PostulacionViewModel

@@ -1,0 +1,96 @@
+@model ExamenIngresoViewModel
+@{
+    ViewData["Title"] = "Examen de ingreso de " + Model.NombreBeneficiario;
+    ViewData["Seccion"] = "Beneficiarios";
+}
+<div class="container py-4 py-md-5" style="max-width: 820px">
+    <a asp-action="Detalle" asp-route-id="@Model.BeneficiarioId" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Hoja de vida de @Model.NombreBeneficiario</a>
+    <h1 class="h2 mt-2 mb-1">Examen de ingreso</h1>
+    <p class="text-suave mb-4">Examen semiológico que se hace cuando @Model.NombreBeneficiario llega a la fundación. Es información clínica: no se publica.</p>
+
+    <form asp-action="ExamenIngreso" asp-route-id="@Model.BeneficiarioId" method="post" novalidate class="mu-card p-4 p-md-5">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <h2 class="h6 fw-bold text-principal mb-3">Constantes fisiológicas</h2>
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-4">
+                <label asp-for="FrecuenciaRespiratoria" class="form-label"></label>
+                <input asp-for="FrecuenciaRespiratoria" class="form-control" inputmode="numeric" placeholder="40" />
+                <span asp-validation-for="FrecuenciaRespiratoria"></span>
+            </div>
+            <div class="col-6 col-md-4">
+                <label asp-for="FrecuenciaCardiaca" class="form-label"></label>
+                <input asp-for="FrecuenciaCardiaca" class="form-control" inputmode="numeric" placeholder="160" />
+                <span asp-validation-for="FrecuenciaCardiaca"></span>
+            </div>
+            <div class="col-6 col-md-4">
+                <label asp-for="Temperatura" class="form-label"></label>
+                <input asp-for="Temperatura" class="form-control" inputmode="decimal" placeholder="38,6" />
+                <span asp-validation-for="Temperatura"></span>
+            </div>
+            <div class="col-6 col-md-4">
+                <label asp-for="Tllc" class="form-label"></label>
+                <input asp-for="Tllc" class="form-control" inputmode="decimal" placeholder="2" />
+                <span asp-validation-for="Tllc"></span>
+            </div>
+            <div class="col-6 col-md-4">
+                <label asp-for="Rpc" class="form-label"></label>
+                <input asp-for="Rpc" class="form-control" inputmode="decimal" placeholder="2" />
+                <span asp-validation-for="Rpc"></span>
+            </div>
+            <div class="col-12 col-md-4">
+                <span class="form-label d-block" id="etiqueta-cc">Condición corporal</span>
+                <div class="d-flex gap-1" role="radiogroup" aria-labelledby="etiqueta-cc">
+                    @for (var i = 1; i <= 5; i++)
+                    {
+                        <input type="radio" class="btn-check" name="CondicionCorporal" id="cc-@i" value="@i" checked="@(Model.CondicionCorporal == i)" />
+                        <label class="chip" for="cc-@i">@i</label>
+                    }
+                </div>
+                <span asp-validation-for="CondicionCorporal"></span>
+            </div>
+        </div>
+
+        <h2 class="h6 fw-bold text-principal mb-3">Mucosas</h2>
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6">
+                <label asp-for="MucosaConjuntival" class="form-label"></label>
+                <input asp-for="MucosaConjuntival" class="form-control" maxlength="100" placeholder="R, H, B" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label asp-for="MucosaOral" class="form-label"></label>
+                <input asp-for="MucosaOral" class="form-control" maxlength="100" placeholder="R, H, B" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label asp-for="MucosaRectal" class="form-label"></label>
+                <input asp-for="MucosaRectal" class="form-control" maxlength="100" placeholder="Sin dolor, sin lesiones" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label asp-for="MucosaVulvarPrepucial" class="form-label"></label>
+                <input asp-for="MucosaVulvarPrepucial" class="form-control" maxlength="100" placeholder="Sin mal olor, sin lesiones" />
+            </div>
+        </div>
+
+        <h2 class="h6 fw-bold text-principal mb-3">Estado de conciencia</h2>
+        <div class="d-flex flex-wrap gap-2 mb-4" role="radiogroup" aria-label="Estado de conciencia">
+            @foreach (var e in Enum.GetValues<EstadoConciencia>())
+            {
+                <input type="radio" class="btn-check" name="EstadoConciencia" id="conciencia-@e" value="@e" checked="@(Model.EstadoConciencia == e)" />
+                <label class="chip" for="conciencia-@e">@Textos.De(e)</label>
+            }
+        </div>
+
+        <label asp-for="Observaciones" class="form-label"></label>
+        <textarea asp-for="Observaciones" class="form-control" rows="3" maxlength="1000" data-contador placeholder="Ej.: presenta flatulencias, no presenta ningún tipo de lesión"></textarea>
+        <span asp-validation-for="Observaciones"></span>
+
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-primary" data-cargando="Guardando...">Guardar examen</button>
+            <a asp-action="Detalle" asp-route-id="@Model.BeneficiarioId" class="btn btn-link">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

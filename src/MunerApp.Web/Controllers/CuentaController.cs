@@ -63,16 +63,13 @@ public class CuentaController : Controller
         if (resultado.Succeeded)
         {
             await _userManager.AddToRoleAsync(usuario, Roles.Donante);
-            // HU-016 escenario 2: si venía de una opción que requiere cuenta, entra de una vez y vuelve a ella
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-            {
-                await _signInManager.SignInAsync(usuario, isPersistent: false);
-                TempData["Mensaje"] = "¡Bienvenido a MunerApp! Tu cuenta fue creada.";
-                return LocalRedirect(returnUrl);
-            }
 
-            TempData["Mensaje"] = "Tu cuenta fue creada. Ya puedes iniciar sesión.";
-            return RedirectToAction(nameof(IniciarSesion));
+            // La cuenta queda inactiva hasta confirmar el correo. El enlace lo devuelve a donde iba (HU-016).
+            var destino = !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : null;
+            var envio = await _invitaciones.EnviarConfirmacionAsync(usuario, destino);
+            AvisarSiNoSeEnvio(envio);
+            TempData["CorreoConfirmacion"] = usuario.Email;
+            return RedirectToAction(nameof(ConfirmaTuCorreo));
         }
 
         if (resultado.Errors.Any(e => e.Code is "DuplicateEmail" or "DuplicateUserName"))
@@ -117,10 +114,86 @@ public class CuentaController : Controller
             return await RedirigirSegunRolAsync(usuario!, returnUrl);
         }
 
+        // Cuenta sin confirmar: se ofrece reenviar el correo
+        if (resultado.IsNotAllowed)
+        {
+            var pendiente = await _userManager.FindByEmailAsync(model.Email);
+            if (pendiente is not null && !pendiente.EmailConfirmed)
+            {
+                ViewData["SinConfirmar"] = pendiente.Email;
+                ModelState.AddModelError(string.Empty, "Aún no confirmas tu correo. Revisa tu bandeja de entrada o pide un enlace nuevo.");
+                return View(model);
+            }
+        }
+
         ModelState.AddModelError(string.Empty, resultado.IsLockedOut
             ? "Tu cuenta quedó bloqueada por varios intentos fallidos. Intenta de nuevo en 10 minutos."
             : "Correo o contraseña incorrectos.");
         return View(model);
+    }
+
+    // ================= Confirmación del correo =================
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult ConfirmaTuCorreo() => View();
+
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> ConfirmarCorreo(string? id, string? token, string? returnUrl = null)
+    {
+        if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(token))
+            return View("EnlaceConfirmacionInvalido");
+
+        var usuario = await _userManager.FindByIdAsync(id);
+        if (usuario is null) return View("EnlaceConfirmacionInvalido");
+
+        if (!usuario.EmailConfirmed)
+        {
+            string tokenDecodificado;
+            try
+            {
+                tokenDecodificado = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+            }
+            catch (FormatException)
+            {
+                return View("EnlaceConfirmacionInvalido");
+            }
+
+            var resultado = await _userManager.ConfirmEmailAsync(usuario, tokenDecodificado);
+            if (!resultado.Succeeded) return View("EnlaceConfirmacionInvalido");
+        }
+
+        var bloqueo = await ValidarAccesoAsync(usuario);
+        if (bloqueo is not null)
+        {
+            TempData["Error"] = bloqueo;
+            return RedirectToAction(nameof(IniciarSesion));
+        }
+
+        await _signInManager.SignInAsync(usuario, isPersistent: false);
+        TempData["Mensaje"] = "¡Listo! Confirmaste tu correo y tu cuenta quedó activa.";
+        return await RedirigirSegunRolAsync(usuario, returnUrl);
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<IActionResult> ReenviarConfirmacion(string? email)
+    {
+        var usuario = string.IsNullOrWhiteSpace(email) ? null : await _userManager.FindByEmailAsync(email.Trim());
+        if (usuario is not null && usuario.Activo && !usuario.EmailConfirmed)
+            AvisarSiNoSeEnvio(await _invitaciones.EnviarConfirmacionAsync(usuario));
+
+        // Mismo mensaje exista o no la cuenta
+        TempData["CorreoConfirmacion"] = email;
+        return RedirectToAction(nameof(ConfirmaTuCorreo));
+    }
+
+    /// <summary>En desarrollo, si no hay SMTP configurado, muestra el enlace para poder probar.</summary>
+    private void AvisarSiNoSeEnvio(ResultadoEnvio envio)
+    {
+        if (!envio.Enviado && _entorno.IsDevelopment())
+            TempData["Error"] = $"[Solo en desarrollo] No se pudo enviar el correo; revisa la configuración SMTP. Enlace: {envio.Enlace}";
     }
 
     // ================= HU-003 · Inicio de sesión con Gmail =================
@@ -178,6 +251,23 @@ public class CuentaController : Controller
         // Si el correo ya existe (por ejemplo, un administrador invitado), se vincula a esa cuenta.
         // Escenario 2: si no existe, se crea una cuenta nueva con rol Donante.
         var usuario = await _userManager.FindByEmailAsync(email);
+        if (usuario is not null && !usuario.EmailConfirmed)
+        {
+            // La cuenta existe pero nunca se confirmó. Solo se vincula si Google garantiza que el correo es de quien entra;
+            // además se borra la contraseña que se puso al registrarse, por si la creó otra persona con ese correo.
+            if (!string.Equals(info.Principal.FindFirstValue("email_verified"), "true", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] = "Google no ha verificado ese correo. Confirma tu cuenta con el enlace que te enviamos al registrarte.";
+                return RedirectToAction(nameof(IniciarSesion));
+            }
+            usuario.EmailConfirmed = true;
+            await _userManager.UpdateAsync(usuario);
+            if (await _userManager.HasPasswordAsync(usuario))
+            {
+                await _userManager.RemovePasswordAsync(usuario);
+                TempData["Mensaje"] = "Confirmamos tu correo con Google. Por seguridad borramos la contraseña anterior: si quieres entrar con contraseña, usa \"¿Olvidaste tu contraseña?\".";
+            }
+        }
         if (usuario is null)
         {
             usuario = new Usuario
@@ -283,6 +373,13 @@ public class CuentaController : Controller
         var resultado = await _userManager.ResetPasswordAsync(usuario, token, model.Contrasena);
         if (resultado.Succeeded)
         {
+            // El enlace llegó a su correo: eso también prueba que el correo es suyo
+            if (!usuario.EmailConfirmed)
+            {
+                usuario.EmailConfirmed = true;
+                await _userManager.UpdateAsync(usuario);
+            }
+
             TempData["Mensaje"] = model.Invitacion
                 ? "Tu contraseña quedó creada. Ya puedes iniciar sesión."
                 : "Tu contraseña fue actualizada. Ya puedes iniciar sesión.";
@@ -341,15 +438,25 @@ public class CuentaController : Controller
             TempData["Mensaje"] = string.IsNullOrEmpty(nombre) ? "Iniciaste sesión." : $"Hola, {nombre}. Iniciaste sesión.";
         }
 
+        var esSuperAdmin = await _userManager.IsInRoleAsync(usuario, Roles.SuperAdministrador);
+        var esEquipo = await _userManager.IsInRoleAsync(usuario, Roles.AdministradorESAL)
+            || await _userManager.IsInRoleAsync(usuario, Roles.Voluntario);
+
+        // El superadmin y el equipo de una fundación entran directo a su panel.
+        // Solo se respeta la página de retorno si es una página de su propio panel.
+        if (esSuperAdmin || esEquipo)
+        {
+            var area = esSuperAdmin ? "/Plataforma" : "/Fundacion";
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
+                && returnUrl.StartsWith(area, StringComparison.OrdinalIgnoreCase))
+                return LocalRedirect(returnUrl);
+            return esSuperAdmin
+                ? RedirectToAction("Index", "Resumen", new { area = "Plataforma" })
+                : RedirectToAction("Index", "Panel", new { area = "Fundacion" });
+        }
+
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return LocalRedirect(returnUrl);
-
-        if (await _userManager.IsInRoleAsync(usuario, Roles.SuperAdministrador))
-            return RedirectToAction("Index", "Esales", new { area = "Plataforma" });
-
-        if (await _userManager.IsInRoleAsync(usuario, Roles.AdministradorESAL)
-            || await _userManager.IsInRoleAsync(usuario, Roles.Voluntario))
-            return RedirectToAction("Index", "Panel", new { area = "Fundacion" });
 
         return RedirectToAction("Index", "Home");
     }

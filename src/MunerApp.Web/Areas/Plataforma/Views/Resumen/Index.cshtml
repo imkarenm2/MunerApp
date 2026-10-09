@@ -1,0 +1,174 @@
+@model ResumenPlataformaViewModel
+@{
+    ViewData["Title"] = "Resumen de la plataforma";
+    var hora = Formatos.Local(DateTime.UtcNow).Hour;
+    var saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
+}
+<div class="container-fluid panel-contenido py-4">
+
+    <section class="panel-hero sin-foto mb-4">
+        <div class="panel-hero-texto">
+            <span class="panel-hero-fecha">@Formatos.DiaLargo(Model.Hoy)</span>
+            <h1 class="h2 mb-1">@saludo, @Model.NombreUsuario</h1>
+            <p class="mb-0">
+                MunerApp acompaña a <strong>@Model.FundacionesActivas @(Model.FundacionesActivas == 1 ? "fundación" : "fundaciones")</strong> de Sabana de Occidente
+                y a <strong>@Model.Donantes @(Model.Donantes == 1 ? "donante" : "donantes")</strong>.
+            </p>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <a class="btn btn-light btn-sm fw-semibold" asp-controller="Esales" asp-action="Crear"><i class="bi bi-building-add me-1" aria-hidden="true"></i>Registrar fundación</a>
+                <a class="btn btn-outline-light btn-sm fw-semibold" asp-controller="Causas" asp-action="Crear"><i class="bi bi-bullseye me-1" aria-hidden="true"></i>Crear causa</a>
+            </div>
+        </div>
+        <div class="panel-hero-ilustracion d-none d-md-block"><partial name="_IlustracionGatos" /></div>
+    </section>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3">
+            <a class="kpi" asp-controller="Esales" asp-action="Index">
+                <span class="kpi-icono"><i class="bi bi-buildings" aria-hidden="true"></i></span>
+                <span class="kpi-valor">@Model.FundacionesActivas</span>
+                <span class="kpi-titulo">Fundaciones activas</span>
+                <span class="kpi-detalle">@(Model.FundacionesInactivas == 0 ? "Ninguna desactivada" : $"{Model.FundacionesInactivas} desactivadas")</span>
+            </a>
+        </div>
+        <div class="col-6 col-xl-3">
+            <a class="kpi acento" asp-controller="Informes" asp-action="Donaciones">
+                <span class="kpi-icono"><i class="bi bi-cash-coin" aria-hidden="true"></i></span>
+                <span class="kpi-valor">@Formatos.Pesos(Model.DonadoMes)</span>
+                <span class="kpi-titulo">Donado este mes</span>
+                <span class="kpi-detalle">@Formatos.Pesos(Model.DonadoTotal) desde el inicio</span>
+            </a>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="kpi exito">
+                <span class="kpi-icono"><i class="bi bi-house-heart" aria-hidden="true"></i></span>
+                <span class="kpi-valor">@Model.HogaresTotal</span>
+                <span class="kpi-titulo">Gatos con hogar</span>
+                <span class="kpi-detalle">@Model.HogaresMes este mes · @Model.GatosEnCasa en fundaciones</span>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <a class="kpi alerta" asp-controller="Informes" asp-action="Apadrinamientos">
+                <span class="kpi-icono"><i class="bi bi-heart-fill" aria-hidden="true"></i></span>
+                <span class="kpi-valor">@Model.PadrinosActivos</span>
+                <span class="kpi-titulo">@(Model.PadrinosActivos == 1 ? "Padrino activo" : "Padrinos activos")</span>
+                <span class="kpi-detalle">@Formatos.Pesos(Model.AporteMensualPadrinos) al mes</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-7">
+            <section class="mu-card p-4 mb-4">
+                <h2 class="h5 mb-1"><i class="bi bi-check2-square me-2 text-acento" aria-hidden="true"></i>Pendientes</h2>
+                @if (Model.Tareas.Count == 0)
+                {
+                    <p class="small text-suave mb-0 mt-2">Todo al día. No hay nada esperando por ti.</p>
+                }
+                else
+                {
+                    <p class="small text-suave mb-3">@Model.Tareas.Count @(Model.Tareas.Count == 1 ? "cosa por revisar" : "cosas por revisar")</p>
+                    <ul class="lista-tareas">
+                        @foreach (var t in Model.Tareas)
+                        {
+                            <li>
+                                <a href="@t.Url">
+                                    <span class="icono-circulo @(t.Tono == "vacio" ? "" : t.Tono) flex-shrink-0"><i class="bi @t.Icono" aria-hidden="true"></i></span>
+                                    <span class="flex-grow-1 min-w-0">
+                                        <span class="d-block fw-semibold">@t.Titulo</span>
+                                        <span class="d-block small text-suave">@t.Detalle</span>
+                                    </span>
+                                    <i class="bi bi-chevron-right text-suave" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+        </div>
+        <div class="col-12 col-xl-5">
+            <section class="mu-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h5 mb-0"><i class="bi bi-hourglass-split me-2 text-acento" aria-hidden="true"></i>Causas por aprobar</h2>
+                    <a class="small fw-semibold" asp-controller="Causas" asp-action="Index">Ver todas</a>
+                </div>
+                @if (Model.CausasPorAprobar.Count == 0)
+                {
+                    <p class="small text-suave mb-0">No hay causas esperando revisión.</p>
+                }
+                else
+                {
+                    <ul class="lista-tareas">
+                        @foreach (var c in Model.CausasPorAprobar)
+                        {
+                            <li>
+                                <a asp-controller="Causas" asp-action="Revisar" asp-route-id="@c.Id">
+                                    <span class="flex-grow-1 min-w-0">
+                                        <span class="d-block fw-semibold text-truncate">@c.Titulo</span>
+                                        <span class="d-block small text-suave">@c.Fundacion · @Formatos.Pesos(c.Meta) · @Formatos.Hace(c.Fecha)@(c.Corregida ? " · corregida" : "")</span>
+                                    </span>
+                                    <span class="btn btn-sm btn-primary flex-shrink-0">Revisar</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+        </div>
+    </div>
+
+    <section class="mu-card overflow-hidden mb-4">
+        <div class="p-4 pb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h2 class="h5 mb-0"><i class="bi bi-buildings me-2 text-acento" aria-hidden="true"></i>Cómo va cada fundación</h2>
+            <span class="small text-suave">Cifras del mes en curso</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table tabla-mu align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Fundación</th>
+                        <th scope="col" class="text-center">Gatos</th>
+                        <th scope="col" class="text-end">Donado este mes</th>
+                        <th scope="col" class="text-center">Por confirmar</th>
+                        <th scope="col" class="text-center">Causas activas</th>
+                        <th scope="col" class="text-center">Padrinos</th>
+                        <th scope="col">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model.Fundaciones)
+                    {
+                        <tr>
+                            <td>
+                                <a class="fw-semibold text-body" asp-controller="Esales" asp-action="Editar" asp-route-id="@f.Id">@f.Nombre</a>
+                                @if (!string.IsNullOrEmpty(f.Ciudad))
+                                {
+                                    <div class="small text-suave">@f.Ciudad</div>
+                                }
+                            </td>
+                            <td class="text-center">@f.Gatos</td>
+                            <td class="text-end">@Formatos.Pesos(f.DonadoMes)</td>
+                            <td class="text-center">@(f.DonacionesPendientes == 0 ? "—" : f.DonacionesPendientes.ToString())</td>
+                            <td class="text-center">@f.CausasActivas</td>
+                            <td class="text-center">@f.Padrinos</td>
+                            <td>
+                                @if (!f.Activa)
+                                {
+                                    <span class="mu-badge">Desactivada</span>
+                                }
+                                else if (!f.EnDirectorio)
+                                {
+                                    <span class="mu-badge alerta">Fuera del directorio</span>
+                                }
+                                else
+                                {
+                                    <span class="mu-badge exito">Publicada</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

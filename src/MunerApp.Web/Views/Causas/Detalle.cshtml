@@ -64,10 +64,10 @@
 
                 @if (Model.RecibeDonaciones)
                 {
-                    <a class="btn btn-apoyar btn-lg w-100" href="/fundaciones/@Model.SlugEsal/donar"><i class="bi bi-heart me-2" aria-hidden="true"></i>Donar a esta causa</a>
+                    <a class="btn btn-apoyar btn-lg w-100" href="/fundaciones/@Model.SlugEsal/donar?causa=@Model.Id"><i class="bi bi-heart me-2" aria-hidden="true"></i>Donar a esta causa</a>
                     <p class="small text-suave mt-3 mb-0">
                         <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
-                        Por ahora la fundación recibe donaciones por transferencia a su cuenta oficial. El pago en línea (tarjeta, PSE y Nequi) que suma a esta barra llegará pronto.
+                        Transfiere a la cuenta oficial de la fundación y reporta tu donación: cuando la fundación la confirme, suma a esta barra. El pago en línea (tarjeta, PSE y Nequi) llegará pronto.
                     </p>
                 }
                 else if (Model.Cerrada)

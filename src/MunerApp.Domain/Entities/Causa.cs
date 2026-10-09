@@ -22,7 +22,15 @@ public class Causa : IPerteneceAEsal
     /// <summary>Último día en que la causa recibe donaciones.</summary>
     public DateTime FechaLimite { get; set; }
 
-    /// <summary>Activa o Pausada. "Cerrada" se calcula con <see cref="EstaCerrada"/> y la guardará el cierre automático (HU-046).</summary>
+    /// <summary>Por qué la fundación necesita la causa. La lee el superadministrador antes de aprobarla.</summary>
+    public string? Justificacion { get; set; }
+
+    /// <summary>Motivo que deja el superadministrador cuando rechaza la causa.</summary>
+    public string? MotivoRechazo { get; set; }
+    public string? RevisadaPorId { get; set; }
+    public DateTime? FechaRevision { get; set; }
+
+    /// <summary>PorAprobar, Activa, Pausada o Rechazada. "Cerrada" se calcula con <see cref="EstaCerrada"/> y la guardará el cierre automático (HU-046).</summary>
     public EstadoCausa Estado { get; set; } = EstadoCausa.Activa;
 
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
@@ -33,6 +41,14 @@ public class Causa : IPerteneceAEsal
 
     public Esal? Esal { get; set; }
     public ICollection<FotoCausa> Fotos { get; set; } = new List<FotoCausa>();
+
+    /// <summary>Estados que se muestran en las páginas públicas (las por aprobar y las rechazadas no).</summary>
+    public static readonly EstadoCausa[] EstadosPublicos = { EstadoCausa.Activa, EstadoCausa.Pausada, EstadoCausa.Cerrada };
+
+    public bool EsPublica => EstadosPublicos.Contains(Estado);
+
+    /// <summary>Todavía no la ha aprobado el superadministrador (o la rechazó).</summary>
+    public bool EnRevision => Estado is EstadoCausa.PorAprobar or EstadoCausa.Rechazada;
 
     /// <summary>Cerrada: llegó a la meta o pasó su fecha límite.</summary>
     public bool EstaCerrada(decimal recaudado, DateTime hoy)
