@@ -1,0 +1,48 @@
+@model ChatDonanteViewModel
+@{
+    ViewData["Title"] = "Chat · " + Model.NombreProducto;
+    var ultimo = Model.Mensajes.Count == 0 ? 0 : Model.Mensajes[^1].Id;
+}
+<div class="container py-4 py-md-5" style="max-width: 860px">
+    <a class="small d-inline-flex align-items-center gap-1 mb-3" href="/mis-chats"><i class="bi bi-arrow-left" aria-hidden="true"></i>Mis chats</a>
+
+    <div class="mu-card overflow-hidden">
+        <div class="chat-encabezado">
+            <partial name="_LogoEsal" model="new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 44)" />
+            <div class="flex-grow-1 min-w-0">
+                <div class="fw-bold">@Model.NombreEsal</div>
+                @if (Model.ProductoVisible)
+                {
+                    <a class="small" href="/fundaciones/@Model.SlugEsal/tienda/@Model.ProductoId">@Model.NombreProducto · @Formatos.Pesos(Model.Precio)</a>
+                }
+                else
+                {
+                    <span class="small text-suave">@Model.NombreProducto (ya no está en la tienda)</span>
+                }
+            </div>
+            @if (Model.FotoUrl is not null)
+            {
+                <img class="chat-producto-foto" src="@Model.FotoUrl" alt="" />
+            }
+        </div>
+
+        <div class="chat-mensajes" data-chat data-chat-url="/mis-chats/@Model.Id/mensajes" data-chat-ultimo="@ultimo" aria-live="polite">
+            <partial name="_MensajesChat" model="Model.Mensajes" />
+        </div>
+
+        @if (Model.Estado == EstadoConversacion.Cerrada)
+        {
+            <div class="alert alert-info rounded-0 border-0 mb-0 small">
+                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                <div>La fundación cerró esta conversación. Si escribes de nuevo, se vuelve a abrir.</div>
+            </div>
+        }
+
+        <form method="post" novalidate class="chat-formulario">
+            <label asp-for="Nuevo.Texto" class="visually-hidden">Escribe un mensaje</label>
+            <textarea asp-for="Nuevo.Texto" class="form-control" rows="2" maxlength="1000" placeholder="Escribe un mensaje" data-enviar-con-enter></textarea>
+            <button type="submit" class="btn btn-primary" aria-label="Enviar"><i class="bi bi-send" aria-hidden="true"></i></button>
+        </form>
+        <span asp-validation-for="Nuevo.Texto" class="d-block px-3 pb-2"></span>
+    </div>
+</div>

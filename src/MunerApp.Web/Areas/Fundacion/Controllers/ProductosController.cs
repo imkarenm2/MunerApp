@@ -212,6 +212,13 @@ public class ProductosController : Controller
         var p = await _db.Productos.Include(x => x.Fotos).FirstOrDefaultAsync(x => x.Id == id);
         if (p is null) return NotFound();
 
+        // HU-025: los chats guardan de qué producto hablaban, así que un producto con chats solo se oculta
+        if (await _db.ConversacionesTienda.AnyAsync(c => c.ProductoId == id))
+        {
+            TempData["Error"] = $"\"{p.Nombre}\" tiene chats con donantes, así que no se puede eliminar. Ocúltalo para que no aparezca en la tienda.";
+            return RedirectToAction(nameof(Index));
+        }
+
         var rutas = p.Fotos.Select(f => f.Ruta).ToList();
         _db.Productos.Remove(p);
         await _db.SaveChangesAsync();
