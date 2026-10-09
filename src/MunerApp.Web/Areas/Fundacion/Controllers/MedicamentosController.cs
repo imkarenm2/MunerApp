@@ -25,18 +25,19 @@ namespace MunerApp.Web.Areas.Fundacion.Controllers;
 [RequiereModulo(CodigosModulo.Salud)]
 public class MedicamentosController : Controller
 {
-    /// <summary>Tope de cantidad por medicamento o movimiento, para evitar errores de digitación.</summary>
-    private const decimal CantidadMaxima = 100_000;
+    private const decimal CantidadMaxima = InventarioMedicamentos.CantidadMaxima;
 
     private readonly MunerAppDbContext _db;
     private readonly IEsalActual _esalActual;
     private readonly IReportesService _reportes;
+    private readonly InventarioMedicamentos _inventario;
 
-    public MedicamentosController(MunerAppDbContext db, IEsalActual esalActual, IReportesService reportes)
+    public MedicamentosController(MunerAppDbContext db, IEsalActual esalActual, IReportesService reportes, InventarioMedicamentos inventario)
     {
         _db = db;
         _esalActual = esalActual;
         _reportes = reportes;
+        _inventario = inventario;
     }
 
     private string UsuarioId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -275,34 +276,14 @@ public class MedicamentosController : Controller
         var nota = string.IsNullOrWhiteSpace(model.Nota) ? null : model.Nota.Trim();
         if (nota?.Length > 300) nota = nota[..300];
 
-        // La cantidad se actualiza en la base de datos de forma atómica: dos usos al mismo tiempo
-        // nunca dejan el inventario en negativo. El movimiento se guarda en la misma transacción.
+        // La cantidad y el movimiento se guardan en la misma transacción (ver InventarioMedicamentos)
         decimal? resultante = null;
         var estrategia = _db.Database.CreateExecutionStrategy();
         await estrategia.ExecuteAsync(async () =>
         {
             await using var tx = await _db.Database.BeginTransactionAsync();
-            var filas = uso
-                ? await _db.Medicamentos.Where(x => x.Id == id && x.Cantidad >= cantidad)
-                    .ExecuteUpdateAsync(s => s.SetProperty(x => x.Cantidad, x => x.Cantidad - cantidad.Value))
-                : await _db.Medicamentos.Where(x => x.Id == id && x.Cantidad + cantidad <= CantidadMaxima)
-                    .ExecuteUpdateAsync(s => s.SetProperty(x => x.Cantidad, x => x.Cantidad + cantidad.Value));
-            if (filas == 0) return;
-
-            resultante = await _db.Medicamentos.Where(x => x.Id == id).Select(x => x.Cantidad).FirstAsync();
-            _db.MovimientosMedicamento.Add(new MovimientoMedicamento
-            {
-                EsalId = m.EsalId,
-                MedicamentoId = id,
-                Tipo = model.Tipo!.Value,
-                Cantidad = cantidad.Value,
-                CantidadResultante = resultante.Value,
-                BeneficiarioId = beneficiarioId,
-                Nota = nota,
-                RegistradoPorId = UsuarioId
-            });
-            await _db.SaveChangesAsync();
-            await tx.CommitAsync();
+            resultante = await _inventario.MoverAsync(m, model.Tipo!.Value, cantidad.Value, beneficiarioId, nota, UsuarioId);
+            if (resultante is not null) await tx.CommitAsync();
         });
 
         var unidad = Textos.UnidadDe(m.Presentacion);

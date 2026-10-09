@@ -23,6 +23,7 @@ builder.Services.AddScoped<IEsalActual, EsalActual>();
 builder.Services.AddScoped<InvitacionService>();
 builder.Services.AddScoped<CausasPublicas>();
 builder.Services.AddScoped<EstadosBeneficiario>();
+builder.Services.AddScoped<InventarioMedicamentos>();
 builder.Services.AddScoped<ConfirmacionPagosWompi>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
