@@ -9,11 +9,14 @@ using MunerApp.Domain.Entities;
 using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Models.Publico;
+using MunerApp.Web.Servicios;
 
 namespace MunerApp.Web.Controllers;
 
 /// <summary>
 /// HU-025: el donante escribe a la fundación sobre un producto de su tienda para acordar la compra.
+/// Las acciones se llaman MisChats y MensajesNuevos (no Index ni Mensajes) para que los enlaces del área Fundacion,
+/// que tiene un controlador con el mismo nombre (HU-026), no se confundan con estas rutas.
 /// Escenario 1: desde el producto inicia el chat con un primer mensaje; la fundación recibe una notificación.
 /// Escenario 2: en "Mis chats" ve sus conversaciones con los mensajes sin leer y responde.
 /// Escenario 3: si ya había escrito sobre ese producto, continúa la misma conversación.
@@ -129,7 +132,7 @@ public class ChatsTiendaController : Controller
     // ---------- Escenario 2: mis chats ----------
 
     [HttpGet("mis-chats")]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> MisChats()
     {
         var chats = await _db.ConversacionesTienda.IgnoreQueryFilters().AsNoTracking()
             .Where(c => c.DonanteId == UsuarioId)
@@ -203,7 +206,7 @@ public class ChatsTiendaController : Controller
 
     /// <summary>Mensajes nuevos (para actualizar el chat sin recargar la página).</summary>
     [HttpGet("mis-chats/{id:int}/mensajes")]
-    public async Task<IActionResult> Mensajes(int id, int despues)
+    public async Task<IActionResult> MensajesNuevos(int id, int despues)
     {
         var c = await BuscarPropiaAsync(id);
         if (c is null) return NotFound();
@@ -259,7 +262,8 @@ public class ChatsTiendaController : Controller
             SlugEsal = c.Esal!.Slug ?? string.Empty,
             NombreEsal = c.Esal.Nombre,
             LogoUrl = c.Esal.LogoRuta is null ? null : _archivos.UrlPublica(c.Esal.LogoRuta),
-            Mensajes = await MensajesAsync(c.Id, 0)
+            Mensajes = await MensajesAsync(c.Id, 0),
+            Pedidos = await ConsultasPedidos.DeConversacionAsync(_db.Pedidos.IgnoreQueryFilters().AsNoTracking(), c.Id)
         };
     }
 

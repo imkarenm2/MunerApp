@@ -1,0 +1,155 @@
+@model ChatEsalDetalleViewModel
+@{
+    ViewData["Title"] = "Chat con " + Model.Donante;
+    ViewData["Seccion"] = "Tienda";
+    var ultimo = Model.Mensajes.Count == 0 ? 0 : Model.Mensajes[^1].Id;
+}
+<div class="container py-4 py-md-5">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Chats de la tienda</a>
+
+    <div class="row g-4 mt-1">
+        <div class="col-12 col-lg-7">
+            <div class="mu-card overflow-hidden">
+                <div class="chat-encabezado">
+                    <span class="mu-avatar">@(Model.Donante.Length > 0 ? char.ToUpper(Model.Donante[0]) : '?')</span>
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="fw-bold">@Model.Donante</div>
+                        @if (Model.CorreoDonante is not null)
+                        {
+                            <div class="small text-suave text-truncate">@Model.CorreoDonante</div>
+                        }
+                    </div>
+                    @if (Model.Estado == EstadoConversacion.Abierta)
+                    {
+                        <form asp-action="Cerrar" asp-route-id="@Model.Id" method="post"
+                              data-confirmar="Pasa a la pestaña de cerradas. Si el donante vuelve a escribir, se abre de nuevo."
+                              data-confirmar-titulo="¿Cerrar la conversación?" data-confirmar-boton="Sí, cerrar">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-check2-all me-1" aria-hidden="true"></i>Cerrar</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form asp-action="Reabrir" asp-route-id="@Model.Id" method="post">
+                            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Reabrir</button>
+                        </form>
+                    }
+                </div>
+
+                <div class="chat-mensajes" data-chat data-chat-url="/Fundacion/ChatsTienda/Mensajes/@Model.Id" data-chat-ultimo="@ultimo" aria-live="polite">
+                    <partial name="_MensajesChat" model="Model.Mensajes" />
+                </div>
+
+                <form asp-action="Responder" asp-route-id="@Model.Id" method="post" novalidate class="chat-formulario">
+                    <label asp-for="Nuevo.Texto" class="visually-hidden">Responder</label>
+                    <textarea asp-for="Nuevo.Texto" class="form-control" rows="2" maxlength="1000" placeholder="Responde al donante" data-enviar-con-enter></textarea>
+                    <button type="submit" class="btn btn-primary" aria-label="Enviar"><i class="bi bi-send" aria-hidden="true"></i></button>
+                </form>
+                <span asp-validation-for="Nuevo.Texto" class="d-block px-3 pb-2"></span>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <div class="mu-card p-4 mb-3">
+                <div class="d-flex align-items-center gap-3">
+                    @if (Model.FotoUrl is not null)
+                    {
+                        <img class="chat-producto-foto" src="@Model.FotoUrl" alt="" />
+                    }
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="small text-suave">Pregunta por</div>
+                        <div class="fw-semibold">@Model.NombreProducto</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-bold text-principal">@Formatos.Pesos(Model.PrecioProducto)</span>
+                            @if (Model.EstadoProducto != EstadoProducto.Disponible)
+                            {
+                                <partial name="_EstadoProducto" model="Model.EstadoProducto" />
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mu-card p-4">
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                    <h2 class="h6 mb-0"><i class="bi bi-receipt me-1" aria-hidden="true"></i>Pedidos de este chat</h2>
+                    <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#nuevo-pedido"
+                            aria-expanded="@(Model.MostrarFormularioPedido ? "true" : "false")" aria-controls="nuevo-pedido">
+                        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Registrar pedido
+                    </button>
+                </div>
+
+                <div id="nuevo-pedido" class="collapse @(Model.MostrarFormularioPedido ? "show" : "")">
+                    <form asp-action="RegistrarPedido" asp-route-id="@Model.Id" method="post" novalidate class="border rounded-3 p-3 mb-3"
+                          data-confirmar="El donante verá el pedido en su chat y recibirá una notificación."
+                          data-confirmar-titulo="¿Registrar el pedido?" data-confirmar-boton="Sí, registrar">
+                        <p class="small text-suave">Cuando acuerden la compra, déjala registrada. El total se calcula con la cantidad y el precio por unidad.</p>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                        <div class="row g-2">
+                            <div class="col-5">
+                                <label asp-for="Pedido.Cantidad" class="form-label"></label>
+                                <input asp-for="Pedido.Cantidad" type="number" min="1" max="1000" class="form-control" />
+                                <span asp-validation-for="Pedido.Cantidad"></span>
+                            </div>
+                            <div class="col-7">
+                                <label asp-for="Pedido.PrecioUnitario" class="form-label"></label>
+                                <div class="input-icono">
+                                    <i class="bi bi-currency-dollar" aria-hidden="true"></i>
+                                    <input asp-for="Pedido.PrecioUnitario" class="form-control" inputmode="numeric" autocomplete="off" data-moneda />
+                                </div>
+                                <span asp-validation-for="Pedido.PrecioUnitario"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Pedido.Notas" class="form-label"></label>
+                                <textarea asp-for="Pedido.Notas" class="form-control" rows="2" maxlength="500" placeholder="Ej.: Paga por Nequi y recoge en la sede el sábado."></textarea>
+                                <span asp-validation-for="Pedido.Notas"></span>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3" data-cargando="Registrando...">Registrar pedido</button>
+                    </form>
+                </div>
+
+                @if (Model.Pedidos.Count == 0)
+                {
+                    <p class="small text-suave mb-0">Aún no hay pedidos registrados en este chat.</p>
+                }
+                else
+                {
+                    <div class="d-grid gap-2">
+                        @foreach (var p in Model.Pedidos)
+                        {
+                            <div class="border rounded-3 p-3">
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+                                    <span class="fw-semibold">@p.Codigo</span>
+                                    <partial name="_EstadoPedido" model="p.Estado" />
+                                </div>
+                                <div class="small">@p.Cantidad × @Formatos.Pesos(p.PrecioUnitario) = <strong>@Formatos.Pesos(p.Total)</strong></div>
+                                @if (p.Notas is not null)
+                                {
+                                    <div class="small text-suave mt-1">@p.Notas</div>
+                                }
+                                @{ var siguientes = MunerApp.Domain.Entities.Pedido.Siguientes(p.Estado); }
+                                @if (siguientes.Count > 0)
+                                {
+                                    <div class="d-flex flex-wrap gap-2 mt-2">
+                                        @foreach (var s in siguientes)
+                                        {
+                                            <form asp-controller="Pedidos" asp-action="CambiarEstado" asp-route-id="@p.Id" asp-route-estado="@s" asp-route-volverA="chat" method="post"
+                                                  data-confirmar="Se le avisará al donante." data-confirmar-titulo="¿Marcar @p.Codigo como @Textos.De(s).ToLower()?"
+                                                  data-confirmar-boton="Sí, marcar" data-confirmar-tipo="@(s == EstadoPedido.Cancelado ? "peligro" : "")">
+                                                <button type="submit" class="btn btn-sm @(s == EstadoPedido.Cancelado ? "btn-outline-danger" : "btn-outline-primary")">@(s == EstadoPedido.Cancelado ? "Cancelar" : "Marcar " + Textos.De(s).ToLower())</button>
+                                            </form>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -113,4 +113,13 @@ public static class Textos
         EstadoProducto.Oculto => "Oculto",
         _ => e.ToString()
     };
+
+    public static string De(EstadoPedido e) => e switch
+    {
+        EstadoPedido.Acordado => "Acordado",
+        EstadoPedido.Pagado => "Pagado",
+        EstadoPedido.Entregado => "Entregado",
+        EstadoPedido.Cancelado => "Cancelado",
+        _ => e.ToString()
+    };
 }

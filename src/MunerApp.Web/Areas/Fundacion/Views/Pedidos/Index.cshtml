@@ -1,0 +1,101 @@
+@model PedidosIndexViewModel
+@{
+    ViewData["Title"] = "Pedidos de la tienda";
+    ViewData["Seccion"] = "Tienda";
+    int Conteo(EstadoPedido e) => Model.Conteos.TryGetValue(e, out var c) ? c : 0;
+    var pestanas = new[]
+    {
+        (Estado: (EstadoPedido?)null, Texto: "Todos", Conteo: Model.Conteos.Values.Sum()),
+        (Estado: (EstadoPedido?)EstadoPedido.Acordado, Texto: "Acordados", Conteo: Conteo(EstadoPedido.Acordado)),
+        (Estado: (EstadoPedido?)EstadoPedido.Pagado, Texto: "Pagados", Conteo: Conteo(EstadoPedido.Pagado)),
+        (Estado: (EstadoPedido?)EstadoPedido.Entregado, Texto: "Entregados", Conteo: Conteo(EstadoPedido.Entregado)),
+        (Estado: (EstadoPedido?)EstadoPedido.Cancelado, Texto: "Cancelados", Conteo: Conteo(EstadoPedido.Cancelado))
+    };
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Pedidos de la tienda</h1>
+            <p class="text-suave mb-0">Compras acordadas por chat. Márcalas como pagadas cuando recibas el dinero y como entregadas al despacharlas.</p>
+        </div>
+        <div class="mu-card px-4 py-3 text-end">
+            <div class="small text-suave">Total entregado</div>
+            <div class="h4 fw-bold text-principal mb-0">@Formatos.Pesos(Model.TotalEntregado)</div>
+        </div>
+    </div>
+
+    <partial name="_NavFundacion" />
+    <partial name="_NavTienda" />
+
+    <ul class="nav nav-tabs pestanas mb-3" role="tablist">
+        @foreach (var p in pestanas)
+        {
+            <li class="nav-item">
+                <a class="nav-link @(Model.Estado == p.Estado ? "active" : "")" asp-action="Index" asp-route-estado="@p.Estado"
+                   aria-current="@(Model.Estado == p.Estado ? "page" : null)">
+                    @p.Texto <span class="badge rounded-pill @(p.Estado == EstadoPedido.Acordado && p.Conteo > 0 ? "text-bg-warning" : "text-bg-light") ms-1">@p.Conteo</span>
+                </a>
+            </li>
+        }
+    </ul>
+
+    @if (Model.Pedidos.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-receipt" aria-hidden="true"></i></div>
+            <h2 class="h5">No hay pedidos @(Model.Estado is null ? "" : Textos.De(Model.Estado.Value).ToLower() + "s")</h2>
+            <p class="text-suave">Los pedidos se registran desde el chat con cada donante, cuando acuerdan la compra.</p>
+            <a class="btn btn-outline-primary" asp-controller="ChatsTienda" asp-action="Index">Ir a los chats</a>
+        </div>
+    }
+    else
+    {
+        <div class="mu-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Pedido</th>
+                            <th scope="col">Donante</th>
+                            <th scope="col">Producto</th>
+                            <th scope="col" class="text-end">Total</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model.Pedidos)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@p.Codigo</div>
+                                    <div class="small text-suave">@Formatos.FechaCorta(p.FechaCreacion)</div>
+                                </td>
+                                <td>@p.Donante</td>
+                                <td>
+                                    <div>@p.NombreProducto</div>
+                                    <div class="small text-suave">@p.Cantidad × @Formatos.Pesos(p.PrecioUnitario)</div>
+                                </td>
+                                <td class="text-end fw-bold">@Formatos.Pesos(p.Total)</td>
+                                <td><partial name="_EstadoPedido" model="p.Estado" /></td>
+                                <td class="text-end">
+                                    <div class="d-flex flex-wrap justify-content-end gap-1">
+                                        @foreach (var s in MunerApp.Domain.Entities.Pedido.Siguientes(p.Estado))
+                                        {
+                                            <form asp-action="CambiarEstado" asp-route-id="@p.Id" asp-route-estado="@s" method="post"
+                                                  data-confirmar="Se le avisará al donante." data-confirmar-titulo="¿Marcar @p.Codigo como @Textos.De(s).ToLower()?"
+                                                  data-confirmar-boton="Sí, marcar" data-confirmar-tipo="@(s == EstadoPedido.Cancelado ? "peligro" : "")">
+                                                <button type="submit" class="btn btn-sm @(s == EstadoPedido.Cancelado ? "btn-outline-danger" : "btn-outline-primary")">@(s == EstadoPedido.Cancelado ? "Cancelar" : Textos.De(s))</button>
+                                            </form>
+                                        }
+                                        <a class="btn btn-sm btn-suave" asp-controller="ChatsTienda" asp-action="Detalle" asp-route-id="@p.ConversacionId" aria-label="Ver el chat de @p.Codigo"><i class="bi bi-chat-dots" aria-hidden="true"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
