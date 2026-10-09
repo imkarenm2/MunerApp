@@ -141,6 +141,54 @@ Al arrancar, las fundaciones que ya existían reciben su dirección pública (`s
 
 Las páginas públicas (`/fundaciones/...`), "Mis donaciones" y "Mis postulaciones" consultan con `IgnoreQueryFilters()` y **siempre** filtran explícitamente por la fundación consultada o por el usuario autenticado. Así un administrador de una fundación también ve completo el perfil de otra, y un donante ve sus donaciones a varias fundaciones.
 
+## Sprint 4: tienda y boletín
+
+| HU | Historia | Dónde está |
+|---|---|---|
+| 023 | Gestión de productos (administrador) | `Areas/Fundacion/Controllers/ProductosController.cs` (`/Fundacion/Productos`) |
+| 024 | Catálogo en tarjetas (visitante) | `Controllers/TiendaController.cs` (`/tienda`, `/fundaciones/{slug}/tienda`, `/fundaciones/{slug}/tienda/{id}`) |
+| 025 | Chat del donante con la tienda | `Controllers/ChatsTiendaController.cs` (`/fundaciones/{slug}/tienda/{id}/chat`, `/mis-chats`) |
+| 026 | Atención de chats y pedidos (administrador) | `Areas/Fundacion/Controllers/ChatsTiendaController.cs` y `PedidosController.cs` (`/Fundacion/ChatsTienda`, `/Fundacion/Pedidos`) |
+| 027 | Publicaciones del boletín (administrador) | `Areas/Fundacion/Controllers/BoletinController.cs` (`/Fundacion/Boletin`) |
+| 028 | Consulta del boletín y eventos (visitante) | `Controllers/BoletinController.cs` (`/boletin`, `/fundaciones/{slug}/boletin`, `/fundaciones/{slug}/boletin/{id}`) |
+
+Migraciones, en orden: `HU023_Productos`, `HU025_ChatTienda`, `HU026_Pedidos`, `HU027_Boletin`.
+
+### Tienda
+
+- La tienda requiere el módulo **Tienda** (configurable). MunerApp no cobra en la tienda: el donante acuerda la compra con la fundación por chat y lo que paga le llega a ella.
+- Producto: nombre, descripción, precio, categoría opcional y de 1 a 4 fotos públicas. Estado **Disponible** (se ve y se puede pedir), **Agotado** (se ve, no se puede pedir) u **Oculto** (no se ve). Un producto con chats no se elimina: se oculta, porque los chats y pedidos guardan de qué producto hablaban.
+- Crear y editar productos es del administrador principal. Los chats y los pedidos los atiende cualquier administrador de la fundación, como las donaciones.
+- Hay **una conversación por donante y producto** (índice único): si vuelve a escribir, continúa la misma. Las cuentas de una fundación no compran como donantes.
+- Mensajes sin leer: cada conversación guarda hasta cuándo leyó cada lado (`UltimaLecturaDonante`, `UltimaLecturaFundacion`). Solo se notifica el primer mensaje sin leer, para no llenar de avisos al otro lado. El chat trae los mensajes nuevos cada 8 segundos sin recargar (`site.js`).
+- La fundación cierra la conversación cuando termina; si el donante vuelve a escribir, se reabre.
+- Pedido: se registra desde el chat (cantidad y precio por unidad; el total se calcula) con código `PED-2026-000001`. Estados: **Acordado → Pagado → Entregado**; antes de entregarse se puede **cancelar**. Cada cambio se le notifica al donante, que ve sus pedidos en el chat.
+- Los controladores públicos usan acciones con nombres distintos a `Index` (`MisChats`, `General`, `DeFundacion`...) porque el área `Fundacion` tiene controladores con el mismo nombre (`ChatsTienda`, `Boletin`) y si no, los enlaces del panel se confunden con las rutas públicas.
+
+### Boletín
+
+- El módulo **Boletín** es general (siempre activo). Categorías: Noticia, Evento, Logro y **RendicionCuentas**.
+- Una publicación nace como **Borrador** (solo la ve el equipo) o se publica de una vez; puede volver a borrador. Crear, editar y publicar es del administrador principal.
+- Un **evento** exige fecha y hora futuras (se escriben en hora de Colombia y se guardan en UTC) y lugar. En el boletín público los próximos eventos se destacan arriba; los pasados quedan marcados. El detalle de un evento futuro tiene "Agregar a mi calendario" (Google Calendar).
+- `CausaId` es opcional: liga la publicación a una causa de la fundación. **Para HU-046:** la rendición de cuentas de una causa cerrada se publica como `Publicacion` con `Categoria = RendicionCuentas`, `Estado = Publicada`, `FechaPublicacion` y `CausaId`.
+- El perfil de la fundación muestra las 2 publicaciones más recientes con un enlace a todo su boletín.
+- **El periódico de MunerApp** (`Servicios/PeriodicoMunerApp.cs`, vista `Shared/_Periodico.cshtml`): portada pública en el inicio y arriba de `/boletin`, sin iniciar sesión. Tiene el titular (el próximo evento de los siguientes 60 días o la publicación más reciente), los próximos eventos, lo último del boletín de todas las fundaciones, las cifras de la plataforma (fundaciones, peludos adoptados, causas cumplidas y total donado) y **buenas noticias que se generan solas** con la actividad de los últimos 90 días: adopciones, causas que llegan a su meta, fundaciones nuevas y productos nuevos en las tiendas. De los donantes solo se publican totales; de las adopciones, el nombre del peludo, nunca el de la familia.
+- **Boletín de demostración:** con `Seed:BoletinDemo = true` (ya está en `appsettings.Development.json`), al arrancar la app se crean publicaciones ficticias en cada fundación activa que aún no tenga ninguna: noticias, un logro, un evento pasado y eventos próximos, entre ellos **"Tu gato secreto"** (el amigo secreto, pero con gatos) en diciembre. Las fechas se calculan desde el día en que se siembran. Está en `Infrastructure/Persistence/BoletinDemo.cs`. En producción no se activa.
+## Sprint 4: donación en línea (HU-043)
+
+| HU | Historia | Dónde está |
+|---|---|---|
+| 043 | Donación en línea a una causa con Wompi | `Controllers/PagosWompiController.cs` (`/fundaciones/{slug}/causas/{id}/donar-en-linea`, `/pagos/resultado/{referencia}`) · `Infrastructure/Servicios/WompiService.cs` |
+
+### Donación en línea con Wompi (HU-043)
+
+- En el detalle de una causa que recibe donaciones, si la fundación tiene **Pagos en línea** activos, aparece "Donar en línea". Si no, queda el flujo por transferencia.
+- El donante escribe el valor (de $5.000 a $50.000.000, constantes en el controlador). Se crea la `Donacion` en **Pendiente** con el contrato de HU-044 y se envía al Web Checkout de Wompi con la firma de integridad: SHA256 de `referencia + montoEnCentavos + moneda + secretoIntegridad` (el secreto se descifra con `ISecretosService`).
+- Al volver del checkout (`/pagos/resultado/{referencia}?id=...`), la página consulta la transacción en el API de Wompi y **solo muestra** el resultado; no cambia la donación. La confirmación oficial, la suma a la causa y el comprobante llegan con el aviso de Wompi (HU-044).
+- En **Mis donaciones**, una donación en línea no tiene soporte; mientras está pendiente muestra "Consultar el pago".
+- Si el donante abandona el checkout, la donación se queda en Pendiente y nunca suma a la causa.
+- **Probar en local:** Wompi responde 403 si la dirección de regreso es `localhost` o `127.0.0.1`. Abre la app desde un túnel público (Dev Tunnels de Visual Studio, ngrok o cloudflared). En Development la app lee `X-Forwarded-Host` para armar la dirección de regreso con el dominio del túnel. El mismo túnel sirve como URL de eventos de HU-044.
+
 ## Sprint 5: estado del código
 
 | HU | Historia | Dónde está |

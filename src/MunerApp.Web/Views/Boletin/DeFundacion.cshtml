@@ -1,0 +1,14 @@
+@model BoletinPublicoViewModel
+@{
+    ViewData["Title"] = "Boletín · " + Model.NombreEsal;
+    ViewData["Nav"] = "Boletin";
+    ViewData["Descripcion"] = $"Noticias y eventos de {Model.NombreEsal}.";
+}
+<div class="container py-4 py-md-5">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal!, Model.LogoUrl, 48), Model.Slug!, "Volver al perfil de")' />
+
+    <h1 class="h2 mb-2">Boletín de @Model.NombreEsal</h1>
+    <p class="text-suave mb-4">Noticias, eventos, logros y rendiciones de cuentas de la fundación.</p>
+
+    <partial name="_Boletin" model="Model" />
+</div>

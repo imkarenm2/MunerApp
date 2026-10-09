@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,7 @@ builder.Services.AddScoped<InvitacionService>();
 builder.Services.AddScoped<CausasPublicas>();
 builder.Services.AddScoped<EstadosBeneficiario>();
 builder.Services.AddScoped<ConfirmacionPagosWompi>();
+builder.Services.AddScoped<PeriodicoMunerApp>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // ---- Identity (documento de diseño, sección 9) ----
@@ -87,6 +89,15 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+}
+else
+{
+    // Detrás de un túnel (Dev Tunnels de Visual Studio, ngrok) el dominio real llega en X-Forwarded-Host.
+    // Wompi necesita ese dominio público para volver del checkout (HU-043) y enviar sus avisos (HU-044).
+    var reenviados = new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.XForwardedHost | ForwardedHeaders.XForwardedProto };
+    reenviados.KnownNetworks.Clear();
+    reenviados.KnownProxies.Clear();
+    app.UseForwardedHeaders(reenviados);
 }
 
 // Formatos de Colombia: $ 50.000 y fechas en español
