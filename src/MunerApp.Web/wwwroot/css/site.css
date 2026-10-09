@@ -1025,3 +1025,11 @@ details.rechazo summary::-webkit-details-marker { display: none; }
 .chat-meta { font-size: .75rem; color: var(--mu-texto-suave, #6B665E); margin-top: .2rem; }
 .chat-formulario { display: flex; gap: .5rem; align-items: flex-end; padding: .75rem; border-top: 1px solid var(--mu-borde, #E7E2DA); }
 .chat-formulario textarea { resize: none; }
+
+/* ---------- Boletín (HU-027 / HU-028) ---------- */
+.tarjeta-publicacion { display: block; overflow: hidden; height: 100%; }
+.publicacion-imagen { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #EDEAE5; }
+.evento-proximo { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; }
+.evento-fecha { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; width: 60px; height: 64px; border-radius: var(--mu-radio-sm); background: var(--mu-principal); color: #fff; line-height: 1; }
+.evento-dia { font-size: 1.5rem; font-weight: 700; }
+.evento-mes { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; margin-top: .2rem; }

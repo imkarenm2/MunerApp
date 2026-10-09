@@ -1,0 +1,13 @@
+@model BoletinPublicoViewModel
+@{
+    ViewData["Title"] = "Boletín";
+    ViewData["Nav"] = "Boletin";
+    ViewData["Descripcion"] = "Noticias, eventos, logros y rendiciones de cuentas de las fundaciones de MunerApp.";
+}
+<div class="container py-4 py-md-5">
+    <span class="mu-badge acento mb-2"><i class="bi bi-newspaper" aria-hidden="true"></i>Boletín</span>
+    <h1 class="h2 mb-2">Lo que pasa en las fundaciones</h1>
+    <p class="text-suave mb-4">Noticias, eventos a los que puedes ir, logros y cuentas claras de cada causa.</p>
+
+    <partial name="_Boletin" model="Model" />
+</div>

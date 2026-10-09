@@ -130,7 +130,11 @@ public class FundacionesController : Controller
             TieneDatosDonacion = tieneDatos,
             TieneModulosApoyo = activos.Overlaps(new[] { CodigosModulo.Beneficiarios, CodigosModulo.Adopcion, CodigosModulo.Tienda }),
             FormasAyuda = ConstruirFormasAyuda(esal, activos, hayApadrinables, hayProductos),
-            Causas = await _causas.ListarAsync(esal.Id)
+            Causas = await _causas.ListarAsync(esal.Id),
+            Boletin = (await _db.Publicaciones.IgnoreQueryFilters().AsNoTracking().Include(p => p.Esal)
+                    .Where(p => p.EsalId == esal.Id && p.Estado == EstadoPublicacion.Publicada)
+                    .OrderByDescending(p => p.FechaPublicacion).Take(2).ToListAsync())
+                .Select(p => TarjetasBoletin.Desde(p, _archivos)).ToList()
         };
 
         return View(modelo);
