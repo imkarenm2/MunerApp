@@ -105,4 +105,12 @@ public static class Textos
         EstadoCausa.Cerrada => "Cerrada",
         _ => e.ToString()
     };
+
+    public static string De(EstadoProducto e) => e switch
+    {
+        EstadoProducto.Disponible => "Disponible",
+        EstadoProducto.Agotado => "Agotado",
+        EstadoProducto.Oculto => "Oculto",
+        _ => e.ToString()
+    };
 }
