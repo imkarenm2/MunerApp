@@ -217,4 +217,19 @@ public static class Textos
         TipoMovimientoMedicamento.Uso => "Uso",
         _ => t.ToString()
     };
+
+    public static string De(EstadoEventoAgenda e) => e switch
+    {
+        EstadoEventoAgenda.Pendiente => "Pendiente",
+        EstadoEventoAgenda.Realizado => "Realizado",
+        EstadoEventoAgenda.Cancelado => "Cancelado",
+        _ => e.ToString()
+    };
+
+    public static string De(UnidadFrecuencia u, int cantidad) => u switch
+    {
+        UnidadFrecuencia.Horas => cantidad == 1 ? "hora" : "horas",
+        UnidadFrecuencia.Dias => cantidad == 1 ? "día" : "días",
+        _ => u.ToString()
+    };
 }
