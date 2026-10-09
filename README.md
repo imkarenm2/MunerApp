@@ -188,7 +188,7 @@ Las páginas públicas (`/fundaciones/...`), "Mis donaciones" y "Mis postulacion
 dotnet test
 ```
 
-`tests/MunerApp.Tests` (xUnit) prueba la validación de la firma de los eventos de Wompi.
+`tests/MunerApp.Tests` (xUnit) prueba la validación de la firma de los eventos de Wompi y la generación de las dosis de un tratamiento de la agenda de salud.
 
 ## Sprint 6: estado del código
 
@@ -197,6 +197,7 @@ dotnet test
 | 036 | Aprobar o rechazar postulaciones y desvincular voluntarios | `Areas/Fundacion/Controllers/PostulacionesController.cs` → `Aprobar`, `Rechazar`, `Desvincular` (`/Fundacion/Postulaciones`) |
 | 037 | Inventario clínico de medicamentos e insumos | `Areas/Fundacion/Controllers/MedicamentosController.cs` (`/Fundacion/Medicamentos`) |
 | 040 | Reporte de medicamentos con filtros y PDF | `MedicamentosController` → `Reporte`, `ReportePdf` · `Infrastructure/Servicios/ReportesPdfService.cs` |
+| 038 | Agenda de salud: eventos, tratamientos recurrentes y registro en la historia clínica | `Areas/Fundacion/Controllers/AgendaController.cs` (`/Fundacion/Agenda`) · `Domain/Entities/EventoAgenda.cs` |
 
 ### Voluntarios (HU-036)
 
@@ -215,6 +216,17 @@ dotnet test
 - Las cantidades se leen con `Formatos.LeerCantidad` (acepta coma o punto, máximo dos decimales), porque los navegadores envían el punto aunque la cultura sea es-CO.
 - `CantidadMinima` (opcional) define cuándo hay stock bajo; la usarán las alertas de HU-039.
 - Reporte (HU-040), solo administradores: filtros *Vencidos*, *Por vencer* (vencen en los próximos `Medicamento.DiasPorVencerPredeterminado` días) y *Stock bajo*, con descarga en PDF horizontal. Las reglas están en `Medicamento` (`EstaVencido`, `EstaPorVencer`, `TieneStockBajo`) para que pantalla, PDF y alertas coincidan. Los PDF de reportes van en `IReportesService`.
+- Las entradas y los usos pasan por `Servicios/InventarioMedicamentos.cs`, que también usa la agenda de salud al descontar una dosis.
+
+### Agenda de salud (HU-038)
+
+- Requiere los módulos **Beneficiarios** y **Salud** y la política `AccesoClinico`.
+- Cada evento (`EventoAgenda`) tiene tipo (los mismos de la historia clínica), fecha y hora (UTC), descripción, medicamento del inventario y dosis opcionales, y estado *Pendiente*, *Realizado* o *Cancelado*.
+- **Agenda general** (`/Fundacion/Agenda`): pestañas *Próximos 7 días*, *Atrasados*, *Más adelante* y *Realizados*, agrupadas por día en hora de Colombia. **Agenda del beneficiario**: se abre desde su hoja de vida o su historia clínica.
+- **Tratamiento recurrente:** frecuencia (cada 1–72 horas o 1–90 días) y duración (1–365 días). `EventoAgenda.FechasDeTratamiento` genera un evento por dosis, todos con el mismo `SerieId` (cada 8 horas durante 5 días son 15 dosis). Máximo `EventoAgenda.MaxDosisPorTratamiento` dosis. *Suspender tratamiento* cancela esa dosis y las siguientes; las anteriores no cambian.
+- **Marcar realizado:** crea el `EventoClinico` (HU-019) con lo programado, la dosis del tratamiento y las observaciones, y guarda su id en `EventoAgenda.EventoClinicoId`. Si se indica, descuenta la cantidad del inventario. Todo va en una transacción: si no hay inventario suficiente no se registra nada, y si dos personas marcan el mismo evento solo cuenta el primero.
+- Un beneficiario adoptado o fallecido no tiene agenda: al cambiar a esos estados (`EstadosBeneficiario.CambiarAsync`, también desde la adopción concretada) se cancelan sus eventos pendientes.
+- No se programan eventos en horas pasadas (15 minutos de margen) ni con medicamentos vencidos.
 
 ## Cómo se protege un módulo
 
