@@ -172,6 +172,7 @@ Migraciones, en orden: `HU023_Productos`, `HU025_ChatTienda`, `HU026_Pedidos`, `
 - Un **evento** exige fecha y hora futuras (se escriben en hora de Colombia y se guardan en UTC) y lugar. En el boletín público los próximos eventos se destacan arriba; los pasados quedan marcados. El detalle de un evento futuro tiene "Agregar a mi calendario" (Google Calendar).
 - `CausaId` es opcional: liga la publicación a una causa de la fundación. **Para HU-046:** la rendición de cuentas de una causa cerrada se publica como `Publicacion` con `Categoria = RendicionCuentas`, `Estado = Publicada`, `FechaPublicacion` y `CausaId`.
 - El perfil de la fundación muestra las 2 publicaciones más recientes con un enlace a todo su boletín.
+- **Boletín de demostración:** con `Seed:BoletinDemo = true` (ya está en `appsettings.Development.json`), al arrancar la app se crean publicaciones ficticias en cada fundación activa que aún no tenga ninguna: noticias, un logro, un evento pasado y eventos próximos, entre ellos **"Tu gato secreto"** (el amigo secreto, pero con gatos) en diciembre. Las fechas se calculan desde el día en que se siembran. Está en `Infrastructure/Persistence/BoletinDemo.cs`. En producción no se activa.
 
 ## Cómo se protege un módulo
 
