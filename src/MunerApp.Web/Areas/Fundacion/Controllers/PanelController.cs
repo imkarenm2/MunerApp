@@ -7,6 +7,8 @@ using MunerApp.Domain.Constantes;
 using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Areas.Fundacion.Models;
+using MunerApp.Web.Seguridad;
+using MunerApp.Web.Servicios;
 
 namespace MunerApp.Web.Areas.Fundacion.Controllers;
 
@@ -18,12 +20,14 @@ public class PanelController : Controller
     private readonly MunerAppDbContext _db;
     private readonly IEsalActual _esalActual;
     private readonly IModuloService _modulos;
+    private readonly AlertasSalud _alertas;
 
-    public PanelController(MunerAppDbContext db, IEsalActual esalActual, IModuloService modulos)
+    public PanelController(MunerAppDbContext db, IEsalActual esalActual, IModuloService modulos, AlertasSalud alertas)
     {
         _db = db;
         _esalActual = esalActual;
         _modulos = modulos;
+        _alertas = alertas;
     }
 
     [HttpGet]
@@ -55,7 +59,12 @@ public class PanelController : Controller
             DocumentosVisibles = await _db.DocumentosTransparencia.CountAsync(d => d.Visible),
             DatosDonacionConfigurados = await _db.DatosDonacion.AnyAsync(),
             DonacionesPendientes = esAdmin ? await _db.Donaciones.CountAsync(d => d.Estado == EstadoDonacion.Pendiente) : 0,
-            PostulacionesPendientes = esAdmin ? await _db.PostulacionesVoluntario.CountAsync(p => p.Estado == EstadoPostulacion.Pendiente) : 0
+            PostulacionesPendientes = esAdmin ? await _db.PostulacionesVoluntario.CountAsync(p => p.Estado == EstadoPostulacion.Pendiente) : 0,
+
+            // HU-039: alertas de salud, solo para los responsables y con el módulo de salud activo
+            AlertasSalud = Politicas.TieneAccesoClinico(User) && modulos.Any(m => m.Codigo == CodigosModulo.Salud)
+                ? await _alertas.ResumenAsync(esalId) : null,
+            TieneAgenda = modulos.Any(m => m.Codigo == CodigosModulo.Beneficiarios)
         };
 
         return View(modelo);

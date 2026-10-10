@@ -13,8 +13,8 @@
         [CodigosModulo.Adopcion] = "bi-house-heart",
         [CodigosModulo.Salud] = "bi-capsule"
     };
-    // Módulos que ya funcionan (Sprints 2 a 5)
-    var disponibles = new HashSet<string> { CodigosModulo.Perfil, CodigosModulo.Donaciones, CodigosModulo.Voluntariado, CodigosModulo.Beneficiarios, CodigosModulo.Tienda, CodigosModulo.Boletin, CodigosModulo.Adopcion };
+    // Módulos que ya funcionan (Sprints 2 a 6)
+    var disponibles = new HashSet<string> { CodigosModulo.Perfil, CodigosModulo.Donaciones, CodigosModulo.Voluntariado, CodigosModulo.Beneficiarios, CodigosModulo.Tienda, CodigosModulo.Boletin, CodigosModulo.Adopcion, CodigosModulo.Salud };
     var rolTexto = Model.EsAdmin
         ? (Model.EsAdminPrincipal ? "Administrador principal" : "Administrador de consulta")
         : (Model.Perfil == Perfiles.Salud ? "Voluntario de salud" : "Voluntario");
@@ -59,6 +59,46 @@
                 </div>
             }
         </div>
+    }
+
+    @* HU-039: alertas de salud para administradores y voluntarios de salud *@
+    @if (Model.AlertasSalud is { } salud)
+    {
+        var avisos = new List<(string Icono, string Clase, string Texto, string Detalle, string Controlador, string? Vista)>();
+        if (salud.Vencidos > 0)
+            avisos.Add(("bi-exclamation-octagon", "error", $"{salud.Vencidos} {(salud.Vencidos == 1 ? "medicamento vencido" : "medicamentos vencidos")}", "Retíralos del uso.", "Medicamentos", null));
+        if (salud.PorVencer > 0)
+            avisos.Add(("bi-hourglass-split", "alerta", $"{salud.PorVencer} {(salud.PorVencer == 1 ? "medicamento vence" : "medicamentos vencen")} pronto", $"En los próximos {salud.DiasAviso} días.", "Medicamentos", null));
+        if (salud.StockBajo > 0)
+            avisos.Add(("bi-arrow-down-circle", "alerta", $"{salud.StockBajo} con stock bajo", "Están en la cantidad mínima o por debajo.", "Medicamentos", null));
+        if (Model.TieneAgenda && salud.EventosAtrasados > 0)
+            avisos.Add(("bi-exclamation-triangle", "alerta", $"{salud.EventosAtrasados} {(salud.EventosAtrasados == 1 ? "evento atrasado" : "eventos atrasados")}", "Pasó su hora y siguen pendientes.", "Agenda", "Atrasados"));
+        if (Model.TieneAgenda && salud.EventosHoy + salud.EventosManana > 0)
+            avisos.Add(("bi-calendar-heart", "exito", $"{salud.EventosHoy} hoy · {salud.EventosManana} mañana", "Eventos de la agenda de salud.", "Agenda", null));
+
+        <h2 class="h5 mb-3">Salud</h2>
+        @if (avisos.Count == 0)
+        {
+            <p class="small text-suave mb-4"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>Todo en orden: no hay medicamentos por vencer, faltantes ni eventos pendientes para hoy o mañana.</p>
+        }
+        else
+        {
+            <div class="row g-3 mb-4">
+                @foreach (var a in avisos)
+                {
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <a class="aviso-panel h-100" asp-controller="@a.Controlador" asp-action="Index" asp-route-vista="@a.Vista">
+                            <span class="icono-circulo @a.Clase flex-shrink-0"><i class="bi @a.Icono" aria-hidden="true"></i></span>
+                            <span class="flex-grow-1">
+                                <span class="d-block fw-bold">@a.Texto</span>
+                                <span class="small text-suave">@a.Detalle</span>
+                            </span>
+                            <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                }
+            </div>
+        }
     }
 
     @if (Model.EsAdminPrincipal)

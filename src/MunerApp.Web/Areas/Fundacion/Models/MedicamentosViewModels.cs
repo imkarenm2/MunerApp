@@ -64,6 +64,9 @@ public class MedicamentoItem
 public class MedicamentosIndexViewModel
 {
     public string? Busqueda { get; set; }
+
+    /// <summary>Plazo de aviso de vencimiento de la fundación (HU-039).</summary>
+    public int DiasAviso { get; set; } = Medicamento.DiasPorVencerPredeterminado;
     public List<MedicamentoItem> Medicamentos { get; set; } = new();
 }
 
@@ -135,4 +138,14 @@ public class ReporteMedicamentosViewModel
         FiltroReporteMedicamentos.StockBajo => "Stock bajo",
         _ => "Todos"
     };
+}
+
+/// <summary>HU-039: configuración de las alertas de salud.</summary>
+public class AlertasSaludViewModel
+{
+    /// <summary>Texto y no número, para que los mensajes de validación salgan en español.</summary>
+    [Display(Name = "Avisar con cuántos días de anticipación")]
+    public string? DiasAvisoVencimiento { get; set; }
+
+    public DateTime? UltimaRevision { get; set; }
 }

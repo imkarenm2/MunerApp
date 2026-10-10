@@ -24,6 +24,10 @@ public class PanelViewModel
     public bool DatosDonacionConfigurados { get; set; }
     public int DonacionesPendientes { get; set; }
     public int PostulacionesPendientes { get; set; }
+
+    /// <summary>HU-039: null si el usuario no es responsable de la salud o el módulo no está activo.</summary>
+    public MunerApp.Web.Servicios.ResumenAlertasSalud? AlertasSalud { get; set; }
+    public bool TieneAgenda { get; set; }
 }
 
 public class UsuarioEsalItem

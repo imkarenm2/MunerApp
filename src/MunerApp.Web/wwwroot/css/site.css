@@ -274,6 +274,7 @@ a { text-underline-offset: 3px; }
 .icono-circulo.acento { background: var(--mu-acento-suave); color: var(--mu-acento-fuerte); }
 .icono-circulo.exito { background: var(--mu-exito-suave); color: var(--mu-exito); }
 .icono-circulo.alerta { background: var(--mu-alerta-suave); color: var(--mu-alerta); }
+.icono-circulo.error { background: var(--mu-error-suave); color: var(--mu-error); }
 
 /* ---------------- Insignias y estados ---------------- */
 .mu-badge {

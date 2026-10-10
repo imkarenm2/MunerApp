@@ -11,6 +11,11 @@
             <p class="text-suave mb-0">Inventario clínico de la fundación: qué hay disponible y hasta cuándo sirve.</p>
         </div>
         <div class="d-flex flex-wrap gap-2">
+            @if (User.IsInRole(Roles.AdministradorESAL) && User.HasClaim(MunerAppClaims.Perfil, Perfiles.Principal))
+            {
+                @* HU-039: plazo de las alertas *@
+                <a class="btn btn-outline-primary" asp-action="Alertas"><i class="bi bi-bell me-1" aria-hidden="true"></i>Alertas</a>
+            }
             @if (User.IsInRole(Roles.AdministradorESAL))
             {
                 @* HU-040: reporte con filtros y PDF *@
@@ -65,6 +70,8 @@
                         {
                             var vencido = m.FechaVencimiento.Date < hoy;
                             var stockBajo = m.CantidadMinima is decimal min && m.Cantidad <= min;
+                            var faltan = (m.FechaVencimiento.Date - hoy).Days;
+                            var porVencer = !vencido && faltan <= Model.DiasAviso;
                             <tr>
                                 <td>
                                     <div class="fw-semibold">@m.NombreComercial</div>
@@ -76,6 +83,10 @@
                                     @if (vencido)
                                     {
                                         <span class="mu-badge error d-table mt-1"><i class="bi bi-exclamation-octagon" aria-hidden="true"></i>Vencido</span>
+                                    }
+                                    else if (porVencer)
+                                    {
+                                        <span class="mu-badge alerta d-table mt-1"><i class="bi bi-hourglass-split" aria-hidden="true"></i>@(faltan == 0 ? "Vence hoy" : faltan == 1 ? "Vence mañana" : $"Vence en {faltan} días")</span>
                                     }
                                 </td>
                                 <td class="text-end">

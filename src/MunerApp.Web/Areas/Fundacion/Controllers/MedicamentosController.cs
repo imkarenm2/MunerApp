@@ -31,13 +31,16 @@ public class MedicamentosController : Controller
     private readonly IEsalActual _esalActual;
     private readonly IReportesService _reportes;
     private readonly InventarioMedicamentos _inventario;
+    private readonly AlertasSalud _alertas;
 
-    public MedicamentosController(MunerAppDbContext db, IEsalActual esalActual, IReportesService reportes, InventarioMedicamentos inventario)
+    public MedicamentosController(MunerAppDbContext db, IEsalActual esalActual, IReportesService reportes,
+        InventarioMedicamentos inventario, AlertasSalud alertas)
     {
         _db = db;
         _esalActual = esalActual;
         _reportes = reportes;
         _inventario = inventario;
+        _alertas = alertas;
     }
 
     private string UsuarioId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -73,7 +76,7 @@ public class MedicamentosController : Controller
     private async Task<ReporteMedicamentosViewModel> ArmarReporteAsync(FiltroReporteMedicamentos filtro)
     {
         var hoy = Formatos.Local(DateTime.UtcNow).Date;
-        var dias = Medicamento.DiasPorVencerPredeterminado;
+        var dias = await AlertasSalud.DiasAvisoAsync(_db, EsalId); // el mismo plazo de las alertas (HU-039)
 
         // El inventario de una fundación es pequeño: se clasifica en memoria con las mismas reglas del dominio
         var todos = await _db.Medicamentos.AsNoTracking().OrderBy(m => m.FechaVencimiento).ThenBy(m => m.NombreComercial).ToListAsync();
@@ -148,7 +151,67 @@ public class MedicamentosController : Controller
                 Via = m.Via
             }).Take(300).ToListAsync();
 
-        return View(new MedicamentosIndexViewModel { Busqueda = q, Medicamentos = medicamentos });
+        return View(new MedicamentosIndexViewModel
+        {
+            Busqueda = q,
+            Medicamentos = medicamentos,
+            DiasAviso = await AlertasSalud.DiasAvisoAsync(_db, EsalId)
+        });
+    }
+
+    // ---------- HU-039: configuración de las alertas (administrador principal) ----------
+
+    [HttpGet]
+    [Authorize(Policy = Politicas.AdminEsalPrincipal)]
+    public async Task<IActionResult> Alertas()
+    {
+        var ultima = await _db.RevisionesDiarias.AsNoTracking()
+            .Where(r => r.Tarea == _alertas.Nombre && r.Terminada != null)
+            .OrderByDescending(r => r.Fecha).Select(r => r.Terminada).FirstOrDefaultAsync();
+        return View(new AlertasSaludViewModel
+        {
+            DiasAvisoVencimiento = (await AlertasSalud.DiasAvisoAsync(_db, EsalId)).ToString(),
+            UltimaRevision = ultima
+        });
+    }
+
+    /// <summary>Escenario 1: el plazo de aviso de vencimiento lo define la fundación.</summary>
+    [HttpPost]
+    [Authorize(Policy = Politicas.AdminEsalPrincipal)]
+    public async Task<IActionResult> Alertas(AlertasSaludViewModel model)
+    {
+        var dias = int.TryParse(model.DiasAvisoVencimiento?.Trim(), out var d) ? d : (int?)null;
+        if (dias is not int valor || valor < ConfigSalud.DiasMinimos || valor > ConfigSalud.DiasMaximos)
+        {
+            ModelState.AddModelError(nameof(model.DiasAvisoVencimiento), $"Escribe un número de días entre {ConfigSalud.DiasMinimos} y {ConfigSalud.DiasMaximos}.");
+            return View(model);
+        }
+
+        var config = await _db.ConfigSalud.FirstOrDefaultAsync();
+        if (config is null)
+            _db.ConfigSalud.Add(config = new ConfigSalud { EsalId = EsalId });
+        config.DiasAvisoVencimiento = valor;
+        config.FechaActualizacion = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        TempData["Mensaje"] = $"Listo: se avisará cuando un medicamento vaya a vencer en los próximos {valor} {(valor == 1 ? "día" : "días")}.";
+        return RedirectToAction(nameof(Alertas));
+    }
+
+    /// <summary>
+    /// Ejecuta ahora la revisión de esta fundación (la misma de todos los días), por ejemplo después de cambiar
+    /// el plazo. No repite avisos ya dados.
+    /// </summary>
+    [HttpPost]
+    [Authorize(Policy = Politicas.AdminEsalPrincipal)]
+    public async Task<IActionResult> RevisarAhora()
+    {
+        var r = await _alertas.RevisarEsalAsync(EsalId, Formatos.Local(DateTime.UtcNow).Date);
+        TempData["Mensaje"] = r.MedicamentosPorVencer == 0 && r.EventosManana == 0
+            ? "Revisión hecha: no hay avisos nuevos. Lo que ya se había avisado no se repite."
+            : $"Revisión hecha: {r.MedicamentosPorVencer} {(r.MedicamentosPorVencer == 1 ? "medicamento por vencer" : "medicamentos por vencer")} y " +
+              $"{r.EventosManana} {(r.EventosManana == 1 ? "evento" : "eventos")} de mañana. El aviso llegó a las notificaciones del equipo de salud.";
+        return RedirectToAction(nameof(Alertas));
     }
 
     // ---------- Escenario 1: registro ----------
