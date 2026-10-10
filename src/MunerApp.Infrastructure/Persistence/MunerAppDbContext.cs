@@ -60,6 +60,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<Medicamento> Medicamentos => Set<Medicamento>();
     public DbSet<MovimientoMedicamento> MovimientosMedicamento => Set<MovimientoMedicamento>();
     public DbSet<EventoAgenda> EventosAgenda => Set<EventoAgenda>();
+    public DbSet<ConfigSalud> ConfigSalud => Set<ConfigSalud>();
+    public DbSet<RevisionDiaria> RevisionesDiarias => Set<RevisionDiaria>();
 
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
@@ -520,6 +522,7 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.Property(x => x.Cantidad).HasPrecision(10, 2);
             e.Property(x => x.CantidadMinima).HasPrecision(10, 2);
             e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.Property(x => x.VencimientoAvisado).HasColumnType("date");
             e.HasIndex(x => new { x.EsalId, x.FechaVencimiento });
             e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
         });
@@ -558,6 +561,22 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne(x => x.EventoClinico).WithMany().HasForeignKey(x => x.EventoClinicoId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        builder.Entity<ConfigSalud>(e =>
+        {
+            e.ToTable("ConfigSalud");
+            e.HasKey(x => x.EsalId);
+            e.HasOne<Esal>().WithOne().HasForeignKey<ConfigSalud>(x => x.EsalId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<RevisionDiaria>(e =>
+        {
+            e.ToTable("RevisionDiaria");
+            e.HasKey(x => new { x.Fecha, x.Tarea });
+            e.Property(x => x.Fecha).HasColumnType("date");
+            e.Property(x => x.Tarea).HasMaxLength(60);
+            e.Property(x => x.Resumen).HasMaxLength(500);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
@@ -587,6 +606,7 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<Medicamento>(builder);
         AplicarFiltroEsal<MovimientoMedicamento>(builder);
         AplicarFiltroEsal<EventoAgenda>(builder);
+        AplicarFiltroEsal<ConfigSalud>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal

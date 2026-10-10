@@ -44,6 +44,9 @@ public class EventoAgenda : IPerteneceAEsal
     public string? RealizadoPorId { get; set; }
     public int? EventoClinicoId { get; set; }
 
+    /// <summary>HU-039 escenario 3: ya se envió el recordatorio del día anterior.</summary>
+    public bool RecordatorioEnviado { get; set; }
+
     public DateTime? FechaCancelado { get; set; }
     public string? CanceladoPorId { get; set; }
     public string? MotivoCancelacion { get; set; }

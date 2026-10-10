@@ -47,4 +47,21 @@ public class Medicamento : IPerteneceAEsal
     /// <summary>Por vencer: aún no vence, pero vence dentro de los próximos <paramref name="dias"/> días.</summary>
     public bool EstaPorVencer(DateTime hoy, int dias = DiasPorVencerPredeterminado)
         => !EstaVencido(hoy) && FechaVencimiento.Date <= hoy.Date.AddDays(dias);
+
+    /// <summary>
+    /// HU-039: fecha de vencimiento de la que ya se avisó. Si se corrige la fecha (por ejemplo, llegó un lote
+    /// nuevo) el aviso se vuelve a dar cuando corresponda.
+    /// </summary>
+    public DateTime? VencimientoAvisado { get; set; }
+
+    /// <summary>HU-039 escenario 1: está por vencer y todavía no se ha avisado de esta fecha.</summary>
+    public bool DebeAvisarVencimiento(DateTime hoy, int dias)
+        => EstaPorVencer(hoy, dias) && VencimientoAvisado?.Date != FechaVencimiento.Date;
+
+    /// <summary>
+    /// HU-039 escenario 2: al bajar de <paramref name="antes"/> a <paramref name="despues"/>, ¿cruzó la cantidad
+    /// mínima? Solo se avisa al cruzarla, no en cada uso mientras siga baja.
+    /// </summary>
+    public static bool CruzoMinimo(decimal? minima, decimal antes, decimal despues)
+        => minima is decimal m && antes > m && despues <= m;
 }
