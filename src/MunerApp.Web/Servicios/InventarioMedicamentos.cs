@@ -7,7 +7,8 @@ namespace MunerApp.Web.Servicios;
 
 /// <summary>
 /// Entradas y usos del inventario de medicamentos (HU-037). Lo usan el inventario y la agenda de salud
-/// (HU-038, al descontar la dosis aplicada), para que la regla esté en un solo lugar.
+/// (HU-038, al descontar la dosis aplicada), para que la regla esté en un solo lugar. Un uso que deja el
+/// medicamento en stock bajo avisa a los responsables (HU-039 escenario 2).
 /// </summary>
 public class InventarioMedicamentos
 {
@@ -15,8 +16,13 @@ public class InventarioMedicamentos
     public const decimal CantidadMaxima = 100_000;
 
     private readonly MunerAppDbContext _db;
+    private readonly AlertasSalud _alertas;
 
-    public InventarioMedicamentos(MunerAppDbContext db) => _db = db;
+    public InventarioMedicamentos(MunerAppDbContext db, AlertasSalud alertas)
+    {
+        _db = db;
+        _alertas = alertas;
+    }
 
     /// <summary>
     /// Suma (entrada) o resta (uso) de forma atómica en la base de datos: dos usos al mismo tiempo nunca dejan
@@ -36,7 +42,10 @@ public class InventarioMedicamentos
                 .ExecuteUpdateAsync(s => s.SetProperty(x => x.Cantidad, x => x.Cantidad + cantidad));
         if (filas == 0) return null;
 
-        var resultante = await _db.Medicamentos.Where(x => x.Id == m.Id).Select(x => x.Cantidad).FirstAsync();
+        var actual = await _db.Medicamentos.Where(x => x.Id == m.Id).Select(x => new { x.Cantidad, x.CantidadMinima }).FirstAsync();
+        var resultante = actual.Cantidad;
+        if (tipo == TipoMovimientoMedicamento.Uso)
+            await _alertas.AvisarSiBajoAsync(m, actual.CantidadMinima, antes: resultante + cantidad, despues: resultante);
         _db.MovimientosMedicamento.Add(new MovimientoMedicamento
         {
             EsalId = m.EsalId,
