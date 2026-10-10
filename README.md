@@ -227,6 +227,8 @@ Migraciones, en orden: `HU023_Productos`, `HU025_ChatTienda`, `HU026_Pedidos`, `
 - La donación solo cambia si sigue Pendiente (actualización atómica): un aviso repetido, o varios a la vez, no la procesan dos veces. El recaudado de la causa se calcula con las donaciones confirmadas, así que nunca se suma doble.
 - Cada aviso queda en la tabla `EventoPasarela` con su resultado (Procesado, FirmaInvalida, Duplicado, MontoNoCoincide...).
 - Una donación en línea no se confirma ni rechaza a mano desde el panel de donaciones.
+- En la lista de donaciones se marcan como *En línea* (*esperando a Wompi* mientras siguen pendientes), y el aviso del panel "donaciones por confirmar" solo cuenta transferencias. Si el donante abandona el checkout, la donación queda pendiente y nunca suma a la causa.
+- Probado de punta a punta con HU-043 en local: la donación nace pendiente, el aviso aprobado la confirma, la causa suma el valor, el aviso repetido queda como *Duplicado* y el donante recibe su comprobante.
 - **Contrato con HU-043:** al iniciar el pago se crea la `Donacion` en Pendiente con `Origen = Wompi`, `ReferenciaPasarela` única, `CausaId`, `MedioPago = "Wompi"` y `SoporteRuta` vacío.
 - Para probar en local se necesita una URL pública (por ejemplo, un túnel de Visual Studio o ngrok) registrada como URL de eventos en el sandbox de Wompi.
 

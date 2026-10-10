@@ -58,7 +58,8 @@ public class PanelController : Controller
             PerfilCompleto = PorcentajePerfil(esal, await _db.FotosEsal.AnyAsync()),
             DocumentosVisibles = await _db.DocumentosTransparencia.CountAsync(d => d.Visible),
             DatosDonacionConfigurados = await _db.DatosDonacion.AnyAsync(),
-            DonacionesPendientes = esAdmin ? await _db.Donaciones.CountAsync(d => d.Estado == EstadoDonacion.Pendiente) : 0,
+            // Solo las transferencias esperan revisión: los pagos en línea los confirma el aviso de Wompi (HU-044)
+            DonacionesPendientes = esAdmin ? await _db.Donaciones.CountAsync(d => d.Estado == EstadoDonacion.Pendiente && d.Origen == OrigenDonacion.Manual) : 0,
             PostulacionesPendientes = esAdmin ? await _db.PostulacionesVoluntario.CountAsync(p => p.Estado == EstadoPostulacion.Pendiente) : 0,
 
             // HU-039: alertas de salud, solo para los responsables y con el módulo de salud activo

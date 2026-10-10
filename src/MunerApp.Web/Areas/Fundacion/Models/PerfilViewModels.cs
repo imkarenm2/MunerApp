@@ -166,6 +166,9 @@ public class DonacionEsalItem
     public DateTime FechaTransferencia { get; set; }
     public DateTime FechaReporte { get; set; }
     public EstadoDonacion Estado { get; set; }
+
+    /// <summary>Pago en línea con Wompi (HU-043): lo confirma o rechaza el aviso de Wompi (HU-044), no el administrador.</summary>
+    public bool EnLinea { get; set; }
 }
 
 public class DonacionEsalDetalleViewModel : DonacionEsalItem
