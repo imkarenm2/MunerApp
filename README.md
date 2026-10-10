@@ -236,7 +236,7 @@ Migraciones, en orden: `HU023_Productos`, `HU025_ChatTienda`, `HU026_Pedidos`, `
 dotnet test
 ```
 
-`tests/MunerApp.Tests` (xUnit) prueba la validación de la firma de los eventos de Wompi y la generación de las dosis de un tratamiento de la agenda de salud.
+`tests/MunerApp.Tests` (xUnit) prueba la validación de la firma de los eventos de Wompi la generación de las dosis de un tratamiento de la agenda de salud y las reglas de las alertas de salud.
 
 ## Sprint 6: estado del código
 
@@ -245,6 +245,7 @@ dotnet test
 | 036 | Aprobar o rechazar postulaciones y desvincular voluntarios | `Areas/Fundacion/Controllers/PostulacionesController.cs` → `Aprobar`, `Rechazar`, `Desvincular` (`/Fundacion/Postulaciones`) |
 | 037 | Inventario clínico de medicamentos e insumos | `Areas/Fundacion/Controllers/MedicamentosController.cs` (`/Fundacion/Medicamentos`) |
 | 040 | Reporte de medicamentos con filtros y PDF | `MedicamentosController` → `Reporte`, `ReportePdf` · `Infrastructure/Servicios/ReportesPdfService.cs` |
+| 039 | Alertas de salud: por vencer, stock bajo y eventos de mañana | `Servicios/AlertasSalud.cs` · revisión diaria en `Servicios/RevisionDiaria.cs` · plazo en `/Fundacion/Medicamentos/Alertas` |
 | 038 | Agenda de salud: eventos, tratamientos recurrentes y registro en la historia clínica | `Areas/Fundacion/Controllers/AgendaController.cs` (`/Fundacion/Agenda`) · `Domain/Entities/EventoAgenda.cs` |
 
 ### Voluntarios (HU-036)
@@ -275,6 +276,28 @@ dotnet test
 - **Marcar realizado:** crea el `EventoClinico` (HU-019) con lo programado, la dosis del tratamiento y las observaciones, y guarda su id en `EventoAgenda.EventoClinicoId`. Si se indica, descuenta la cantidad del inventario. Todo va en una transacción: si no hay inventario suficiente no se registra nada, y si dos personas marcan el mismo evento solo cuenta el primero.
 - Un beneficiario adoptado o fallecido no tiene agenda: al cambiar a esos estados (`EstadosBeneficiario.CambiarAsync`, también desde la adopción concretada) se cancelan sus eventos pendientes.
 - No se programan eventos en horas pasadas (15 minutos de margen) ni con medicamentos vencidos.
+
+### Alertas de salud (HU-039)
+
+- Llegan como notificación a los **responsables de la salud**: administradores activos y voluntarios con perfil `Salud` de la fundación (`INotificacionService.AgregarAResponsablesSaludAsync`). El panel muestra además un resumen en vivo (sección *Salud*).
+- **Por vencer:** en la revisión diaria, los medicamentos que vencen dentro del plazo de la fundación (`ConfigSalud.DiasAvisoVencimiento`, 30 días por defecto; lo cambia el administrador principal en *Medicamentos → Alertas*). Ese mismo plazo define "Por vencer" en el inventario y en el reporte de HU-040. Se avisa una vez por fecha de vencimiento (`Medicamento.VencimientoAvisado`); si la fecha se corrige, se vuelve a avisar.
+- **Stock bajo:** al registrar un uso (desde el inventario o desde la agenda) que deja la cantidad en el mínimo o por debajo. Solo al cruzar el mínimo, no en cada uso. También avisa si se agota.
+- **Eventos de mañana:** en la revisión diaria, un resumen de los eventos pendientes del día siguiente (`EventoAgenda.RecordatorioEnviado` evita repetirlo).
+- Las notificaciones y las marcas se guardan en el mismo `SaveChanges`: no hay avisos repetidos ni perdidos.
+
+### Revisión diaria (HU-039, HU-046)
+
+- `RevisionDiariaService` (un `BackgroundService`) revisa cada 30 minutos si ya pasó la hora configurada y ejecuta una vez por día cada `ITareaDiaria` registrada. HU-046 agregará el cierre de causas como otra tarea.
+- La tabla `RevisionDiaria` (llave fecha + tarea) garantiza que cada tarea corra una sola vez por día aunque la aplicación se reinicie o haya varias instancias. Si una ejecución se cae a medias, se retoma pasados 30 minutos.
+- Si la aplicación estaba apagada a la hora de la revisión, corre apenas vuelva a encender ese día.
+- Configuración opcional en `appsettings.json`:
+
+```json
+"RevisionDiaria": { "Activa": true, "Hora": 6 }
+```
+
+- **Azure App Service:** activar *Always On* (Configuración → Configuración general). Sin eso, la aplicación se duerme cuando no hay visitas y la revisión espera a la siguiente visita.
+- Para probar o hacer una demostración: *Medicamentos → Alertas → Revisar ahora* ejecuta la revisión de la fundación sin repetir avisos.
 
 ## Cómo se protege un módulo
 
