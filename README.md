@@ -238,7 +238,7 @@ Migraciones, en orden: `HU023_Productos`, `HU025_ChatTienda`, `HU026_Pedidos`, `
 dotnet test
 ```
 
-`tests/MunerApp.Tests` (xUnit) prueba la validación de la firma de los eventos de Wompi la generación de las dosis de un tratamiento de la agenda de salud y las reglas de las alertas de salud.
+`tests/MunerApp.Tests` (xUnit) prueba la validación de la firma de los eventos de Wompi la generación de las dosis de un tratamiento de la agenda de salud las reglas de las alertas de salud y cuándo se cierra una causa.
 
 ## Sprint 6: estado del código
 
@@ -247,6 +247,7 @@ dotnet test
 | 036 | Aprobar o rechazar postulaciones y desvincular voluntarios | `Areas/Fundacion/Controllers/PostulacionesController.cs` → `Aprobar`, `Rechazar`, `Desvincular` (`/Fundacion/Postulaciones`) |
 | 037 | Inventario clínico de medicamentos e insumos | `Areas/Fundacion/Controllers/MedicamentosController.cs` (`/Fundacion/Medicamentos`) |
 | 040 | Reporte de medicamentos con filtros y PDF | `MedicamentosController` → `Reporte`, `ReportePdf` · `Infrastructure/Servicios/ReportesPdfService.cs` |
+| 046 | Cierre automático de causas y rendición de cuentas | `Servicios/CierreCausas.cs` (revisión diaria) · `Servicios/RendicionCuentas.cs` · `Areas/Fundacion/Controllers/CausasController.cs` → `Cerrar`, `Rendicion` |
 | 022 | Novedades del apadrinado para sus padrinos | `Areas/Fundacion/Controllers/NovedadesController.cs` (`/Fundacion/Novedades/Index/{beneficiarioId}`) · padrinos en `Controllers/ApadrinamientosController.cs` (`/mis-apadrinamientos/{id}`) |
 | 039 | Alertas de salud: por vencer, stock bajo y eventos de mañana | `Servicios/AlertasSalud.cs` · revisión diaria en `Servicios/RevisionDiaria.cs` · plazo en `/Fundacion/Medicamentos/Alertas` |
 | 038 | Agenda de salud: eventos, tratamientos recurrentes y registro en la historia clínica | `Areas/Fundacion/Controllers/AgendaController.cs` (`/Fundacion/Agenda`) · `Domain/Entities/EventoAgenda.cs` |
@@ -295,9 +296,21 @@ dotnet test
 - Un padrino activo ve todas las novedades, también las anteriores a su llegada. Si canceló, ve solo las publicadas hasta el día en que canceló.
 - Las fotos son privadas (`priv/esal/{id}/novedades`): las entrega `ApadrinamientosController.FotoNovedad`, que verifica que el apadrinamiento sea del usuario y que la novedad le corresponda, y `NovedadesController.Foto` para los administradores.
 
+### Cierre de causas y rendición de cuentas (HU-046)
+
+- **Cierre automático:** la tarea `CierreCausas` de la revisión diaria guarda como *Cerrada* la causa que alcanzó su meta o pasó su fecha límite (también las pausadas), con `FechaCierre` y `MotivoCierre` (`Causa.MotivoDeCierre`; si se cumplen ambas, gana la meta). Avisa a los administradores para que publiquen la rendición. El administrador principal también puede cerrar una causa antes de tiempo (*Causas → Cerrar*). Una causa cerrada no se edita ni se reabre.
+- **Rendición de cuentas:** en *Causas → Publicar rendición de cuentas* (solo causas cerradas, una por causa): texto de 30 a 4000 caracteres, valor usado opcional, hasta 5 fotos y 5 soportes (PDF, JPG o PNG); al menos una foto o un soporte. Al publicarla, `RendicionCuentas` en una transacción:
+  - la muestra en la página de la causa (sección *Rendición de cuentas*, con fotos y soportes descargables);
+  - genera un PDF (`IReportesService.GenerarRendicionCausa`) y lo publica en **Transparencia** con la categoría *Rendición de cuentas*, enlazado en `Causa.RendicionDocumentoId`;
+  - crea la publicación del **boletín** (HU-027) con la categoría *Rendición de cuentas* y `CausaId`, con su propia copia de la primera foto;
+  - **avisa a los donantes** con donaciones confirmadas en la causa.
+- Lo recaudado y el número de donaciones se guardan en la rendición al publicarla, para que el registro no cambie después. Los archivos son públicos: el formulario lo advierte.
+- Si algo falla al publicar, los archivos ya guardados se borran y no queda nada a medias.
+- Los enlaces y redirecciones del panel de causas indican el área (`Fundacion`): sin ella llevaban a la página pública `/causas`, porque hay un controlador público con el mismo nombre (venía del Sprint 3).
+
 ### Revisión diaria (HU-039, HU-046)
 
-- `RevisionDiariaService` (un `BackgroundService`) revisa cada 30 minutos si ya pasó la hora configurada y ejecuta una vez por día cada `ITareaDiaria` registrada. HU-046 agregará el cierre de causas como otra tarea.
+- `RevisionDiariaService` (un `BackgroundService`) revisa cada 30 minutos si ya pasó la hora configurada y ejecuta una vez por día cada `ITareaDiaria` registrada. Hoy son dos: `AlertasSalud` (HU-039) y `CierreCausas` (HU-046).
 - La tabla `RevisionDiaria` (llave fecha + tarea) garantiza que cada tarea corra una sola vez por día aunque la aplicación se reinicie o haya varias instancias. Si una ejecución se cae a medias, se retoma pasados 30 minutos.
 - Si la aplicación estaba apagada a la hora de la revisión, corre apenas vuelva a encender ese día.
 - Configuración opcional en `appsettings.json`:
