@@ -62,6 +62,7 @@ public static class Textos
         EstadoPostulacion.Pendiente => "Pendiente",
         EstadoPostulacion.Aprobada => "Aprobada",
         EstadoPostulacion.Rechazada => "Rechazada",
+        EstadoPostulacion.Retirada => "Desvinculado",
         _ => e.ToString()
     };
 

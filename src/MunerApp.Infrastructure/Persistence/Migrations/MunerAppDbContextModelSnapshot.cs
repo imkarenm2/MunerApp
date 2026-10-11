@@ -1358,6 +1358,9 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("FechaRespuesta")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("FechaRetiro")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Institucion")
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
@@ -1366,9 +1369,17 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<string>("Programa")
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("RevisadoPorId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int?>("Semestre")
                         .HasColumnType("int");
