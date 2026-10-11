@@ -1,0 +1,54 @@
+@model AlertasSaludViewModel
+@{
+    ViewData["Title"] = "Alertas de salud";
+    ViewData["Seccion"] = "Medicamentos";
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Medicamentos e insumos</a>
+    <h1 class="h2 mt-2 mb-1">Alertas de salud</h1>
+    <p class="text-suave mb-4">Los administradores y los voluntarios de salud las reciben en sus notificaciones y las ven en el panel.</p>
+
+    <div class="mu-card p-4 p-md-5 mb-4">
+        <h2 class="h6 fw-bold mb-3">Qué se avisa</h2>
+        <ul class="list-unstyled d-grid gap-3 mb-0">
+            <li class="d-flex gap-3">
+                <span class="icono-circulo alerta flex-shrink-0" style="width:38px;height:38px"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span>
+                <span><strong>Medicamento por vencer.</strong> <span class="text-suave">En la revisión de cada mañana, si vence dentro del plazo de abajo. Se avisa una vez por cada fecha de vencimiento.</span></span>
+            </li>
+            <li class="d-flex gap-3">
+                <span class="icono-circulo alerta flex-shrink-0" style="width:38px;height:38px"><i class="bi bi-arrow-down-circle" aria-hidden="true"></i></span>
+                <span><strong>Stock bajo.</strong> <span class="text-suave">En el momento en que un uso deja la cantidad en el mínimo o por debajo, o la agota.</span></span>
+            </li>
+            <li class="d-flex gap-3">
+                <span class="icono-circulo exito flex-shrink-0" style="width:38px;height:38px"><i class="bi bi-calendar-heart" aria-hidden="true"></i></span>
+                <span><strong>Eventos de mañana.</strong> <span class="text-suave">En la revisión de cada mañana, un recordatorio con la medicación, vacunas y controles del día siguiente.</span></span>
+            </li>
+        </ul>
+    </div>
+
+    <form asp-action="Alertas" method="post" novalidate class="mu-card p-4 p-md-5 mb-4">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <label asp-for="DiasAvisoVencimiento" class="form-label"></label>
+        <div class="input-group" style="max-width: 260px">
+            <input asp-for="DiasAvisoVencimiento" type="text" inputmode="numeric" maxlength="3" class="form-control" autocomplete="off" />
+            <span class="input-group-text">días</span>
+        </div>
+        <div class="form-text">Entre @MunerApp.Domain.Entities.ConfigSalud.DiasMinimos y @MunerApp.Domain.Entities.ConfigSalud.DiasMaximos. También define qué es "Por vencer" en el inventario y en el reporte.</div>
+        <span asp-validation-for="DiasAvisoVencimiento"></span>
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+    </form>
+
+    <div class="mu-card p-4 p-md-5">
+        <h2 class="h6 fw-bold mb-1">Revisión diaria</h2>
+        <p class="small text-suave mb-2">Se hace sola cada mañana. Si acabas de cambiar el plazo, puedes hacerla ahora; no repite avisos ya dados.</p>
+        @if (Model.UltimaRevision is DateTime ultima)
+        {
+            <p class="small mb-3"><i class="bi bi-clock-history me-1" aria-hidden="true"></i>Última revisión automática: <strong>@Formatos.FechaHora(ultima)</strong></p>
+        }
+        <form asp-action="RevisarAhora" method="post">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Revisar ahora</button>
+        </form>
+    </div>
+</div>

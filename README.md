@@ -227,6 +227,8 @@ Migraciones, en orden: `HU023_Productos`, `HU025_ChatTienda`, `HU026_Pedidos`, `
 - La donación solo cambia si sigue Pendiente (actualización atómica): un aviso repetido, o varios a la vez, no la procesan dos veces. El recaudado de la causa se calcula con las donaciones confirmadas, así que nunca se suma doble.
 - Cada aviso queda en la tabla `EventoPasarela` con su resultado (Procesado, FirmaInvalida, Duplicado, MontoNoCoincide...).
 - Una donación en línea no se confirma ni rechaza a mano desde el panel de donaciones.
+- En la lista de donaciones se marcan como *En línea* (*esperando a Wompi* mientras siguen pendientes), y el aviso del panel "donaciones por confirmar" solo cuenta transferencias. Si el donante abandona el checkout, la donación queda pendiente y nunca suma a la causa.
+- Probado de punta a punta con HU-043 en local: la donación nace pendiente, el aviso aprobado la confirma, la causa suma el valor, el aviso repetido queda como *Duplicado* y el donante recibe su comprobante.
 - **Contrato con HU-043:** al iniciar el pago se crea la `Donacion` en Pendiente con `Origen = Wompi`, `ReferenciaPasarela` única, `CausaId`, `MedioPago = "Wompi"` y `SoporteRuta` vacío.
 - Para probar en local se necesita una URL pública (por ejemplo, un túnel de Visual Studio o ngrok) registrada como URL de eventos en el sandbox de Wompi.
 
@@ -236,7 +238,76 @@ Migraciones, en orden: `HU023_Productos`, `HU025_ChatTienda`, `HU026_Pedidos`, `
 dotnet test
 ```
 
-`tests/MunerApp.Tests` (xUnit) prueba la validación de la firma de los eventos de Wompi.
+`tests/MunerApp.Tests` (xUnit) prueba la validación de la firma de los eventos de Wompi la generación de las dosis de un tratamiento de la agenda de salud y las reglas de las alertas de salud.
+
+## Sprint 6: estado del código
+
+| HU | Historia | Dónde está |
+|---|---|---|
+| 036 | Aprobar o rechazar postulaciones y desvincular voluntarios | `Areas/Fundacion/Controllers/PostulacionesController.cs` → `Aprobar`, `Rechazar`, `Desvincular` (`/Fundacion/Postulaciones`) |
+| 037 | Inventario clínico de medicamentos e insumos | `Areas/Fundacion/Controllers/MedicamentosController.cs` (`/Fundacion/Medicamentos`) |
+| 040 | Reporte de medicamentos con filtros y PDF | `MedicamentosController` → `Reporte`, `ReportePdf` · `Infrastructure/Servicios/ReportesPdfService.cs` |
+| 022 | Novedades del apadrinado para sus padrinos | `Areas/Fundacion/Controllers/NovedadesController.cs` (`/Fundacion/Novedades/Index/{beneficiarioId}`) · padrinos en `Controllers/ApadrinamientosController.cs` (`/mis-apadrinamientos/{id}`) |
+| 039 | Alertas de salud: por vencer, stock bajo y eventos de mañana | `Servicios/AlertasSalud.cs` · revisión diaria en `Servicios/RevisionDiaria.cs` · plazo en `/Fundacion/Medicamentos/Alertas` |
+| 038 | Agenda de salud: eventos, tratamientos recurrentes y registro en la historia clínica | `Areas/Fundacion/Controllers/AgendaController.cs` (`/Fundacion/Agenda`) · `Domain/Entities/EventoAgenda.cs` |
+
+### Voluntarios (HU-036)
+
+- Solo el **administrador principal** aprueba, rechaza o desvincula, porque da o quita acceso al panel. El de consulta solo ve.
+- **Aprobar:** la persona recibe el rol `Voluntario` con perfil `Salud` (si se postuló como practicante) o `General`, y queda vinculada a la fundación (`Usuario.EsalId`). Conserva el rol `Donante` para seguir donando y aparece en **Equipo**. No se le cambia el sello de seguridad: su sesión se actualiza sola en máximo un minuto (HU-008), sin volver a iniciar sesión.
+- **Rechazar:** exige un motivo que la persona ve en Mis postulaciones; sigue como donante y puede volver a postularse.
+- **Desvincular:** pierde el rol `Voluntario` y la fundación, conserva `Donante`, y se cambia su sello de seguridad para que pierda el acceso aunque tenga la sesión abierta.
+- Una cuenta pertenece a una sola fundación: si la persona ya es parte de otra, no se puede aprobar.
+- Los enlaces del panel de voluntarios indican el área (`Fundacion`) de forma explícita: sin ella, `Index` se confunde con la acción pública `/mis-postulaciones`, que está en un controlador con el mismo nombre.
+
+### Inventario de medicamentos (HU-037)
+
+- Requiere el módulo **Salud** y la política `AccesoClinico`: administradores y voluntarios de salud. El voluntario general no tiene acceso ni ve el enlace.
+- La cantidad solo cambia con movimientos (registro inicial, entradas y usos), que quedan en `MovimientoMedicamento` con la cantidad resultante. Un uso se puede asociar a un beneficiario.
+- La cantidad se actualiza en la base de datos de forma atómica dentro de una transacción: varios usos simultáneos nunca dejan el inventario en negativo.
+- Las cantidades se leen con `Formatos.LeerCantidad` (acepta coma o punto, máximo dos decimales), porque los navegadores envían el punto aunque la cultura sea es-CO.
+- `CantidadMinima` (opcional) define cuándo hay stock bajo; la usarán las alertas de HU-039.
+- Reporte (HU-040), solo administradores: filtros *Vencidos*, *Por vencer* (vencen en los próximos `Medicamento.DiasPorVencerPredeterminado` días) y *Stock bajo*, con descarga en PDF horizontal. Las reglas están en `Medicamento` (`EstaVencido`, `EstaPorVencer`, `TieneStockBajo`) para que pantalla, PDF y alertas coincidan. Los PDF de reportes van en `IReportesService`.
+- Las entradas y los usos pasan por `Servicios/InventarioMedicamentos.cs`, que también usa la agenda de salud al descontar una dosis.
+
+### Agenda de salud (HU-038)
+
+- Requiere los módulos **Beneficiarios** y **Salud** y la política `AccesoClinico`.
+- Cada evento (`EventoAgenda`) tiene tipo (los mismos de la historia clínica), fecha y hora (UTC), descripción, medicamento del inventario y dosis opcionales, y estado *Pendiente*, *Realizado* o *Cancelado*.
+- **Agenda general** (`/Fundacion/Agenda`): pestañas *Próximos 7 días*, *Atrasados*, *Más adelante* y *Realizados*, agrupadas por día en hora de Colombia. **Agenda del beneficiario**: se abre desde su hoja de vida o su historia clínica.
+- **Tratamiento recurrente:** frecuencia (cada 1–72 horas o 1–90 días) y duración (1–365 días). `EventoAgenda.FechasDeTratamiento` genera un evento por dosis, todos con el mismo `SerieId` (cada 8 horas durante 5 días son 15 dosis). Máximo `EventoAgenda.MaxDosisPorTratamiento` dosis. *Suspender tratamiento* cancela esa dosis y las siguientes; las anteriores no cambian.
+- **Marcar realizado:** crea el `EventoClinico` (HU-019) con lo programado, la dosis del tratamiento y las observaciones, y guarda su id en `EventoAgenda.EventoClinicoId`. Si se indica, descuenta la cantidad del inventario. Todo va en una transacción: si no hay inventario suficiente no se registra nada, y si dos personas marcan el mismo evento solo cuenta el primero.
+- Un beneficiario adoptado o fallecido no tiene agenda: al cambiar a esos estados (`EstadosBeneficiario.CambiarAsync`, también desde la adopción concretada) se cancelan sus eventos pendientes.
+- No se programan eventos en horas pasadas (15 minutos de margen) ni con medicamentos vencidos.
+
+### Alertas de salud (HU-039)
+
+- Llegan como notificación a los **responsables de la salud**: administradores activos y voluntarios con perfil `Salud` de la fundación (`INotificacionService.AgregarAResponsablesSaludAsync`). El panel muestra además un resumen en vivo (sección *Salud*).
+- **Por vencer:** en la revisión diaria, los medicamentos que vencen dentro del plazo de la fundación (`ConfigSalud.DiasAvisoVencimiento`, 30 días por defecto; lo cambia el administrador principal en *Medicamentos → Alertas*). Ese mismo plazo define "Por vencer" en el inventario y en el reporte de HU-040. Se avisa una vez por fecha de vencimiento (`Medicamento.VencimientoAvisado`); si la fecha se corrige, se vuelve a avisar.
+- **Stock bajo:** al registrar un uso (desde el inventario o desde la agenda) que deja la cantidad en el mínimo o por debajo. Solo al cruzar el mínimo, no en cada uso. También avisa si se agota.
+- **Eventos de mañana:** en la revisión diaria, un resumen de los eventos pendientes del día siguiente (`EventoAgenda.RecordatorioEnviado` evita repetirlo).
+- Las notificaciones y las marcas se guardan en el mismo `SaveChanges`: no hay avisos repetidos ni perdidos.
+
+### Novedades del apadrinado (HU-022)
+
+- El administrador publica una novedad (texto de 10 a 2000 caracteres y hasta 3 fotos) desde la hoja de vida del beneficiario, en la tarjeta de *Padrinos*. Se puede publicar si tiene padrinos activos o si se ofrece para apadrinar; también se puede eliminar una novedad publicada por error (sus fotos se borran).
+- Los padrinos activos reciben una notificación (`EstadosBeneficiario.NotificarPadrinosAsync`) y ven las novedades en *Mis apadrinamientos*, de la más reciente a la más antigua. Sin novedades se muestra "Pronto habrá noticias".
+- Un padrino activo ve todas las novedades, también las anteriores a su llegada. Si canceló, ve solo las publicadas hasta el día en que canceló.
+- Las fotos son privadas (`priv/esal/{id}/novedades`): las entrega `ApadrinamientosController.FotoNovedad`, que verifica que el apadrinamiento sea del usuario y que la novedad le corresponda, y `NovedadesController.Foto` para los administradores.
+
+### Revisión diaria (HU-039, HU-046)
+
+- `RevisionDiariaService` (un `BackgroundService`) revisa cada 30 minutos si ya pasó la hora configurada y ejecuta una vez por día cada `ITareaDiaria` registrada. HU-046 agregará el cierre de causas como otra tarea.
+- La tabla `RevisionDiaria` (llave fecha + tarea) garantiza que cada tarea corra una sola vez por día aunque la aplicación se reinicie o haya varias instancias. Si una ejecución se cae a medias, se retoma pasados 30 minutos.
+- Si la aplicación estaba apagada a la hora de la revisión, corre apenas vuelva a encender ese día.
+- Configuración opcional en `appsettings.json`:
+
+```json
+"RevisionDiaria": { "Activa": true, "Hora": 6 }
+```
+
+- **Azure App Service:** activar *Always On* (Configuración → Configuración general). Sin eso, la aplicación se duerme cuando no hay visitas y la revisión espera a la siguiente visita.
+- Para probar o hacer una demostración: *Medicamentos → Alertas → Revisar ahora* ejecuta la revisión de la fundación sin repetir avisos.
 
 ## Cómo se protege un módulo
 

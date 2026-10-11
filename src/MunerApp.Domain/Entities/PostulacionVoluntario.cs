@@ -24,5 +24,14 @@ public class PostulacionVoluntario : IPerteneceAEsal
     public DateTime FechaPostulacion { get; set; } = DateTime.UtcNow;
     public DateTime? FechaRespuesta { get; set; }
 
+    // ---- Revisión de la fundación (HU-036) ----
+
+    /// <summary>Por qué no se aprobó: lo ve la persona.</summary>
+    public string? MotivoRechazo { get; set; }
+    public string? RevisadoPorId { get; set; }
+
+    /// <summary>Cuándo la fundación desvinculó al voluntario (escenario 3).</summary>
+    public DateTime? FechaRetiro { get; set; }
+
     public Esal? Esal { get; set; }
 }
