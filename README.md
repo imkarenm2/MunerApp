@@ -236,7 +236,45 @@ Migraciones, en orden: `HU023_Productos`, `HU025_ChatTienda`, `HU026_Pedidos`, `
 dotnet test
 ```
 
-`tests/MunerApp.Tests` (xUnit) prueba la validación de la firma de los eventos de Wompi.
+`tests/MunerApp.Tests` (xUnit) prueba la validación de la firma de los eventos de Wompi y la generación de las dosis de un tratamiento de la agenda de salud.
+
+## Sprint 6: estado del código
+
+| HU | Historia | Dónde está |
+|---|---|---|
+| 036 | Aprobar o rechazar postulaciones y desvincular voluntarios | `Areas/Fundacion/Controllers/PostulacionesController.cs` → `Aprobar`, `Rechazar`, `Desvincular` (`/Fundacion/Postulaciones`) |
+| 037 | Inventario clínico de medicamentos e insumos | `Areas/Fundacion/Controllers/MedicamentosController.cs` (`/Fundacion/Medicamentos`) |
+| 040 | Reporte de medicamentos con filtros y PDF | `MedicamentosController` → `Reporte`, `ReportePdf` · `Infrastructure/Servicios/ReportesPdfService.cs` |
+| 038 | Agenda de salud: eventos, tratamientos recurrentes y registro en la historia clínica | `Areas/Fundacion/Controllers/AgendaController.cs` (`/Fundacion/Agenda`) · `Domain/Entities/EventoAgenda.cs` |
+
+### Voluntarios (HU-036)
+
+- Solo el **administrador principal** aprueba, rechaza o desvincula, porque da o quita acceso al panel. El de consulta solo ve.
+- **Aprobar:** la persona recibe el rol `Voluntario` con perfil `Salud` (si se postuló como practicante) o `General`, y queda vinculada a la fundación (`Usuario.EsalId`). Conserva el rol `Donante` para seguir donando y aparece en **Equipo**. No se le cambia el sello de seguridad: su sesión se actualiza sola en máximo un minuto (HU-008), sin volver a iniciar sesión.
+- **Rechazar:** exige un motivo que la persona ve en Mis postulaciones; sigue como donante y puede volver a postularse.
+- **Desvincular:** pierde el rol `Voluntario` y la fundación, conserva `Donante`, y se cambia su sello de seguridad para que pierda el acceso aunque tenga la sesión abierta.
+- Una cuenta pertenece a una sola fundación: si la persona ya es parte de otra, no se puede aprobar.
+- Los enlaces del panel de voluntarios indican el área (`Fundacion`) de forma explícita: sin ella, `Index` se confunde con la acción pública `/mis-postulaciones`, que está en un controlador con el mismo nombre.
+
+### Inventario de medicamentos (HU-037)
+
+- Requiere el módulo **Salud** y la política `AccesoClinico`: administradores y voluntarios de salud. El voluntario general no tiene acceso ni ve el enlace.
+- La cantidad solo cambia con movimientos (registro inicial, entradas y usos), que quedan en `MovimientoMedicamento` con la cantidad resultante. Un uso se puede asociar a un beneficiario.
+- La cantidad se actualiza en la base de datos de forma atómica dentro de una transacción: varios usos simultáneos nunca dejan el inventario en negativo.
+- Las cantidades se leen con `Formatos.LeerCantidad` (acepta coma o punto, máximo dos decimales), porque los navegadores envían el punto aunque la cultura sea es-CO.
+- `CantidadMinima` (opcional) define cuándo hay stock bajo; la usarán las alertas de HU-039.
+- Reporte (HU-040), solo administradores: filtros *Vencidos*, *Por vencer* (vencen en los próximos `Medicamento.DiasPorVencerPredeterminado` días) y *Stock bajo*, con descarga en PDF horizontal. Las reglas están en `Medicamento` (`EstaVencido`, `EstaPorVencer`, `TieneStockBajo`) para que pantalla, PDF y alertas coincidan. Los PDF de reportes van en `IReportesService`.
+- Las entradas y los usos pasan por `Servicios/InventarioMedicamentos.cs`, que también usa la agenda de salud al descontar una dosis.
+
+### Agenda de salud (HU-038)
+
+- Requiere los módulos **Beneficiarios** y **Salud** y la política `AccesoClinico`.
+- Cada evento (`EventoAgenda`) tiene tipo (los mismos de la historia clínica), fecha y hora (UTC), descripción, medicamento del inventario y dosis opcionales, y estado *Pendiente*, *Realizado* o *Cancelado*.
+- **Agenda general** (`/Fundacion/Agenda`): pestañas *Próximos 7 días*, *Atrasados*, *Más adelante* y *Realizados*, agrupadas por día en hora de Colombia. **Agenda del beneficiario**: se abre desde su hoja de vida o su historia clínica.
+- **Tratamiento recurrente:** frecuencia (cada 1–72 horas o 1–90 días) y duración (1–365 días). `EventoAgenda.FechasDeTratamiento` genera un evento por dosis, todos con el mismo `SerieId` (cada 8 horas durante 5 días son 15 dosis). Máximo `EventoAgenda.MaxDosisPorTratamiento` dosis. *Suspender tratamiento* cancela esa dosis y las siguientes; las anteriores no cambian.
+- **Marcar realizado:** crea el `EventoClinico` (HU-019) con lo programado, la dosis del tratamiento y las observaciones, y guarda su id en `EventoAgenda.EventoClinicoId`. Si se indica, descuenta la cantidad del inventario. Todo va en una transacción: si no hay inventario suficiente no se registra nada, y si dos personas marcan el mismo evento solo cuenta el primero.
+- Un beneficiario adoptado o fallecido no tiene agenda: al cambiar a esos estados (`EstadosBeneficiario.CambiarAsync`, también desde la adopción concretada) se cancelan sus eventos pendientes.
+- No se programan eventos en horas pasadas (15 minutos de margen) ni con medicamentos vencidos.
 
 ## Cómo se protege un módulo
 

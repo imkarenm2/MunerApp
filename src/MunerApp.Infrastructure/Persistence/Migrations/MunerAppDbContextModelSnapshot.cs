@@ -827,6 +827,99 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EsalModulo", (string)null);
                 });
 
+            modelBuilder.Entity("MunerApp.Domain.Entities.EventoAgenda", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BeneficiarioId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CanceladoPorId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CreadoPorId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Dosis")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("EsalId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<int?>("EventoClinicoId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("FechaCancelado")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaProgramada")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaRealizado")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("MedicamentoId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MotivoCancelacion")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("NumeroDosis")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RealizadoPorId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid?>("SerieId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("TotalDosis")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventoClinicoId")
+                        .IsUnique()
+                        .HasFilter("[EventoClinicoId] IS NOT NULL");
+
+                    b.HasIndex("MedicamentoId");
+
+                    b.HasIndex("SerieId");
+
+                    b.HasIndex("BeneficiarioId", "FechaProgramada");
+
+                    b.HasIndex("EsalId", "Estado", "FechaProgramada");
+
+                    b.ToTable("EventoAgenda", (string)null);
+                });
+
             modelBuilder.Entity("MunerApp.Domain.Entities.EventoClinico", b =>
                 {
                     b.Property<int>("Id")
@@ -1089,6 +1182,72 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.ToTable("HistorialEstadoBeneficiario", (string)null);
                 });
 
+            modelBuilder.Entity("MunerApp.Domain.Entities.Medicamento", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Cantidad")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal?>("CantidadMinima")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("Dosis")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("EsalId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaRegistro")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaVencimiento")
+                        .HasColumnType("date");
+
+                    b.Property<string>("NombreComercial")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Presentacion")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PrincipioActivo")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("RegistradoPorId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Uso")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Via")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EsalId", "FechaVencimiento");
+
+                    b.ToTable("Medicamento", (string)null);
+                });
+
             modelBuilder.Entity("MunerApp.Domain.Entities.MensajeTienda", b =>
                 {
                     b.Property<int>("Id")
@@ -1211,6 +1370,56 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                             EsConfigurable = true,
                             Nombre = "Salud e insumos"
                         });
+                });
+
+            modelBuilder.Entity("MunerApp.Domain.Entities.MovimientoMedicamento", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("BeneficiarioId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Cantidad")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("CantidadResultante")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("EsalId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MedicamentoId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Nota")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("RegistradoPorId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BeneficiarioId");
+
+                    b.HasIndex("MedicamentoId", "Fecha");
+
+                    b.ToTable("MovimientoMedicamento", (string)null);
                 });
 
             modelBuilder.Entity("MunerApp.Domain.Entities.Notificacion", b =>
@@ -1358,6 +1567,9 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("FechaRespuesta")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("FechaRetiro")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Institucion")
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
@@ -1366,9 +1578,17 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<string>("Programa")
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("RevisadoPorId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int?>("Semestre")
                         .HasColumnType("int");
@@ -2093,6 +2313,31 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.Navigation("Modulo");
                 });
 
+            modelBuilder.Entity("MunerApp.Domain.Entities.EventoAgenda", b =>
+                {
+                    b.HasOne("MunerApp.Domain.Entities.Beneficiario", "Beneficiario")
+                        .WithMany()
+                        .HasForeignKey("BeneficiarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MunerApp.Domain.Entities.EventoClinico", "EventoClinico")
+                        .WithMany()
+                        .HasForeignKey("EventoClinicoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MunerApp.Domain.Entities.Medicamento", "Medicamento")
+                        .WithMany()
+                        .HasForeignKey("MedicamentoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Beneficiario");
+
+                    b.Navigation("EventoClinico");
+
+                    b.Navigation("Medicamento");
+                });
+
             modelBuilder.Entity("MunerApp.Domain.Entities.EventoClinico", b =>
                 {
                     b.HasOne("MunerApp.Domain.Entities.Beneficiario", "Beneficiario")
@@ -2173,6 +2418,17 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.Navigation("Beneficiario");
                 });
 
+            modelBuilder.Entity("MunerApp.Domain.Entities.Medicamento", b =>
+                {
+                    b.HasOne("MunerApp.Domain.Entities.Esal", "Esal")
+                        .WithMany()
+                        .HasForeignKey("EsalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Esal");
+                });
+
             modelBuilder.Entity("MunerApp.Domain.Entities.MensajeTienda", b =>
                 {
                     b.HasOne("MunerApp.Domain.Entities.ConversacionTienda", "Conversacion")
@@ -2182,6 +2438,24 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Conversacion");
+                });
+
+            modelBuilder.Entity("MunerApp.Domain.Entities.MovimientoMedicamento", b =>
+                {
+                    b.HasOne("MunerApp.Domain.Entities.Beneficiario", "Beneficiario")
+                        .WithMany()
+                        .HasForeignKey("BeneficiarioId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MunerApp.Domain.Entities.Medicamento", "Medicamento")
+                        .WithMany("Movimientos")
+                        .HasForeignKey("MedicamentoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Beneficiario");
+
+                    b.Navigation("Medicamento");
                 });
 
             modelBuilder.Entity("MunerApp.Domain.Entities.Notificacion", b =>
@@ -2344,6 +2618,11 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("MunerApp.Domain.Entities.EventoClinico", b =>
                 {
                     b.Navigation("Fotos");
+                });
+
+            modelBuilder.Entity("MunerApp.Domain.Entities.Medicamento", b =>
+                {
+                    b.Navigation("Movimientos");
                 });
 
             modelBuilder.Entity("MunerApp.Domain.Entities.Producto", b =>

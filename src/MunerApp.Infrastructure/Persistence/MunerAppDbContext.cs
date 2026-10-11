@@ -56,6 +56,11 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<Pedido> Pedidos => Set<Pedido>();
     public DbSet<Publicacion> Publicaciones => Set<Publicacion>();
 
+    // Sprint 6
+    public DbSet<Medicamento> Medicamentos => Set<Medicamento>();
+    public DbSet<MovimientoMedicamento> MovimientosMedicamento => Set<MovimientoMedicamento>();
+    public DbSet<EventoAgenda> EventosAgenda => Set<EventoAgenda>();
+
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
     // Superadministrador, tareas internas (seed, migraciones) y usuarios sin ESAL no se filtran:
@@ -231,6 +236,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.Property(x => x.Programa).HasMaxLength(150);
             e.Property(x => x.SoporteAcademicoRuta).HasMaxLength(300);
             e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.MotivoRechazo).HasMaxLength(300);
+            e.Property(x => x.RevisadoPorId).HasMaxLength(450);
             e.HasIndex(x => new { x.EsalId, x.UsuarioId, x.Estado });
             e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
@@ -498,6 +505,59 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne(x => x.Causa).WithMany().HasForeignKey(x => x.CausaId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        // ---------------- Sprint 6 ----------------
+
+        builder.Entity<Medicamento>(e =>
+        {
+            e.ToTable("Medicamento");
+            e.Property(x => x.NombreComercial).HasMaxLength(150).IsRequired();
+            e.Property(x => x.PrincipioActivo).HasMaxLength(150).IsRequired();
+            e.Property(x => x.FechaVencimiento).HasColumnType("date");
+            e.Property(x => x.Uso).HasMaxLength(300).IsRequired();
+            e.Property(x => x.Via).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Dosis).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Presentacion).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Cantidad).HasPrecision(10, 2);
+            e.Property(x => x.CantidadMinima).HasPrecision(10, 2);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.FechaVencimiento });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<MovimientoMedicamento>(e =>
+        {
+            e.ToTable("MovimientoMedicamento");
+            e.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(15);
+            e.Property(x => x.Cantidad).HasPrecision(10, 2);
+            e.Property(x => x.CantidadResultante).HasPrecision(10, 2);
+            e.Property(x => x.Nota).HasMaxLength(300);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.MedicamentoId, x.Fecha });
+            e.HasOne(x => x.Medicamento).WithMany(x => x.Movimientos).HasForeignKey(x => x.MedicamentoId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Beneficiario).WithMany().HasForeignKey(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<EventoAgenda>(e =>
+        {
+            e.ToTable("EventoAgenda");
+            e.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(15);
+            e.Property(x => x.Descripcion).HasMaxLength(300).IsRequired();
+            e.Property(x => x.Dosis).HasMaxLength(150);
+            e.Property(x => x.MotivoCancelacion).HasMaxLength(300);
+            e.Property(x => x.CreadoPorId).HasMaxLength(450);
+            e.Property(x => x.RealizadoPorId).HasMaxLength(450);
+            e.Property(x => x.CanceladoPorId).HasMaxLength(450);
+            // Agenda general por fecha y agenda de cada beneficiario
+            e.HasIndex(x => new { x.EsalId, x.Estado, x.FechaProgramada });
+            e.HasIndex(x => new { x.BeneficiarioId, x.FechaProgramada });
+            e.HasIndex(x => x.SerieId);
+            e.HasIndex(x => x.EventoClinicoId).IsUnique().HasFilter("[EventoClinicoId] IS NOT NULL");
+            e.HasOne(x => x.Beneficiario).WithMany().HasForeignKey(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Medicamento).WithMany().HasForeignKey(x => x.MedicamentoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.EventoClinico).WithMany().HasForeignKey(x => x.EventoClinicoId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
@@ -524,6 +584,9 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<MensajeTienda>(builder);
         AplicarFiltroEsal<Pedido>(builder);
         AplicarFiltroEsal<Publicacion>(builder);
+        AplicarFiltroEsal<Medicamento>(builder);
+        AplicarFiltroEsal<MovimientoMedicamento>(builder);
+        AplicarFiltroEsal<EventoAgenda>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal

@@ -28,6 +28,21 @@ public static class Formatos
     /// <summary>3 de octubre de 2026, 4:35 p. m.</summary>
     public static string FechaHora(DateTime utc) => Local(utc).ToString("d 'de' MMMM 'de' yyyy, h:mm tt", Co);
 
+    /// <summary>4:35 p. m. (hora de Colombia de un momento guardado en UTC).</summary>
+    public static string Hora(DateTime utc) => Local(utc).ToString("h:mm tt", Co);
+
+    /// <summary>"Hoy", "Mañana", "Ayer" o "lunes 12 de octubre" (para agrupar una agenda por día).</summary>
+    public static string Dia(DateTime diaLocal)
+    {
+        var hoy = Local(DateTime.UtcNow).Date;
+        var dia = diaLocal.Date;
+        var nombre = dia.ToString(dia.Year == hoy.Year ? "dddd d 'de' MMMM" : "dddd d 'de' MMMM 'de' yyyy", Co);
+        if (dia == hoy) return "Hoy · " + nombre;
+        if (dia == hoy.AddDays(1)) return "Mañana · " + nombre;
+        if (dia == hoy.AddDays(-1)) return "Ayer · " + nombre;
+        return char.ToUpper(nombre[0], Co) + nombre[1..];
+    }
+
     /// <summary>"hace 5 minutos", "hace 2 días"...</summary>
     public static string Hace(DateTime utc)
     {
@@ -72,6 +87,22 @@ public static class Formatos
         var digitos = new string(limpio.Where(char.IsDigit).ToArray());
         return digitos.Length is > 0 and <= 12 ? decimal.Parse(digitos) : null;
     }
+
+    /// <summary>
+    /// Cantidad de inventario (HU-037): "12", "12,5" o "12.5", con máximo dos decimales.
+    /// Devuelve null si no es un número válido. No usa la cultura es-CO porque los navegadores envían el punto.
+    /// </summary>
+    public static decimal? LeerCantidad(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto)) return null;
+        var limpio = texto.Trim().Replace(',', '.');
+        if (limpio.Count(c => c == '.') > 1 || limpio.Any(c => !char.IsDigit(c) && c != '.')) return null;
+        if (!decimal.TryParse(limpio, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var valor)) return null;
+        return decimal.Round(valor, 2) == valor ? valor : null;
+    }
+
+    /// <summary>Cantidad sin ceros de más: "12", "12,5".</summary>
+    public static string Cantidad(decimal valor) => valor.ToString("0.##", Co);
 
     /// <summary>Porcentaje de la meta alcanzado (0 a 100). Si hay algo recaudado nunca muestra 0 %.</summary>
     public static int Porcentaje(decimal recaudado, decimal meta)

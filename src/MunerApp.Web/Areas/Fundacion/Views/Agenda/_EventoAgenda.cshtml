@@ -1,0 +1,92 @@
+@model EventoAgendaItem
+@*
+    Un evento de la agenda de salud (HU-038). ViewData:
+    "Volver" = "beneficiario" cuando se muestra en la agenda de un beneficiario (no repite su nombre).
+*@
+@{
+    var volver = ViewData["Volver"] as string;
+    var enBeneficiario = volver == "beneficiario";
+    var icono = Model.Tipo switch
+    {
+        TipoEventoClinico.Vacuna => "bi-shield-plus",
+        TipoEventoClinico.Tratamiento => "bi-capsule",
+        TipoEventoClinico.Control => "bi-clipboard2-pulse",
+        _ => "bi-journal-medical"
+    };
+    var pendiente = Model.Estado == EstadoEventoAgenda.Pendiente;
+}
+<article class="mu-card p-3 p-md-4 evento-agenda @(Model.Atrasado ? "atrasado" : "")">
+    <div class="d-flex gap-3">
+        <span class="icono-circulo flex-shrink-0" style="width:42px;height:42px;font-size:1.1rem"><i class="bi @icono" aria-hidden="true"></i></span>
+        <div class="flex-grow-1 min-w-0">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                <span class="fw-bold">@(pendiente ? Formatos.Hora(Model.FechaProgramada) : Formatos.FechaHora(Model.FechaProgramada))</span>
+                <span class="text-suave small">@Textos.De(Model.Tipo)</span>
+                @if (!enBeneficiario)
+                {
+                    <span class="text-suave small">·</span>
+                    <a class="small fw-semibold" asp-action="Beneficiario" asp-route-id="@Model.BeneficiarioId">@Model.Beneficiario</a>
+                }
+                @if (Model.EsRecurrente)
+                {
+                    <span class="mu-badge"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Dosis @Model.NumeroDosis de @Model.TotalDosis</span>
+                }
+                @if (Model.Atrasado)
+                {
+                    <span class="mu-badge alerta"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i>Atrasado</span>
+                }
+                else if (Model.Estado == EstadoEventoAgenda.Realizado)
+                {
+                    <span class="mu-badge exito"><i class="bi bi-check2-circle" aria-hidden="true"></i>Realizado</span>
+                }
+                else if (Model.Estado == EstadoEventoAgenda.Cancelado)
+                {
+                    <span class="mu-badge error"><i class="bi bi-x-circle" aria-hidden="true"></i>Cancelado</span>
+                }
+            </div>
+            <p class="mb-1 texto-largo">@Model.Descripcion</p>
+            @if (Model.Medicamento is not null || Model.Dosis is not null)
+            {
+                <p class="small text-suave mb-0">
+                    @if (Model.Medicamento is not null)
+                    {
+                        <span><i class="bi bi-capsule me-1" aria-hidden="true"></i>@Model.Medicamento</span>
+                    }
+                    @if (Model.Dosis is not null)
+                    {
+                        <span>@(Model.Medicamento is null ? "" : " · ")Dosis: @Model.Dosis</span>
+                    }
+                </p>
+            }
+            @if (!pendiente && Model.FechaRealizado is DateTime cuando)
+            {
+                <p class="small text-suave mb-0 mt-1">
+                    @(Model.Estado == EstadoEventoAgenda.Realizado ? "Marcado como realizado" : "Cancelado") el @Formatos.FechaHora(cuando)@(Model.MotivoCancelacion is null ? "" : " · " + Model.MotivoCancelacion)
+                </p>
+            }
+        </div>
+    </div>
+    @if (pendiente)
+    {
+        <div class="d-flex flex-wrap justify-content-end gap-2 mt-3">
+            <form asp-action="Cancelar" asp-route-id="@Model.Id" method="post" class="d-inline"
+                  data-confirmar="El evento quedará cancelado y no se registrará en la historia clínica."
+                  data-confirmar-titulo="¿Cancelar este evento?" data-confirmar-tipo="peligro" data-confirmar-boton="Sí, cancelar">
+                <input type="hidden" name="volver" value="@volver" />
+                <button type="submit" class="btn btn-sm btn-suave">Cancelar</button>
+            </form>
+            @if (Model.EsProximaDosis && Model.NumeroDosis < Model.TotalDosis)
+            {
+                <form asp-action="Cancelar" asp-route-id="@Model.Id" method="post" class="d-inline"
+                      data-confirmar="Se cancelan esta dosis y todas las siguientes que sigan pendientes. Las anteriores no cambian."
+                      data-confirmar-titulo="¿Suspender el tratamiento?" data-confirmar-tipo="peligro" data-confirmar-boton="Sí, suspender">
+                    <input type="hidden" name="volver" value="@volver" />
+                    <input type="hidden" name="serie" value="true" />
+                    <input type="hidden" name="motivo" value="Tratamiento suspendido." />
+                    <button type="submit" class="btn btn-sm btn-suave">Suspender tratamiento</button>
+                </form>
+            }
+            <a class="btn btn-sm btn-primary" asp-action="Realizar" asp-route-id="@Model.Id" asp-route-volver="@volver"><i class="bi bi-check2 me-1" aria-hidden="true"></i>Marcar realizado</a>
+        </div>
+    }
+</article>
