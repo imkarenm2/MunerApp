@@ -243,6 +243,14 @@ public static class Textos
         _ => t.ToString()
     };
 
+    public static string De(MotivoCierreCausa m) => m switch
+    {
+        MotivoCierreCausa.MetaAlcanzada => "Alcanzó la meta",
+        MotivoCierreCausa.FechaLimite => "Terminó su plazo",
+        MotivoCierreCausa.Manual => "Cerrada por la fundación",
+        _ => m.ToString()
+    };
+
     public static string De(EstadoEventoAgenda e) => e switch
     {
         EstadoEventoAgenda.Pendiente => "Pendiente",

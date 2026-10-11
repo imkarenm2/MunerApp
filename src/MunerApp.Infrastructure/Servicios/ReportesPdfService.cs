@@ -9,6 +9,7 @@ namespace MunerApp.Infrastructure.Servicios;
 /// <summary>
 /// Reportes en PDF de la fundación con QuestPDF (misma licencia y estilo del comprobante de donación).
 /// HU-040: reporte de medicamentos, en horizontal porque tiene siete columnas.
+/// HU-046: rendición de cuentas de una causa.
 /// </summary>
 public class ReportesPdfService : IReportesService
 {
@@ -125,6 +126,110 @@ public class ReportesPdfService : IReportesService
                     col.Item().PaddingTop(5).Row(fila =>
                     {
                         fila.RelativeItem().Text($"Generado por MunerApp · {generado.ToString("d 'de' MMMM 'de' yyyy, h:mm tt", Co)}").FontSize(7.5f).FontColor(TextoSuave);
+                        fila.ConstantItem(120).AlignRight().Text(t =>
+                        {
+                            t.Span("Página ").FontSize(7.5f).FontColor(TextoSuave);
+                            t.CurrentPageNumber().FontSize(7.5f).FontColor(TextoSuave);
+                            t.Span(" de ").FontSize(7.5f).FontColor(TextoSuave);
+                            t.TotalPages().FontSize(7.5f).FontColor(TextoSuave);
+                        });
+                    });
+                });
+            });
+        }).GeneratePdf();
+    }
+
+    /// <summary>
+    /// HU-046: rendición de cuentas de una causa en PDF (vertical). Es el documento que queda en la sección de
+    /// transparencia: cifras de la causa, en qué se usó el dinero, fotos y la lista de soportes publicados.
+    /// </summary>
+    public byte[] GenerarRendicionCausa(DatosRendicionCausa d)
+    {
+        var publicado = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(d.FechaPublicacionUtc, DateTimeKind.Utc), ZonaColombia);
+        string Pesos(decimal v) => v.ToString("C0", Co);
+
+        return Document.Create(documento =>
+        {
+            documento.Page(pagina =>
+            {
+                pagina.Size(PageSizes.Letter);
+                pagina.Margin(40);
+                pagina.PageColor(Colors.White);
+                pagina.DefaultTextStyle(x => x.FontSize(10).FontColor("#1F2A2E"));
+
+                pagina.Header().Column(col =>
+                {
+                    col.Item().Row(fila =>
+                    {
+                        fila.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text("MunerApp").FontSize(20).Bold().FontColor(Principal);
+                            c.Item().Text($"{d.NombreEsal} · NIT {d.NitEsal}").FontSize(9).FontColor(TextoSuave);
+                        });
+                        fila.ConstantItem(200).AlignRight().Column(c =>
+                        {
+                            c.Item().AlignRight().Text("RENDICIÓN DE CUENTAS").FontSize(10).Bold().FontColor(Acento);
+                            c.Item().AlignRight().Text(publicado.ToString("d 'de' MMMM 'de' yyyy", Co)).FontSize(9).FontColor(TextoSuave);
+                        });
+                    });
+                    col.Item().PaddingTop(10).LineHorizontal(2).LineColor(Principal);
+                });
+
+                pagina.Content().PaddingVertical(16).Column(col =>
+                {
+                    col.Spacing(14);
+                    col.Item().Text(d.TituloCausa).FontSize(17).Bold();
+                    col.Item().Text($"{d.MotivoCierre} · fecha límite {d.FechaLimite.ToString("d 'de' MMMM 'de' yyyy", Co)}").FontSize(9).FontColor(TextoSuave);
+
+                    col.Item().Row(fila =>
+                    {
+                        fila.Spacing(8);
+                        void Cifra(string etiqueta, string valor, string color)
+                        {
+                            fila.RelativeItem().Background(PrincipalSuave).Padding(10).Column(c =>
+                            {
+                                c.Item().Text(valor).FontSize(13).Bold().FontColor(color);
+                                c.Item().Text(etiqueta).FontSize(8).FontColor(TextoSuave);
+                            });
+                        }
+                        Cifra("Meta", Pesos(d.Meta), Principal);
+                        Cifra("Recaudado", Pesos(d.Recaudado), Principal);
+                        Cifra("Donaciones confirmadas", d.Donaciones.ToString(Co), Principal);
+                        if (d.ValorEjecutado is decimal ejecutado) Cifra("Valor usado", Pesos(ejecutado), Acento);
+                    });
+
+                    col.Item().Text("En qué se usó el dinero").FontSize(12).Bold().FontColor(Principal);
+                    col.Item().Text(d.Texto).LineHeight(1.4f);
+
+                    if (d.Fotos.Count > 0)
+                    {
+                        col.Item().Text("Fotos").FontSize(12).Bold().FontColor(Principal);
+                        col.Item().Table(tabla =>
+                        {
+                            tabla.ColumnsDefinition(c => { c.RelativeColumn(); c.RelativeColumn(); });
+                            foreach (var foto in d.Fotos)
+                                tabla.Cell().Padding(4).Height(170).AlignCenter().AlignMiddle().Image(foto).FitArea();
+                        });
+                    }
+
+                    if (d.Soportes.Count > 0)
+                    {
+                        col.Item().Text("Soportes publicados").FontSize(12).Bold().FontColor(Principal);
+                        col.Item().Column(lista =>
+                        {
+                            foreach (var soporte in d.Soportes)
+                                lista.Item().Text($"• {soporte}").FontSize(9);
+                        });
+                        col.Item().Text("Los soportes se pueden descargar en la página de la causa en MunerApp.").FontSize(8).FontColor(TextoSuave);
+                    }
+                });
+
+                pagina.Footer().Column(col =>
+                {
+                    col.Item().LineHorizontal(1).LineColor(Borde);
+                    col.Item().PaddingTop(5).Row(fila =>
+                    {
+                        fila.RelativeItem().Text($"Publicado en MunerApp · {publicado.ToString("d 'de' MMMM 'de' yyyy, h:mm tt", Co)}").FontSize(7.5f).FontColor(TextoSuave);
                         fila.ConstantItem(120).AlignRight().Text(t =>
                         {
                             t.Span("Página ").FontSize(7.5f).FontColor(TextoSuave);

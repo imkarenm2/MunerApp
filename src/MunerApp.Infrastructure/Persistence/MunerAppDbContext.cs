@@ -64,6 +64,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<RevisionDiaria> RevisionesDiarias => Set<RevisionDiaria>();
     public DbSet<NovedadBeneficiario> NovedadesBeneficiario => Set<NovedadBeneficiario>();
     public DbSet<FotoNovedad> FotosNovedad => Set<FotoNovedad>();
+    public DbSet<RendicionCausa> RendicionesCausa => Set<RendicionCausa>();
+    public DbSet<ArchivoRendicion> ArchivosRendicion => Set<ArchivoRendicion>();
 
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
@@ -336,6 +338,7 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.Property(x => x.Meta).HasPrecision(14, 2);
             e.Property(x => x.FechaLimite).HasColumnType("date");
             e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.MotivoCierre).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.CreadaPorId).HasMaxLength(450);
             e.HasIndex(x => new { x.EsalId, x.Estado });
             e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
@@ -586,6 +589,27 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne(x => x.Novedad).WithMany(x => x.Fotos).HasForeignKey(x => x.NovedadId).OnDelete(DeleteBehavior.Cascade);
         });
 
+        builder.Entity<RendicionCausa>(e =>
+        {
+            e.ToTable("RendicionCausa");
+            e.Property(x => x.Texto).HasMaxLength(4000).IsRequired();
+            e.Property(x => x.ValorEjecutado).HasPrecision(14, 2);
+            e.Property(x => x.Recaudado).HasPrecision(14, 2);
+            e.Property(x => x.PublicadaPorId).HasMaxLength(450);
+            e.HasIndex(x => x.CausaId).IsUnique(); // una sola rendición por causa
+            e.HasOne(x => x.Causa).WithMany().HasForeignKey(x => x.CausaId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<DocumentoTransparencia>().WithMany().HasForeignKey(x => x.DocumentoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Publicacion>().WithMany().HasForeignKey(x => x.PublicacionId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ArchivoRendicion>(e =>
+        {
+            e.ToTable("ArchivoRendicion");
+            e.Property(x => x.Ruta).HasMaxLength(300).IsRequired();
+            e.Property(x => x.NombreOriginal).HasMaxLength(200).IsRequired();
+            e.HasOne(x => x.Rendicion).WithMany(x => x.Archivos).HasForeignKey(x => x.RendicionId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         builder.Entity<RevisionDiaria>(e =>
         {
             e.ToTable("RevisionDiaria");
@@ -627,6 +651,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<ConfigSalud>(builder);
         AplicarFiltroEsal<NovedadBeneficiario>(builder);
         AplicarFiltroEsal<FotoNovedad>(builder);
+        AplicarFiltroEsal<RendicionCausa>(builder);
+        AplicarFiltroEsal<ArchivoRendicion>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal
