@@ -62,6 +62,7 @@ public static class Textos
         EstadoPostulacion.Pendiente => "Pendiente",
         EstadoPostulacion.Aprobada => "Aprobada",
         EstadoPostulacion.Rechazada => "Rechazada",
+        EstadoPostulacion.Retirada => "Desvinculado",
         _ => e.ToString()
     };
 
@@ -201,5 +202,44 @@ public static class Textos
         EstadoPedido.Entregado => "Entregado",
         EstadoPedido.Cancelado => "Cancelado",
         _ => e.ToString()
+    };
+
+    public static string De(ViaAdministracion v) => v switch
+    {
+        ViaAdministracion.Oral => "Oral",
+        ViaAdministracion.Topica => "Tópica",
+        ViaAdministracion.Oftalmica => "Oftálmica",
+        ViaAdministracion.Otica => "Ótica",
+        ViaAdministracion.Subcutanea => "Subcutánea",
+        ViaAdministracion.Intramuscular => "Intramuscular",
+        ViaAdministracion.Intravenosa => "Intravenosa",
+        _ => "Otra"
+    };
+
+    public static string De(PresentacionMedicamento p) => p switch
+    {
+        PresentacionMedicamento.Tabletas => "Tabletas",
+        PresentacionMedicamento.Capsulas => "Cápsulas",
+        PresentacionMedicamento.Mililitros => "Mililitros (ml)",
+        PresentacionMedicamento.Frascos => "Frascos",
+        PresentacionMedicamento.Ampollas => "Ampollas",
+        PresentacionMedicamento.Sobres => "Sobres",
+        PresentacionMedicamento.Tubos => "Tubos",
+        _ => "Unidades"
+    };
+
+    /// <summary>Unidad corta para mostrar junto a una cantidad: "12 tabletas", "40 ml".</summary>
+    public static string UnidadDe(PresentacionMedicamento p) => p switch
+    {
+        PresentacionMedicamento.Mililitros => "ml",
+        _ => De(p).ToLowerInvariant()
+    };
+
+    public static string De(TipoMovimientoMedicamento t) => t switch
+    {
+        TipoMovimientoMedicamento.Registro => "Registro inicial",
+        TipoMovimientoMedicamento.Entrada => "Entrada",
+        TipoMovimientoMedicamento.Uso => "Uso",
+        _ => t.ToString()
     };
 }
