@@ -73,6 +73,22 @@ public static class Formatos
         return digitos.Length is > 0 and <= 12 ? decimal.Parse(digitos) : null;
     }
 
+    /// <summary>
+    /// Cantidad de inventario (HU-037): "12", "12,5" o "12.5", con máximo dos decimales.
+    /// Devuelve null si no es un número válido. No usa la cultura es-CO porque los navegadores envían el punto.
+    /// </summary>
+    public static decimal? LeerCantidad(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto)) return null;
+        var limpio = texto.Trim().Replace(',', '.');
+        if (limpio.Count(c => c == '.') > 1 || limpio.Any(c => !char.IsDigit(c) && c != '.')) return null;
+        if (!decimal.TryParse(limpio, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var valor)) return null;
+        return decimal.Round(valor, 2) == valor ? valor : null;
+    }
+
+    /// <summary>Cantidad sin ceros de más: "12", "12,5".</summary>
+    public static string Cantidad(decimal valor) => valor.ToString("0.##", Co);
+
     /// <summary>Porcentaje de la meta alcanzado (0 a 100). Si hay algo recaudado nunca muestra 0 %.</summary>
     public static int Porcentaje(decimal recaudado, decimal meta)
     {

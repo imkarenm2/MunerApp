@@ -238,6 +238,30 @@ dotnet test
 
 `tests/MunerApp.Tests` (xUnit) prueba la validación de la firma de los eventos de Wompi.
 
+## Sprint 6: estado del código
+
+| HU | Historia | Dónde está |
+|---|---|---|
+| 036 | Aprobar o rechazar postulaciones y desvincular voluntarios | `Areas/Fundacion/Controllers/PostulacionesController.cs` → `Aprobar`, `Rechazar`, `Desvincular` (`/Fundacion/Postulaciones`) |
+| 037 | Inventario clínico de medicamentos e insumos | `Areas/Fundacion/Controllers/MedicamentosController.cs` (`/Fundacion/Medicamentos`) |
+
+### Voluntarios (HU-036)
+
+- Solo el **administrador principal** aprueba, rechaza o desvincula, porque da o quita acceso al panel. El de consulta solo ve.
+- **Aprobar:** la persona recibe el rol `Voluntario` con perfil `Salud` (si se postuló como practicante) o `General`, y queda vinculada a la fundación (`Usuario.EsalId`). Conserva el rol `Donante` para seguir donando y aparece en **Equipo**. No se le cambia el sello de seguridad: su sesión se actualiza sola en máximo un minuto (HU-008), sin volver a iniciar sesión.
+- **Rechazar:** exige un motivo que la persona ve en Mis postulaciones; sigue como donante y puede volver a postularse.
+- **Desvincular:** pierde el rol `Voluntario` y la fundación, conserva `Donante`, y se cambia su sello de seguridad para que pierda el acceso aunque tenga la sesión abierta.
+- Una cuenta pertenece a una sola fundación: si la persona ya es parte de otra, no se puede aprobar.
+- Los enlaces del panel de voluntarios indican el área (`Fundacion`) de forma explícita: sin ella, `Index` se confunde con la acción pública `/mis-postulaciones`, que está en un controlador con el mismo nombre.
+
+### Inventario de medicamentos (HU-037)
+
+- Requiere el módulo **Salud** y la política `AccesoClinico`: administradores y voluntarios de salud. El voluntario general no tiene acceso ni ve el enlace.
+- La cantidad solo cambia con movimientos (registro inicial, entradas y usos), que quedan en `MovimientoMedicamento` con la cantidad resultante. Un uso se puede asociar a un beneficiario.
+- La cantidad se actualiza en la base de datos de forma atómica dentro de una transacción: varios usos simultáneos nunca dejan el inventario en negativo.
+- Las cantidades se leen con `Formatos.LeerCantidad` (acepta coma o punto, máximo dos decimales), porque los navegadores envían el punto aunque la cultura sea es-CO.
+- `CantidadMinima` (opcional) define cuándo hay stock bajo; la usarán las alertas de HU-039.
+
 ## Cómo se protege un módulo
 
 ```csharp
