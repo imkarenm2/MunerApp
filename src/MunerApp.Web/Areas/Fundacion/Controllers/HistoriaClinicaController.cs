@@ -30,11 +30,13 @@ public class HistoriaClinicaController : Controller
 
     private readonly MunerAppDbContext _db;
     private readonly IAlmacenamientoArchivos _archivos;
+    private readonly IModuloService _modulos;
 
-    public HistoriaClinicaController(MunerAppDbContext db, IAlmacenamientoArchivos archivos)
+    public HistoriaClinicaController(MunerAppDbContext db, IAlmacenamientoArchivos archivos, IModuloService modulos)
     {
         _db = db;
         _archivos = archivos;
+        _modulos = modulos;
     }
 
     private string UsuarioId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -71,6 +73,7 @@ public class HistoriaClinicaController : Controller
             Estado = b.Estado,
             FechaNacimiento = b.FechaNacimiento,
             TieneFoto = b.FotoRuta is not null,
+            TieneAgenda = await _modulos.EstaActivoAsync(b.EsalId, CodigosModulo.Salud),
             Eventos = eventos
         });
     }

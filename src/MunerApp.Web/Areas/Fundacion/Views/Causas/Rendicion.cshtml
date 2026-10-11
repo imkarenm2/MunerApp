@@ -1,0 +1,85 @@
+@model RendicionFormViewModel
+@{
+    ViewData["Title"] = "Rendición de cuentas";
+    ViewData["Seccion"] = "Causas";
+    var maxFotos = MunerApp.Domain.Entities.RendicionCausa.MaxFotos;
+    var maxSoportes = MunerApp.Domain.Entities.RendicionCausa.MaxSoportes;
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <a asp-area="Fundacion" asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Causas</a>
+    <h1 class="h2 mt-2 mb-1">Rendición de cuentas</h1>
+    <p class="text-suave mb-4">Cuéntales a los donantes en qué se usó lo recaudado en <strong>@Model.Titulo</strong>.</p>
+
+    <div class="row g-2 mb-4">
+        <div class="col-6 col-md-3"><div class="mu-card p-3 h-100"><div class="fw-bold">@Formatos.Pesos(Model.Recaudado)</div><div class="small text-suave">Recaudado</div></div></div>
+        <div class="col-6 col-md-3"><div class="mu-card p-3 h-100"><div class="fw-bold">@Formatos.Pesos(Model.Meta)</div><div class="small text-suave">Meta</div></div></div>
+        <div class="col-6 col-md-3"><div class="mu-card p-3 h-100"><div class="fw-bold">@Model.Donaciones</div><div class="small text-suave">@(Model.Donaciones == 1 ? "Donación confirmada" : "Donaciones confirmadas")</div></div></div>
+        <div class="col-6 col-md-3"><div class="mu-card p-3 h-100"><div class="fw-bold">@Model.Motivo</div><div class="small text-suave">Cierre</div></div></div>
+    </div>
+
+    <div class="alert alert-info small">
+        <i class="bi bi-megaphone" aria-hidden="true"></i>
+        <div>
+            Al publicarla queda en la página de la causa, en la sección de <strong>Transparencia</strong> (como un PDF que genera MunerApp) y en el <strong>boletín</strong>.
+            @(Model.Donantes switch
+            {
+                0 => "La causa no tiene donaciones confirmadas, así que no habrá a quién avisar.",
+                1 => "La persona que donó recibirá una notificación.",
+                _ => $"Las {Model.Donantes} personas que donaron recibirán una notificación."
+            })
+            Una vez publicada no se puede editar.
+        </div>
+    </div>
+
+    <form asp-action="Rendicion" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" novalidate class="mu-card p-4 p-md-5"
+          data-confirmar="Quedará pública en la causa, en transparencia y en el boletín, y no se podrá editar."
+          data-confirmar-titulo="¿Publicar la rendición de cuentas?" data-confirmar-boton="Sí, publicar">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label asp-for="Texto" class="form-label"></label>
+                <textarea asp-for="Texto" class="form-control" rows="7" maxlength="4000"
+                          placeholder="Ej.: Con lo recaudado pagamos la esterilización de 10 gatos en la Clínica Veterinaria San Roque ($450.000) y las vacunas de refuerzo de 4 de ellos ($60.000). Adjuntamos las facturas."></textarea>
+                <span asp-validation-for="Texto"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="ValorEjecutado" class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input asp-for="ValorEjecutado" type="text" inputmode="numeric" class="form-control" maxlength="15" autocomplete="off" placeholder="Ej.: 510.000" />
+                </div>
+                <div class="form-text">Cuánto se gastó. Puede ser distinto de lo recaudado.</div>
+                <span asp-validation-for="ValorEjecutado"></span>
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="Fotos">Fotos</label>
+                <label class="zona-archivo" for="Fotos">
+                    <i class="bi bi-images" aria-hidden="true"></i>
+                    <span class="fw-semibold" data-nombre-archivo>Selecciona hasta @maxFotos fotos</span>
+                    <span class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Imagen)</span>
+                </label>
+                <input asp-for="Fotos" type="file" multiple class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Imagen)" data-archivo />
+                <span asp-validation-for="Fotos"></span>
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="Soportes">Soportes (facturas, recibos)</label>
+                <label class="zona-archivo" for="Soportes">
+                    <i class="bi bi-receipt" aria-hidden="true"></i>
+                    <span class="fw-semibold" data-nombre-archivo>Selecciona hasta @maxSoportes soportes</span>
+                    <span class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Documento) Serán públicos: revisa que no tengan datos personales que no quieras mostrar.</span>
+                </label>
+                <input asp-for="Soportes" type="file" multiple class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Documento)" data-archivo />
+                <span asp-validation-for="Soportes"></span>
+            </div>
+        </div>
+        <p class="small text-suave mt-3 mb-0">Agrega al menos una foto o un soporte.</p>
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-primary" data-cargando="Publicando..."><i class="bi bi-clipboard-data me-1" aria-hidden="true"></i>Publicar rendición de cuentas</button>
+            <a asp-area="Fundacion" asp-action="Index" class="btn btn-link">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
