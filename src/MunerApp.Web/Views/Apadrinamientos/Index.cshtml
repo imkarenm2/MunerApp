@@ -45,6 +45,12 @@
                     <span class="flex-grow-1 min-w-0">
                         <span class="d-block fw-semibold text-body text-truncate">@a.NombreBeneficiario</span>
                         <span class="d-block small text-suave text-truncate">@a.NombreEsal · desde @Formatos.FechaCorta(a.FechaInicio)</span>
+                        @* HU-022: novedades del apadrinado *@
+                        <span class="d-block small text-truncate @(a.Novedades > 0 ? "text-acento fw-semibold" : "text-suave")">
+                            <i class="bi bi-chat-heart me-1" aria-hidden="true"></i>@(a.UltimaNovedad is DateTime ultima
+                                ? $"{a.Novedades} {(a.Novedades == 1 ? "novedad" : "novedades")} · la última {Formatos.Hace(ultima)}"
+                                : "Pronto habrá noticias")
+                        </span>
                     </span>
                     <span class="text-end">
                         <span class="d-block fw-bold text-body">@Formatos.Pesos(a.ValorMensual)<span class="small fw-normal text-suave"> /mes</span></span>

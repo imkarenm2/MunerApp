@@ -1081,3 +1081,6 @@ details.rechazo summary::-webkit-details-marker { display: none; }
 .dia-agenda { font-size: .95rem; font-weight: 700; margin: 1.5rem 0 .75rem; }
 .dia-agenda:first-child { margin-top: 0; }
 .vista-previa-tratamiento { background: var(--mu-acento-suave); border-radius: .75rem; padding: .75rem 1rem; }
+
+/* ---------- Novedades del apadrinado (HU-022) ---------- */
+.novedad-apadrinado { padding-left: 1rem; border-left: 3px solid var(--mu-acento-suave); }
