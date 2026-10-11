@@ -32,14 +32,16 @@ public class BeneficiariosController : Controller
     private readonly IEsalActual _esalActual;
     private readonly IAlmacenamientoArchivos _archivos;
     private readonly EstadosBeneficiario _estados;
+    private readonly IModuloService _modulos;
 
     public BeneficiariosController(MunerAppDbContext db, IEsalActual esalActual, IAlmacenamientoArchivos archivos,
-        EstadosBeneficiario estados)
+        EstadosBeneficiario estados, IModuloService modulos)
     {
         _db = db;
         _esalActual = esalActual;
         _archivos = archivos;
         _estados = estados;
+        _modulos = modulos;
     }
 
     private const int PorPagina = 12;
@@ -161,6 +163,8 @@ public class BeneficiariosController : Controller
             .Include(x => x.Adoptante)
             .FirstOrDefaultAsync(x => x.Id == id);
         if (b is null) return NotFound();
+        // HU-038: la agenda de salud requiere además el módulo de salud
+        var verAgenda = verClinica && await _modulos.EstaActivoAsync(b.EsalId, CodigosModulo.Salud);
 
         var historial = await (from h in _db.HistorialEstadosBeneficiario.AsNoTracking()
                                where h.BeneficiarioId == id
@@ -205,6 +209,10 @@ public class BeneficiariosController : Controller
             SlugEsal = await _db.Esales.AsNoTracking().Where(e => e.Id == b.EsalId).Select(e => e.Slug).FirstOrDefaultAsync(),
             PuedeVerClinica = verClinica,
             EventosClinicos = verClinica ? await _db.EventosClinicos.CountAsync(e => e.BeneficiarioId == id) : 0,
+            PuedeVerAgenda = verAgenda,
+            EventosPendientes = verAgenda ? await _db.EventosAgenda.CountAsync(e => e.BeneficiarioId == id && e.Estado == EstadoEventoAgenda.Pendiente) : 0,
+            ProximoEvento = verAgenda ? await _db.EventosAgenda.Where(e => e.BeneficiarioId == id && e.Estado == EstadoEventoAgenda.Pendiente)
+                .OrderBy(e => e.FechaProgramada).Select(e => (DateTime?)e.FechaProgramada).FirstOrDefaultAsync() : null,
             FaltaAdoptante = esAdmin && b.Estado == EstadoBeneficiario.Adoptado && b.Adoptante is null,
             Historial = historial,
             // Los datos personales del adoptante son solo para los administradores
@@ -323,16 +331,23 @@ public class BeneficiariosController : Controller
         var nuevo = model.Estado.Value;
 
         // Historial con fecha; un beneficiario adoptado o fallecido ya no se ofrece para apadrinar (HU-020)
-        var retiradoDeApadrinamiento = await _estados.CambiarAsync(b, nuevo, UsuarioId, model.Nota);
+        var cambio = await _estados.CambiarAsync(b, nuevo, UsuarioId, model.Nota);
         await _db.SaveChangesAsync();
+        var efectos = (cambio.RetiradoDeApadrinamiento ? " También dejó de ofrecerse para apadrinar." : "")
+                      + cambio.EventosAgendaCancelados switch
+                      {
+                          0 => "",
+                          1 => " Se canceló 1 evento pendiente de su agenda de salud.",
+                          var n => $" Se cancelaron {n} eventos pendientes de su agenda de salud."
+                      };
 
         if (nuevo == EstadoBeneficiario.Adoptado && !await _db.AdoptantesBeneficiario.AnyAsync(a => a.BeneficiarioId == id))
         {
-            TempData["Mensaje"] = $"{b.Nombre} ahora está \"Adoptado\". Registra los datos del adoptante para el seguimiento.{(retiradoDeApadrinamiento ? " También dejó de ofrecerse para apadrinar." : "")}";
+            TempData["Mensaje"] = $"{b.Nombre} ahora está \"Adoptado\". Registra los datos del adoptante para el seguimiento.{efectos}";
             return RedirectToAction(nameof(Adoptante), new { id });
         }
 
-        TempData["Mensaje"] = $"El estado de {b.Nombre} cambió a \"{Textos.De(nuevo)}\".{(retiradoDeApadrinamiento ? " También dejó de ofrecerse para apadrinar." : "")}";
+        TempData["Mensaje"] = $"El estado de {b.Nombre} cambió a \"{Textos.De(nuevo)}\".{efectos}";
         return RedirectToAction(nameof(Detalle), new { id });
     }
 

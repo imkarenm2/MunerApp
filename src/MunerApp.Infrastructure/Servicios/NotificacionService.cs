@@ -36,6 +36,23 @@ public class NotificacionService : INotificacionService
         foreach (var id in admins) Agregar(id, titulo, mensaje, url, icono);
     }
 
+    public async Task AgregarAResponsablesSaludAsync(int esalId, string titulo, string mensaje, string? url = null, string icono = "bi-bell")
+    {
+        var roles = await _db.Roles.Where(r => r.Name == Roles.AdministradorESAL || r.Name == Roles.Voluntario)
+            .Select(r => new { r.Id, r.Name }).ToListAsync();
+        var rolAdminId = roles.FirstOrDefault(r => r.Name == Roles.AdministradorESAL)?.Id;
+        var rolVoluntarioId = roles.FirstOrDefault(r => r.Name == Roles.Voluntario)?.Id;
+
+        var responsables = await _db.Users
+            .Where(u => u.EsalId == esalId && u.Activo
+                        && (_db.UserRoles.Any(ur => ur.UserId == u.Id && ur.RoleId == rolAdminId)
+                            || (u.Perfil == Perfiles.Salud && _db.UserRoles.Any(ur => ur.UserId == u.Id && ur.RoleId == rolVoluntarioId))))
+            .Select(u => u.Id)
+            .ToListAsync();
+
+        foreach (var id in responsables) Agregar(id, titulo, mensaje, url, icono);
+    }
+
     public Task<int> ContarNoLeidasAsync(string usuarioId)
         => _db.Notificaciones.CountAsync(n => n.UsuarioId == usuarioId && !n.Leida);
 

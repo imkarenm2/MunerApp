@@ -68,7 +68,12 @@
                                     <div class="fw-semibold">@d.Donante</div>
                                     <div class="small text-suave">@d.CorreoDonante</div>
                                 </td>
-                                <td class="small">@d.Codigo<div class="text-suave">Reportada @Formatos.Hace(d.FechaReporte)</div>
+                                <td class="small">@d.Codigo<div class="text-suave">@(d.EnLinea ? "Iniciada" : "Reportada") @Formatos.Hace(d.FechaReporte)</div>
+                                    @if (d.EnLinea)
+                                    {
+                                        @* HU-044: los pagos en línea los confirma Wompi; no se revisan a mano *@
+                                        <span class="mu-badge mt-1"><i class="bi bi-credit-card" aria-hidden="true"></i>@(d.Estado == EstadoDonacion.Pendiente ? "En línea · esperando a Wompi" : "En línea")</span>
+                                    }
                                     @if (d.Apadrinado is not null)
                                     {
                                         <span class="mu-badge acento mt-1"><i class="bi bi-balloon-heart" aria-hidden="true"></i>Apadrinamiento de @d.Apadrinado</span>
@@ -77,8 +82,8 @@
                                 <td class="small">@Formatos.Fecha(d.FechaTransferencia)</td>
                                 <td class="text-end fw-bold">@Formatos.Pesos(d.Valor)</td>
                                 <td class="text-end">
-                                    <a class="btn btn-sm @(d.Estado == EstadoDonacion.Pendiente ? "btn-primary" : "btn-suave")" asp-action="Detalle" asp-route-id="@d.Id">
-                                        @(d.Estado == EstadoDonacion.Pendiente ? "Revisar" : "Ver")
+                                    <a class="btn btn-sm @(d.Estado == EstadoDonacion.Pendiente && !d.EnLinea ? "btn-primary" : "btn-suave")" asp-action="Detalle" asp-route-id="@d.Id">
+                                        @(d.Estado == EstadoDonacion.Pendiente && !d.EnLinea ? "Revisar" : "Ver")
                                     </a>
                                 </td>
                             </tr>
