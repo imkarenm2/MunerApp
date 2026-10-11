@@ -25,6 +25,12 @@ namespace MunerApp.Web.Areas.Fundacion.Controllers;
 public class CausasController : Controller
 {
     public const int MaxFotos = 5;
+
+    /// <summary>
+    /// El área va explícita en las redirecciones al listado: sin ella, Index se confunde con la página pública
+    /// /causas, que está en un controlador con el mismo nombre.
+    /// </summary>
+    private const string AreaFundacion = "Fundacion";
     private const long LimitePeticion = 32L * 1024 * 1024; // 5 fotos de hasta 5 MB y los demás campos
     private const decimal MetaMaxima = 1_000_000_000;
 
@@ -99,7 +105,7 @@ public class CausasController : Controller
         await _db.SaveChangesAsync();
 
         TempData["Mensaje"] = $"Publicaste \"{causa.Titulo}\". Ya aparece en el perfil de la fundación con su barra de progreso en 0 %.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Index), new { area = AreaFundacion });
     }
 
     // ---------- Escenario 3: editar, pausar y reanudar ----------
@@ -115,7 +121,7 @@ public class CausasController : Controller
         if (c.EstaCerrada(recaudado, DateTime.Today))
         {
             TempData["Error"] = $"\"{c.Titulo}\" ya está cerrada y no se puede editar.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { area = AreaFundacion });
         }
 
         return View(Formulario(c, recaudado, new CausaFormViewModel
@@ -139,7 +145,7 @@ public class CausasController : Controller
         if (c.EstaCerrada(recaudado, DateTime.Today))
         {
             TempData["Error"] = $"\"{c.Titulo}\" ya está cerrada y no se puede editar.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { area = AreaFundacion });
         }
 
         var meta = ValidarCampos(model, recaudado);
@@ -155,7 +161,7 @@ public class CausasController : Controller
         await _db.SaveChangesAsync();
 
         TempData["Mensaje"] = $"Guardaste los cambios de \"{c.Titulo}\". Ya se ven en el perfil.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Index), new { area = AreaFundacion });
     }
 
     [HttpPost]
@@ -197,14 +203,14 @@ public class CausasController : Controller
         if (c.EstaCerrada(await RecaudadoAsync(id), DateTime.Today))
         {
             TempData["Error"] = $"\"{c.Titulo}\" ya está cerrada.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { area = AreaFundacion });
         }
 
         var nuevo = pausar ? EstadoCausa.Pausada : EstadoCausa.Activa;
         if (c.Estado == nuevo)
         {
             TempData["Error"] = $"\"{c.Titulo}\" ya estaba {(pausar ? "en pausa" : "activa")}.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { area = AreaFundacion });
         }
 
         c.Estado = nuevo;
@@ -213,7 +219,7 @@ public class CausasController : Controller
         TempData["Mensaje"] = pausar
             ? $"Pausaste \"{c.Titulo}\". Se sigue viendo, pero no recibe donaciones hasta que la reanudes."
             : $"Reanudaste \"{c.Titulo}\". Vuelve a recibir donaciones.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Index), new { area = AreaFundacion });
     }
 
     // ---------- Apoyo ----------
