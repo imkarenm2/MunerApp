@@ -209,6 +209,7 @@ public class BeneficiariosController : Controller
             SlugEsal = await _db.Esales.AsNoTracking().Where(e => e.Id == b.EsalId).Select(e => e.Slug).FirstOrDefaultAsync(),
             PuedeVerClinica = verClinica,
             EventosClinicos = verClinica ? await _db.EventosClinicos.CountAsync(e => e.BeneficiarioId == id) : 0,
+            Novedades = esAdmin ? await _db.NovedadesBeneficiario.CountAsync(n => n.BeneficiarioId == id) : 0,
             PuedeVerAgenda = verAgenda,
             EventosPendientes = verAgenda ? await _db.EventosAgenda.CountAsync(e => e.BeneficiarioId == id && e.Estado == EstadoEventoAgenda.Pendiente) : 0,
             ProximoEvento = verAgenda ? await _db.EventosAgenda.Where(e => e.BeneficiarioId == id && e.Estado == EstadoEventoAgenda.Pendiente)

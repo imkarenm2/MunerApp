@@ -119,6 +119,9 @@ public class BeneficiarioDetalleViewModel : BeneficiarioItem
     public bool PuedeVerClinica { get; set; }
     public int EventosClinicos { get; set; }
 
+    /// <summary>HU-022: novedades publicadas para los padrinos.</summary>
+    public int Novedades { get; set; }
+
     /// <summary>HU-038: agenda de salud (acceso clínico y módulo de salud).</summary>
     public bool PuedeVerAgenda { get; set; }
     public int EventosPendientes { get; set; }

@@ -1,0 +1,77 @@
+@model NovedadesBeneficiarioViewModel
+@{
+    ViewData["Title"] = "Novedades de " + Model.Nombre;
+    ViewData["Seccion"] = "Beneficiarios";
+}
+<div class="container py-4 py-md-5" style="max-width: 860px">
+    <a asp-controller="Beneficiarios" asp-action="Detalle" asp-route-id="@Model.BeneficiarioId" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Hoja de vida de @Model.Nombre</a>
+
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mt-2 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Novedades para los padrinos</h1>
+            <p class="text-suave mb-0">
+                @Model.Nombre · <partial name="_EstadoBeneficiario" model="Model.Estado" /> ·
+                @(Model.PadrinosActivos == 0 ? "sin padrinos activos" : Model.PadrinosActivos == 1 ? "1 padrino activo" : $"{Model.PadrinosActivos} padrinos activos")
+            </p>
+        </div>
+        @if (Model.PuedePublicar)
+        {
+            <a class="btn btn-primary" asp-action="Crear" asp-route-id="@Model.BeneficiarioId"><i class="bi bi-megaphone me-1" aria-hidden="true"></i>Publicar novedad</a>
+        }
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    @if (Model.Novedades.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-chat-heart" aria-hidden="true"></i></div>
+            <h2 class="h5">Aún no has publicado novedades de @Model.Nombre</h2>
+            @if (Model.PuedePublicar)
+            {
+                <p class="text-suave">Una foto y unas líneas sobre cómo está bastan para que sus padrinos se sientan cerca.</p>
+                <a class="btn btn-primary" asp-action="Crear" asp-route-id="@Model.BeneficiarioId">Publicar la primera</a>
+            }
+            else
+            {
+                <p class="text-suave mb-0">Cuando tenga padrinos o lo ofrezcas para apadrinar podrás contarles cómo avanza.</p>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="small text-suave mb-3">Así las ven sus padrinos, de la más reciente a la más antigua.</p>
+        <div class="d-grid gap-3">
+            @foreach (var n in Model.Novedades)
+            {
+                <article class="mu-card p-4">
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                        <span class="fw-bold">@Formatos.FechaHora(n.Fecha)</span>
+                        @if (n.PublicadaPor is not null)
+                        {
+                            <span class="small text-suave">· por @n.PublicadaPor</span>
+                        }
+                        <form asp-action="Eliminar" asp-route-id="@n.Id" method="post" class="ms-auto"
+                              data-confirmar="Los padrinos dejarán de verla y sus fotos se borran." data-confirmar-titulo="¿Eliminar esta novedad?"
+                              data-confirmar-boton="Sí, eliminar" data-confirmar-tipo="peligro">
+                            <button type="submit" class="btn btn-sm btn-suave"><i class="bi bi-trash me-1" aria-hidden="true"></i>Eliminar</button>
+                        </form>
+                    </div>
+                    <p class="texto-largo mb-0">@n.Texto</p>
+                    @if (n.FotoIds.Count > 0)
+                    {
+                        <div class="evento-fotos mt-3">
+                            @foreach (var fotoId in n.FotoIds)
+                            {
+                                var url = Url.Action("Foto", new { id = fotoId });
+                                <a href="@url" target="_blank" rel="noopener" class="evento-foto" aria-label="Abrir la foto en otra pestaña">
+                                    <img src="@url" alt="Foto de @Model.Nombre" loading="lazy" />
+                                </a>
+                            }
+                        </div>
+                    }
+                </article>
+            }
+        </div>
+    }
+</div>
