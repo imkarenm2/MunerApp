@@ -62,6 +62,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<EventoAgenda> EventosAgenda => Set<EventoAgenda>();
     public DbSet<ConfigSalud> ConfigSalud => Set<ConfigSalud>();
     public DbSet<RevisionDiaria> RevisionesDiarias => Set<RevisionDiaria>();
+    public DbSet<NovedadBeneficiario> NovedadesBeneficiario => Set<NovedadBeneficiario>();
+    public DbSet<FotoNovedad> FotosNovedad => Set<FotoNovedad>();
 
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
@@ -568,6 +570,22 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne<Esal>().WithOne().HasForeignKey<ConfigSalud>(x => x.EsalId).OnDelete(DeleteBehavior.Cascade);
         });
 
+        builder.Entity<NovedadBeneficiario>(e =>
+        {
+            e.ToTable("NovedadBeneficiario");
+            e.Property(x => x.Texto).HasMaxLength(2000).IsRequired();
+            e.Property(x => x.PublicadaPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.BeneficiarioId, x.Fecha });
+            e.HasOne(x => x.Beneficiario).WithMany().HasForeignKey(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<FotoNovedad>(e =>
+        {
+            e.ToTable("FotoNovedad");
+            e.Property(x => x.Ruta).HasMaxLength(300).IsRequired();
+            e.HasOne(x => x.Novedad).WithMany(x => x.Fotos).HasForeignKey(x => x.NovedadId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         builder.Entity<RevisionDiaria>(e =>
         {
             e.ToTable("RevisionDiaria");
@@ -607,6 +625,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<MovimientoMedicamento>(builder);
         AplicarFiltroEsal<EventoAgenda>(builder);
         AplicarFiltroEsal<ConfigSalud>(builder);
+        AplicarFiltroEsal<NovedadBeneficiario>(builder);
+        AplicarFiltroEsal<FotoNovedad>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal
