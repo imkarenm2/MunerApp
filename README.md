@@ -247,6 +247,7 @@ dotnet test
 | 036 | Aprobar o rechazar postulaciones y desvincular voluntarios | `Areas/Fundacion/Controllers/PostulacionesController.cs` → `Aprobar`, `Rechazar`, `Desvincular` (`/Fundacion/Postulaciones`) |
 | 037 | Inventario clínico de medicamentos e insumos | `Areas/Fundacion/Controllers/MedicamentosController.cs` (`/Fundacion/Medicamentos`) |
 | 040 | Reporte de medicamentos con filtros y PDF | `MedicamentosController` → `Reporte`, `ReportePdf` · `Infrastructure/Servicios/ReportesPdfService.cs` |
+| 022 | Novedades del apadrinado para sus padrinos | `Areas/Fundacion/Controllers/NovedadesController.cs` (`/Fundacion/Novedades/Index/{beneficiarioId}`) · padrinos en `Controllers/ApadrinamientosController.cs` (`/mis-apadrinamientos/{id}`) |
 | 039 | Alertas de salud: por vencer, stock bajo y eventos de mañana | `Servicios/AlertasSalud.cs` · revisión diaria en `Servicios/RevisionDiaria.cs` · plazo en `/Fundacion/Medicamentos/Alertas` |
 | 038 | Agenda de salud: eventos, tratamientos recurrentes y registro en la historia clínica | `Areas/Fundacion/Controllers/AgendaController.cs` (`/Fundacion/Agenda`) · `Domain/Entities/EventoAgenda.cs` |
 
@@ -286,6 +287,13 @@ dotnet test
 - **Stock bajo:** al registrar un uso (desde el inventario o desde la agenda) que deja la cantidad en el mínimo o por debajo. Solo al cruzar el mínimo, no en cada uso. También avisa si se agota.
 - **Eventos de mañana:** en la revisión diaria, un resumen de los eventos pendientes del día siguiente (`EventoAgenda.RecordatorioEnviado` evita repetirlo).
 - Las notificaciones y las marcas se guardan en el mismo `SaveChanges`: no hay avisos repetidos ni perdidos.
+
+### Novedades del apadrinado (HU-022)
+
+- El administrador publica una novedad (texto de 10 a 2000 caracteres y hasta 3 fotos) desde la hoja de vida del beneficiario, en la tarjeta de *Padrinos*. Se puede publicar si tiene padrinos activos o si se ofrece para apadrinar; también se puede eliminar una novedad publicada por error (sus fotos se borran).
+- Los padrinos activos reciben una notificación (`EstadosBeneficiario.NotificarPadrinosAsync`) y ven las novedades en *Mis apadrinamientos*, de la más reciente a la más antigua. Sin novedades se muestra "Pronto habrá noticias".
+- Un padrino activo ve todas las novedades, también las anteriores a su llegada. Si canceló, ve solo las publicadas hasta el día en que canceló.
+- Las fotos son privadas (`priv/esal/{id}/novedades`): las entrega `ApadrinamientosController.FotoNovedad`, que verifica que el apadrinamiento sea del usuario y que la novedad le corresponda, y `NovedadesController.Foto` para los administradores.
 
 ### Revisión diaria (HU-039, HU-046)
 
