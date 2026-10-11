@@ -1,0 +1,66 @@
+@model ConfirmarApadrinamientoViewModel
+@{
+    ViewData["Title"] = "Apadrinar a " + Model.NombreBeneficiario;
+    ViewData["Nav"] = "Fundaciones";
+}
+<div class="container py-4 py-md-5" style="max-width: 720px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Apadrinamiento en")' />
+
+    <h1 class="h2 mb-2">Apadrinar a @Model.NombreBeneficiario</h1>
+
+    @if (!Model.Disponible)
+    {
+        <div class="estado-vacio mt-4">
+            <div class="icono-circulo alerta mb-3"><i class="bi bi-hourglass-split" aria-hidden="true"></i></div>
+            <h2 class="h5">Todavía no se pueden recibir aportes</h2>
+            <p class="text-suave">@Model.NombreEsal aún está configurando los datos de su cuenta para recibir aportes. Vuelve pronto.</p>
+            <a class="btn btn-outline-primary" href="/fundaciones/@Model.Slug/apadrinar/@Model.BeneficiarioId">Volver a la ficha de @Model.NombreBeneficiario</a>
+        </div>
+    }
+    else
+    {
+        <div class="mu-card p-3 d-flex align-items-center gap-3 mb-4">
+            @if (Model.FotoUrl is not null)
+            {
+                <img class="beneficiario-foto" src="@Model.FotoUrl" alt="Foto de @Model.NombreBeneficiario" />
+            }
+            else
+            {
+                <span class="beneficiario-foto beneficiario-sin-foto" aria-hidden="true"><i class="bi bi-camera"></i></span>
+            }
+            <div>
+                <div class="fw-bold">@Model.NombreBeneficiario</div>
+                <div class="small text-suave">@Model.Edad</div>
+                <div class="small text-suave">Aporte sugerido: @Formatos.Pesos(Model.AporteSugerido) al mes</div>
+            </div>
+        </div>
+
+        <form asp-action="Confirmar" asp-route-slug="@Model.Slug" asp-route-id="@Model.BeneficiarioId" method="post" novalidate class="mu-card p-4 p-md-5"
+              data-confirmar="Te comprometes a un aporte mensual. No se cobra automáticamente: tú transfieres a la cuenta oficial de la fundación y reportas cada aporte. Puedes cancelar cuando quieras."
+              data-confirmar-titulo="¿Apadrinar a @Model.NombreBeneficiario?" data-confirmar-boton="Sí, apadrinar">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+            <label asp-for="ValorMensual" class="form-label"></label>
+            <div class="input-icono">
+                <i class="bi bi-currency-dollar" aria-hidden="true"></i>
+                <input asp-for="ValorMensual" class="form-control" inputmode="numeric" placeholder="30.000" autocomplete="off" data-moneda />
+            </div>
+            <span asp-validation-for="ValorMensual"></span>
+            <div class="form-text">Cada mes transferirás este valor a la cuenta oficial de la fundación. Mínimo $5.000.</div>
+
+            <ul class="lista-check small mt-4 mb-0">
+                <li>MunerApp no cobra ni maneja tu dinero: va directo a la cuenta de la fundación.</li>
+                <li>Cada mes reportas tu aporte con el soporte y la fundación lo confirma.</li>
+                <li>Puedes cancelar tu apadrinamiento cuando quieras desde <strong>Mis apadrinamientos</strong>.</li>
+            </ul>
+
+            <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+                <button type="submit" class="btn btn-apoyar btn-lg" data-cargando="Registrando...">Apadrinar a @Model.NombreBeneficiario</button>
+                <a class="btn btn-link" href="/fundaciones/@Model.Slug/apadrinar/@Model.BeneficiarioId">Volver</a>
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

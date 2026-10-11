@@ -68,7 +68,12 @@
                                     <div class="fw-semibold">@d.Donante</div>
                                     <div class="small text-suave">@d.CorreoDonante</div>
                                 </td>
-                                <td class="small">@d.Codigo<div class="text-suave">Reportada @Formatos.Hace(d.FechaReporte)</div></td>
+                                <td class="small">@d.Codigo<div class="text-suave">Reportada @Formatos.Hace(d.FechaReporte)</div>
+                                    @if (d.Apadrinado is not null)
+                                    {
+                                        <span class="mu-badge acento mt-1"><i class="bi bi-balloon-heart" aria-hidden="true"></i>Apadrinamiento de @d.Apadrinado</span>
+                                    }
+                                </td>
                                 <td class="small">@Formatos.Fecha(d.FechaTransferencia)</td>
                                 <td class="text-end fw-bold">@Formatos.Pesos(d.Valor)</td>
                                 <td class="text-end">

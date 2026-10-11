@@ -52,6 +52,15 @@
     </div>
 </section>
 
+@if (ViewData["Periodico"] is PeriodicoViewModel periodico)
+{
+    <section class="seccion pb-0" id="periodico" aria-label="El periódico de MunerApp">
+        <div class="container">
+            <partial name="_Periodico" model="periodico" view-data='new ViewDataDictionary(ViewData) { ["PeriodicoEnInicio"] = true }' />
+        </div>
+    </section>
+}
+
 <section class="seccion seccion-blanca" id="formas-de-ayudar">
     <div class="container">
         <div class="seccion-titulo">

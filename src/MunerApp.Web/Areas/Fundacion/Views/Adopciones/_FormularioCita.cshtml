@@ -1,0 +1,29 @@
+@* Agendar o reprogramar la cita presencial (HU-034, escenarios 1 y 2). La fecha se escribe en hora de Colombia. *@
+@model SolicitudAdopcionDetalleViewModel
+@{
+    var s = Model.Solicitud;
+    var reprogramar = s.FechaCita is not null;
+    var formato = "yyyy-MM-ddTHH:mm";
+    var minimo = Formatos.Local(DateTime.UtcNow).AddMinutes(5).ToString(formato);
+    var actual = s.FechaCita is DateTime f ? Formatos.Local(f).ToString(formato) : "";
+    var sufijo = reprogramar ? "Reprogramar" : "Agendar";
+}
+<form asp-action="AgendarCita" asp-route-id="@s.Id" method="post"
+      data-confirmar="@(reprogramar ? "La persona recibirá una notificación con los nuevos datos de la cita." : "La persona recibirá una notificación con la fecha, el lugar y los requisitos de la cita.")"
+      data-confirmar-titulo="@(reprogramar ? "¿Actualizar la cita?" : "¿Agendar la cita?")" data-confirmar-boton="@(reprogramar ? "Sí, actualizar" : "Sí, agendar")">
+    <div class="mb-3">
+        <label for="Fecha@(sufijo)" class="form-label">Fecha y hora</label>
+        <input id="Fecha@(sufijo)" name="Fecha" type="datetime-local" class="form-control" min="@minimo" value="@actual" required />
+    </div>
+    <div class="mb-3">
+        <label for="Lugar@(sufijo)" class="form-label">Lugar</label>
+        <input id="Lugar@(sufijo)" name="Lugar" class="form-control" maxlength="200" value="@s.LugarCita" required
+               placeholder="Ej.: sede de la fundación, Calle 7 # 4-12, Facatativá" />
+    </div>
+    <div class="mb-3">
+        <label for="Indicaciones@(sufijo)" class="form-label">Indicaciones (opcional)</label>
+        <textarea id="Indicaciones@(sufijo)" name="Indicaciones" class="form-control" rows="2" maxlength="300"
+                  placeholder="Ej.: pregunta por Cristian en la entrada.">@s.IndicacionesCita</textarea>
+    </div>
+    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-calendar-check me-2" aria-hidden="true"></i>@(reprogramar ? "Guardar cambios de la cita" : "Agendar cita")</button>
+</form>

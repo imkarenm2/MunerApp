@@ -1,0 +1,17 @@
+@* Pregunta de opción única en chips (formulario de adopción): un grupo de radios con su etiqueta accesible y su error *@
+@model (string Nombre, string Etiqueta, IEnumerable<(string Valor, string Texto)> Opciones, string? Actual)
+@{
+    var error = ViewData.ModelState[Model.Nombre]?.Errors.FirstOrDefault()?.ErrorMessage;
+}
+<fieldset class="mb-3">
+    <legend class="form-label">@Model.Etiqueta</legend>
+    <div class="d-flex flex-wrap gap-2">
+        @foreach (var o in Model.Opciones)
+        {
+            var id = Model.Nombre + o.Valor;
+            <input type="radio" class="btn-check" name="@Model.Nombre" id="@id" value="@o.Valor" @(o.Valor == Model.Actual ? "checked" : "") />
+            <label class="chip" for="@id">@o.Texto</label>
+        }
+    </div>
+    <span class="@(error is null ? "field-validation-valid" : "field-validation-error")" data-valmsg-for="@Model.Nombre" data-valmsg-replace="true">@error</span>
+</fieldset>

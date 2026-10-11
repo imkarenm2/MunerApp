@@ -1,0 +1,71 @@
+@model ChatsEsalIndexViewModel
+@{
+    ViewData["Title"] = "Chats de la tienda";
+    ViewData["Seccion"] = "Tienda";
+    var pestanas = new[]
+    {
+        (Estado: EstadoConversacion.Abierta, Texto: "Abiertas", Icono: "bi-chat-dots", Conteo: Model.Abiertas),
+        (Estado: EstadoConversacion.Cerrada, Texto: "Cerradas", Icono: "bi-check2-all", Conteo: Model.Cerradas)
+    };
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Chats de la tienda</h1>
+            <p class="text-suave mb-0">Responde a los donantes interesados en sus productos y registra los pedidos que acuerden.</p>
+        </div>
+    </div>
+
+    <partial name="_NavFundacion" />
+    <partial name="_NavTienda" />
+
+    <ul class="nav nav-tabs pestanas mb-3" role="tablist">
+        @foreach (var p in pestanas)
+        {
+            <li class="nav-item">
+                <a class="nav-link @(Model.Estado == p.Estado ? "active" : "")" asp-action="Index" asp-route-estado="@p.Estado"
+                   aria-current="@(Model.Estado == p.Estado ? "page" : null)">
+                    <i class="bi @p.Icono me-1" aria-hidden="true"></i>@p.Texto
+                    <span class="badge rounded-pill text-bg-light ms-1">@p.Conteo</span>
+                </a>
+            </li>
+        }
+    </ul>
+
+    @if (Model.Chats.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo exito mb-3"><i class="bi bi-chat-heart" aria-hidden="true"></i></div>
+            <h2 class="h5">@(Model.Estado == EstadoConversacion.Abierta ? "No hay chats abiertos" : "No hay chats cerrados")</h2>
+            <p class="text-suave">Cuando un donante escriba desde un producto de la tienda, aparecerá aquí y recibirás una notificación.</p>
+        </div>
+    }
+    else
+    {
+        @if (Model.SinLeer > 0)
+        {
+            <p class="small fw-semibold mb-2"><i class="bi bi-envelope-exclamation me-1" aria-hidden="true"></i>@Model.SinLeer @(Model.SinLeer == 1 ? "chat con mensajes sin leer" : "chats con mensajes sin leer")</p>
+        }
+        <div class="d-grid gap-2">
+            @foreach (var c in Model.Chats)
+            {
+                <a class="mu-card mu-card-hover fila-lista d-flex align-items-center gap-3 p-3 text-decoration-none text-body" asp-action="Detalle" asp-route-id="@c.Id">
+                    @if (c.FotoUrl is not null)
+                    {
+                        <img class="chat-producto-foto" src="@c.FotoUrl" alt="" loading="lazy" />
+                    }
+                    <span class="flex-grow-1 min-w-0">
+                        <span class="d-block fw-semibold">@c.Donante</span>
+                        <span class="d-block small text-suave">@c.NombreProducto · @Formatos.Hace(c.FechaUltimoMensaje)</span>
+                        <span class="d-block small text-truncate @(c.NoLeidos > 0 ? "fw-semibold" : "text-suave")">@(c.UltimoEsDeLaFundacion ? "Ustedes: " : "")@c.UltimoMensaje</span>
+                    </span>
+                    @if (c.NoLeidos > 0)
+                    {
+                        <span class="badge rounded-pill text-bg-danger" aria-label="@c.NoLeidos sin leer">@c.NoLeidos</span>
+                    }
+                    <i class="bi bi-chevron-right text-suave" aria-hidden="true"></i>
+                </a>
+            }
+        </div>
+    }
+</div>

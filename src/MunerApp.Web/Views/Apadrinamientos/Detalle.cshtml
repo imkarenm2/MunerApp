@@ -1,0 +1,146 @@
+@model ApadrinamientoDetalleViewModel
+@{
+    ViewData["Title"] = "Apadrinamiento de " + Model.NombreBeneficiario;
+    var activo = Model.Estado == EstadoApadrinamiento.Activo;
+    var urlReportar = $"/fundaciones/{Model.SlugEsal}/reportar-donacion?apadrinamiento={Model.Id}";
+}
+<div class="container py-4 py-md-5" style="max-width: 960px">
+    <a class="small d-inline-flex align-items-center gap-1 mb-3" href="/mis-apadrinamientos"><i class="bi bi-arrow-left" aria-hidden="true"></i>Mis apadrinamientos</a>
+
+    <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+        @if (Model.FotoUrl is not null)
+        {
+            <img class="beneficiario-foto" src="@Model.FotoUrl" alt="Foto de @Model.NombreBeneficiario" />
+        }
+        else
+        {
+            <span class="beneficiario-foto beneficiario-sin-foto" aria-hidden="true"><i class="bi bi-balloon-heart"></i></span>
+        }
+        <div class="flex-grow-1">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <h1 class="h2 mb-0">@Model.NombreBeneficiario</h1>
+                @if (activo)
+                {
+                    <span class="mu-badge exito"><i class="bi bi-heart-fill" aria-hidden="true"></i>Apadrinamiento activo</span>
+                }
+                else
+                {
+                    <span class="mu-badge"><i class="bi bi-x-circle" aria-hidden="true"></i>Cancelado</span>
+                }
+            </div>
+            <p class="text-suave mb-0">
+                Con <a href="/fundaciones/@Model.SlugEsal">@Model.NombreEsal</a> · @Formatos.Pesos(Model.ValorMensual) al mes · desde el @Formatos.Fecha(Formatos.Local(Model.FechaInicio))
+                @if (Model.FechaCancelacion is DateTime cancelado)
+                {
+                    <span> · cancelado el @Formatos.Fecha(Formatos.Local(cancelado))</span>
+                }
+            </p>
+            @if (Model.BeneficiarioVisible)
+            {
+                <a class="small" href="/fundaciones/@Model.SlugEsal/apadrinar/@Model.BeneficiarioId">Ver ficha de @Model.NombreBeneficiario</a>
+            }
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            @if (activo)
+            {
+                <div class="mu-card p-4 mb-4">
+                    <h2 class="h5 mb-3">Cómo hacer tu aporte de @Formatos.Pesos(Model.ValorMensual)</h2>
+                    @if (!Model.DatosDisponibles)
+                    {
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-hourglass-split" aria-hidden="true"></i>
+                            <div>@Model.NombreEsal todavía no configuró los datos de su cuenta. Te avisaremos cuando puedas hacer tu aporte.</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="datos-cuenta mu-card p-4">
+                            <div class="small text-suave">@Model.TipoCuenta · @Model.Entidad</div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap my-2">
+                                <span class="numero-cuenta" id="numeroCuenta">@Model.Numero</span>
+                                <button type="button" class="btn btn-sm btn-suave" data-copiar="numeroCuenta">
+                                    <i class="bi bi-copy me-1" aria-hidden="true"></i><span>Copiar</span>
+                                </button>
+                            </div>
+                            <dl class="row small mb-0 mt-3">
+                                <dt class="col-5 text-suave fw-normal">Titular</dt>
+                                <dd class="col-7 fw-semibold">@Model.Titular</dd>
+                                <dt class="col-5 text-suave fw-normal">NIT / documento</dt>
+                                <dd class="col-7 fw-semibold mb-0">@Model.DocumentoTitular</dd>
+                            </dl>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.Instrucciones))
+                        {
+                            <div class="alert alert-info mt-3 mb-0">
+                                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                                <div class="texto-largo">@Model.Instrucciones</div>
+                            </div>
+                        }
+                        <p class="text-suave mt-3 mb-3">Cuando hagas la transferencia, guarda el soporte y repórtalo: la fundación lo revisa y te llega tu comprobante.</p>
+                        <a class="btn btn-apoyar" href="@urlReportar"><i class="bi bi-upload me-2" aria-hidden="true"></i>Reportar mi aporte</a>
+                    }
+                </div>
+            }
+
+            <div class="mu-card p-4">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                    <h2 class="h5 mb-0">Mis aportes</h2>
+                    @if (Model.Aportes.Count > 0)
+                    {
+                        <span class="small text-suave">Confirmado: <strong class="text-body">@Formatos.Pesos(Model.TotalConfirmado)</strong></span>
+                    }
+                </div>
+                @if (Model.Aportes.Count == 0)
+                {
+                    <p class="text-suave mb-0">Aún no has reportado ningún aporte para este apadrinamiento.</p>
+                }
+                else
+                {
+                    <div class="d-grid gap-2">
+                        @foreach (var a in Model.Aportes)
+                        {
+                            <a class="fila-lista mu-card mu-card-hover" href="/mis-donaciones/@a.Codigo">
+                                <span class="flex-grow-1 min-w-0">
+                                    <span class="d-block fw-semibold text-body">@Formatos.Pesos(a.Valor)</span>
+                                    <span class="d-block small text-suave">@a.Codigo · @Formatos.Fecha(a.FechaTransferencia)</span>
+                                </span>
+                                <partial name="_EstadoDonacion" model="a.Estado" />
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <div class="mu-card p-4 mb-4">
+                <h2 class="h6 fw-bold mb-3"><i class="bi bi-shield-check text-principal me-2" aria-hidden="true"></i>Así funciona</h2>
+                <ul class="lista-check small mb-0">
+                    <li>Cada mes transfieres tu aporte a la cuenta oficial y lo reportas aquí.</li>
+                    <li>La fundación confirma que llegó el dinero y te avisamos.</li>
+                    <li>MunerApp no cobra ni maneja tu dinero.</li>
+                </ul>
+            </div>
+
+            @if (activo)
+            {
+                <div class="mu-card p-4">
+                    <h2 class="h6 fw-bold mb-2">Cancelar el apadrinamiento</h2>
+                    <p class="small text-suave">Dejarás de ser padrino de @Model.NombreBeneficiario y avisaremos a la fundación. Tus aportes anteriores se conservan.</p>
+                    <form asp-action="Cancelar" asp-route-id="@Model.Id" method="post"
+                          data-confirmar="Quedará inactivo y la fundación será notificada. Tus aportes anteriores se conservan."
+                          data-confirmar-titulo="¿Cancelar tu apadrinamiento de @Model.NombreBeneficiario?" data-confirmar-boton="Sí, cancelar" data-confirmar-tipo="peligro">
+                        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancelar apadrinamiento</button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <a class="btn btn-outline-primary" href="/fundaciones/@Model.SlugEsal/apadrinar">Apadrinar a otro beneficiario</a>
+            }
+        </div>
+    </div>
+</div>

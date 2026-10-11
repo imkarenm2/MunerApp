@@ -1,0 +1,25 @@
+@* Cómo comprar el producto. La plataforma no cobra en la tienda: la compra se acuerda con la fundación por chat (HU-024, HU-025). *@
+@model ProductoDetalleViewModel
+@{
+    var chat = $"/fundaciones/{Model.SlugEsal}/tienda/{Model.Id}/chat";
+    var autenticado = User.Identity?.IsAuthenticated == true;
+}
+@if (Model.Agotado)
+{
+    <div class="alert alert-warning mb-0">
+        <i class="bi bi-hourglass" aria-hidden="true"></i>
+        <div>Este producto está agotado por ahora. Vuelve pronto o mira otros productos de la fundación.</div>
+    </div>
+}
+else
+{
+    <p class="fw-semibold mb-1"><i class="bi bi-chat-heart me-1" aria-hidden="true"></i>¿Cómo lo compro?</p>
+    <p class="small text-suave mb-3">Escríbele a la fundación por chat y acuerden la forma de pago y la entrega. Lo que pagas llega a ella.</p>
+    <a class="btn btn-apoyar btn-lg w-100" href="@(autenticado ? chat : "/Cuenta/IniciarSesion?returnUrl=" + Uri.EscapeDataString(chat))">
+        <i class="bi bi-chat-heart me-2" aria-hidden="true"></i>Me interesa: escribir a la fundación
+    </a>
+    @if (!autenticado)
+    {
+        <p class="small text-suave text-center mt-2 mb-0">Te pediremos iniciar sesión o crear tu cuenta.</p>
+    }
+}

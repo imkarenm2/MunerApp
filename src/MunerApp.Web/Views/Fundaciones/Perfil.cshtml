@@ -75,6 +75,7 @@
         <ul class="nav flex-nowrap overflow-auto">
             @if (tieneQuienes) { <li class="nav-item"><a class="nav-link" href="#quienes-somos">Quiénes somos</a></li> }
             @if (Model.Fotos.Count > 0) { <li class="nav-item"><a class="nav-link" href="#galeria">Galería</a></li> }
+            @if (Model.Causas.Abiertas.Count + Model.Causas.Cerradas.Count > 0) { <li class="nav-item"><a class="nav-link" href="#causas">Causas</a></li> }
             <li class="nav-item"><a class="nav-link" href="#transparencia">Transparencia</a></li>
             <li class="nav-item"><a class="nav-link" href="#como-ayudar">Cómo ayudar</a></li>
             <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
@@ -147,6 +148,45 @@
                 </section>
             }
 
+            @* ---------- Causas de recaudación (HU-041 / HU-042) ---------- *@
+            @if (Model.Causas.Abiertas.Count + Model.Causas.Cerradas.Count > 0)
+            {
+                <section id="causas" class="perfil-seccion">
+                    <h2 class="h3 mb-1">Causas</h2>
+                    <p class="text-suave mb-3">Campañas para reunir dinero para una necesidad concreta.</p>
+                    <div class="row g-3">
+                        @foreach (var c in Model.Causas.Abiertas.Concat(Model.Causas.Cerradas))
+                        {
+                            <div class="col-12 col-md-6">
+                                <partial name="_TarjetaCausa" model="c" />
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
+            @* ---------- Boletín (HU-028) ---------- *@
+            @if (Model.Boletin.Count > 0)
+            {
+                <section id="boletin" class="perfil-seccion">
+                    <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
+                        <div>
+                            <h2 class="h3 mb-1">Boletín</h2>
+                            <p class="text-suave mb-0">Noticias, eventos y logros de la fundación.</p>
+                        </div>
+                        <a class="small fw-semibold" href="/fundaciones/@Model.Slug/boletin">Ver todo el boletín <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                    </div>
+                    <div class="row g-3">
+                        @foreach (var p in Model.Boletin)
+                        {
+                            <div class="col-12 col-md-6">
+                                <partial name="_TarjetaPublicacion" model="p" />
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
             @* ---------- Transparencia (HU-012) ---------- *@
             <section id="transparencia" class="perfil-seccion">
                 <div class="d-flex align-items-center gap-2 mb-1">
@@ -191,8 +231,9 @@
                 <div class="row g-3">
                     @foreach (var f in Model.FormasAyuda)
                     {
+                        // Las recomendaciones de adopción se pueden leer sin cuenta: la sesión se pide al aceptarlas (HU-029)
                         var destino = f.Url is null ? null
-                            : (f.RequiereCuenta && !autenticado ? "/Cuenta/IniciarSesion?returnUrl=" + Uri.EscapeDataString(f.Url) : f.Url);
+                            : (f.RequiereCuenta && !autenticado && f.Codigo != CodigosModulo.Adopcion ? "/Cuenta/IniciarSesion?returnUrl=" + Uri.EscapeDataString(f.Url) : f.Url);
                         <div class="col-12 col-md-6">
                             <div class="mu-card p-4 h-100 d-flex flex-column @(f.Disponible ? "" : "forma-pronto")">
                                 <div class="d-flex align-items-start gap-3 mb-2">
@@ -214,12 +255,24 @@
                                 {
                                     <p class="small text-suave mb-0"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Las cuentas de una fundación no pueden postularse como voluntarias.</p>
                                 }
+                                else if (f.Disponible && f.Codigo == CodigosModulo.Adopcion && cuentaDeFundacion)
+                                {
+                                    <p class="small text-suave mb-0"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Las cuentas de una fundación no pueden solicitar adopciones.</p>
+                                }
                                 else if (f.Disponible && destino is not null)
                                 {
                                     <a class="btn @(f.Codigo == CodigosModulo.Donaciones ? "btn-apoyar" : "btn-outline-primary") align-self-start" href="@destino">
                                         @if (f.Codigo == CodigosModulo.Donaciones)
                                         {
                                             <text>Ver cómo donar</text>
+                                        }
+                                        else if (f.Codigo == CodigosModulo.Beneficiarios)
+                                        {
+                                            <text>Conocer a los apadrinables</text>
+                                        }
+                                        else if (f.Codigo == CodigosModulo.Adopcion)
+                                        {
+                                            <text>Ver cómo adoptar</text>
                                         }
                                         else if (!autenticado)
                                         {

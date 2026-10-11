@@ -5,6 +5,7 @@ using MunerApp.Application.Interfaces;
 using MunerApp.Domain.Common;
 using MunerApp.Domain.Constantes;
 using MunerApp.Domain.Entities;
+using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Identity;
 
 namespace MunerApp.Infrastructure.Persistence;
@@ -32,6 +33,28 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<Donacion> Donaciones => Set<Donacion>();
     public DbSet<Notificacion> Notificaciones => Set<Notificacion>();
     public DbSet<PostulacionVoluntario> PostulacionesVoluntario => Set<PostulacionVoluntario>();
+
+    // Sprint 3
+    public DbSet<Beneficiario> Beneficiarios => Set<Beneficiario>();
+    public DbSet<HistorialEstadoBeneficiario> HistorialEstadosBeneficiario => Set<HistorialEstadoBeneficiario>();
+    public DbSet<AdoptanteBeneficiario> AdoptantesBeneficiario => Set<AdoptanteBeneficiario>();
+    public DbSet<EventoClinico> EventosClinicos => Set<EventoClinico>();
+    public DbSet<FotoEventoClinico> FotosEventoClinico => Set<FotoEventoClinico>();
+    public DbSet<Apadrinamiento> Apadrinamientos => Set<Apadrinamiento>();
+    public DbSet<Causa> Causas => Set<Causa>();
+    public DbSet<FotoCausa> FotosCausa => Set<FotoCausa>();
+
+    // Sprint 5
+    public DbSet<ConfigAdopcion> ConfigAdopciones => Set<ConfigAdopcion>();
+    public DbSet<SolicitudAdopcion> SolicitudesAdopcion => Set<SolicitudAdopcion>();
+    public DbSet<EventoPasarela> EventosPasarela => Set<EventoPasarela>();
+    // Sprint 4
+    public DbSet<Producto> Productos => Set<Producto>();
+    public DbSet<FotoProducto> FotosProducto => Set<FotoProducto>();
+    public DbSet<ConversacionTienda> ConversacionesTienda => Set<ConversacionTienda>();
+    public DbSet<MensajeTienda> MensajesTienda => Set<MensajeTienda>();
+    public DbSet<Pedido> Pedidos => Set<Pedido>();
+    public DbSet<Publicacion> Publicaciones => Set<Publicacion>();
 
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
@@ -172,6 +195,16 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasIndex(x => x.DonanteId);
             e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.DonanteId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Apadrinamiento).WithMany().HasForeignKey(x => x.ApadrinamientoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.ApadrinamientoId);
+            e.HasOne(x => x.Causa).WithMany().HasForeignKey(x => x.CausaId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.CausaId);
+            // Donación en línea con Wompi (HU-043, HU-044)
+            e.Property(x => x.Origen).HasConversion<string>().HasMaxLength(10).HasDefaultValue(OrigenDonacion.Manual);
+            e.Property(x => x.ReferenciaPasarela).HasMaxLength(60);
+            e.Property(x => x.TransaccionPasarelaId).HasMaxLength(60);
+            e.HasIndex(x => x.ReferenciaPasarela).IsUnique(); // EF agrega el filtro "IS NOT NULL"
+            e.HasIndex(x => x.TransaccionPasarelaId).IsUnique();
         });
 
         builder.Entity<Notificacion>(e =>
@@ -203,6 +236,268 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        // ---------------- Sprint 3 ----------------
+
+        builder.Entity<Beneficiario>(e =>
+        {
+            e.ToTable("Beneficiario");
+            e.Property(x => x.Nombre).HasMaxLength(100).IsRequired();
+            e.Property(x => x.FechaNacimiento).HasColumnType("date");
+            e.Property(x => x.FechaRescate).HasColumnType("date");
+            e.Property(x => x.Sexo).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Color).HasMaxLength(60).IsRequired();
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.FotoRuta).HasMaxLength(300);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.Property(x => x.HistoriaPublica).HasMaxLength(600);
+            e.Property(x => x.AporteSugerido).HasPrecision(14, 2);
+            e.Property(x => x.FotoPublicaRuta).HasMaxLength(300);
+            e.HasIndex(x => new { x.EsalId, x.Estado });
+            e.HasIndex(x => new { x.EsalId, x.Apadrinable });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<HistorialEstadoBeneficiario>(e =>
+        {
+            e.ToTable("HistorialEstadoBeneficiario");
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.CambiadoPorId).HasMaxLength(450);
+            e.Property(x => x.Nota).HasMaxLength(300);
+            e.HasIndex(x => x.BeneficiarioId);
+            e.HasOne(x => x.Beneficiario).WithMany(x => x.HistorialEstados).HasForeignKey(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AdoptanteBeneficiario>(e =>
+        {
+            e.ToTable("AdoptanteBeneficiario");
+            e.HasKey(x => x.BeneficiarioId);
+            e.Property(x => x.Nombre).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Documento).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Telefono).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Correo).HasMaxLength(150);
+            e.Property(x => x.Ciudad).HasMaxLength(100).IsRequired();
+            e.Property(x => x.Direccion).HasMaxLength(200).IsRequired();
+            e.Property(x => x.FechaAdopcion).HasColumnType("date");
+            e.Property(x => x.Observaciones).HasMaxLength(500);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.HasOne(x => x.Beneficiario).WithOne(x => x.Adoptante).HasForeignKey<AdoptanteBeneficiario>(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<EventoClinico>(e =>
+        {
+            e.ToTable("EventoClinico");
+            e.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Fecha).HasColumnType("date");
+            e.Property(x => x.Descripcion).HasMaxLength(1000).IsRequired();
+            e.Property(x => x.Responsable).HasMaxLength(150).IsRequired();
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.BeneficiarioId, x.Fecha });
+            e.HasOne(x => x.Beneficiario).WithMany().HasForeignKey(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<FotoEventoClinico>(e =>
+        {
+            e.ToTable("FotoEventoClinico");
+            e.Property(x => x.Ruta).HasMaxLength(300).IsRequired();
+            e.HasOne(x => x.Evento).WithMany(x => x.Fotos).HasForeignKey(x => x.EventoClinicoId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Apadrinamiento>(e =>
+        {
+            e.ToTable("Apadrinamiento");
+            e.Property(x => x.PadrinoId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.ValorMensual).HasPrecision(14, 2);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.HasIndex(x => new { x.EsalId, x.BeneficiarioId, x.Estado });
+            e.HasIndex(x => x.PadrinoId);
+            // Un padrino solo puede tener un apadrinamiento activo por beneficiario
+            e.HasIndex(x => new { x.PadrinoId, x.BeneficiarioId }).IsUnique().HasFilter("[Estado] = N'Activo'");
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Beneficiario).WithMany().HasForeignKey(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.PadrinoId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Causa>(e =>
+        {
+            e.ToTable("Causa");
+            e.Property(x => x.Titulo).HasMaxLength(120).IsRequired();
+            e.Property(x => x.Descripcion).HasMaxLength(3000).IsRequired();
+            e.Property(x => x.Meta).HasPrecision(14, 2);
+            e.Property(x => x.FechaLimite).HasColumnType("date");
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.CreadaPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.Estado });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<DocumentoTransparencia>().WithMany().HasForeignKey(x => x.RendicionDocumentoId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<FotoCausa>(e =>
+        {
+            e.ToTable("FotoCausa");
+            e.Property(x => x.Ruta).HasMaxLength(300).IsRequired();
+            e.HasOne(x => x.Causa).WithMany(x => x.Fotos).HasForeignKey(x => x.CausaId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ---------------- Sprint 5 ----------------
+
+        // Registro de avisos de Wompi (HU-044). Sin filtro por ESAL: lo escribe un endpoint anónimo
+        // y solo se consulta filtrando explícitamente por la fundación.
+        builder.Entity<EventoPasarela>(e =>
+        {
+            e.ToTable("EventoPasarela");
+            e.Property(x => x.Evento).HasMaxLength(60);
+            e.Property(x => x.TransaccionId).HasMaxLength(60);
+            e.Property(x => x.Referencia).HasMaxLength(60);
+            e.Property(x => x.EstadoTransaccion).HasMaxLength(20);
+            e.Property(x => x.Resultado).HasConversion<string>().HasMaxLength(25);
+            e.Property(x => x.Detalle).HasMaxLength(300);
+            e.Property(x => x.Cuerpo).IsRequired();
+            e.HasIndex(x => new { x.EsalId, x.FechaRecepcion });
+            e.HasIndex(x => x.TransaccionId);
+            e.HasOne<Esal>().WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Donacion>().WithMany().HasForeignKey(x => x.DonacionId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ConfigAdopcion>(e =>
+        {
+            e.ToTable("ConfigAdopcion");
+            e.HasKey(x => x.EsalId);
+            e.Property(x => x.Recomendaciones).HasMaxLength(3000).IsRequired();
+            e.Property(x => x.ValorAporte).HasPrecision(14, 2).HasDefaultValue(ConfigAdopcion.ValorAportePredeterminado);
+            e.Property(x => x.MensajeToxoplasmosis).HasMaxLength(1500);
+            e.Property(x => x.ImagenToxoplasmosisRuta).HasMaxLength(300);
+            e.HasOne(x => x.Esal).WithOne().HasForeignKey<ConfigAdopcion>(x => x.EsalId);
+        });
+
+        builder.Entity<SolicitudAdopcion>(e =>
+        {
+            e.ToTable("SolicitudAdopcion");
+            e.Property(x => x.UsuarioId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            // Sección 1: datos personales (HU-030)
+            e.Property(x => x.NombreCompleto).HasMaxLength(150);
+            e.Property(x => x.Cedula).HasMaxLength(10);
+            e.Property(x => x.Celular).HasMaxLength(10);
+            e.Property(x => x.Ciudad).HasMaxLength(100);
+            e.Property(x => x.Direccion).HasMaxLength(200);
+            e.Property(x => x.Ocupacion).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.DetalleOcupacion).HasMaxLength(150);
+            e.Property(x => x.ReferenciaNombre).HasMaxLength(150);
+            e.Property(x => x.ReferenciaCelular).HasMaxLength(10);
+            e.Property(x => x.ReferenciaRelacion).HasMaxLength(60);
+            // Sección 2: mascotas (HU-031)
+            e.Property(x => x.Mascotas).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.OtraMascota).HasMaxLength(100);
+            e.Property(x => x.GatoEsterilizacion).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.GatoVacunas).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.CarneVacunasRuta).HasMaxLength(300);
+            e.Property(x => x.PerroSociabilidad).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.QuePasoMascota).HasMaxLength(500);
+            // Sección 3: hogar y compromisos (HU-032)
+            e.Property(x => x.TipoVivienda).HasConversion<string>().HasMaxLength(15);
+            e.Property(x => x.TenenciaVivienda).HasConversion<string>().HasMaxLength(15);
+            e.Property(x => x.Codigo).HasMaxLength(20);
+            e.HasIndex(x => x.Codigo).IsUnique(); // EF agrega el filtro "Codigo IS NOT NULL"
+            // Revisión de la fundación (HU-033)
+            e.Property(x => x.MotivoRechazo).HasMaxLength(300);
+            e.Property(x => x.RevisadoPorId).HasMaxLength(450);
+            // Cita presencial y resultado (HU-034)
+            e.Property(x => x.LugarCita).HasMaxLength(200);
+            e.Property(x => x.IndicacionesCita).HasMaxLength(300);
+            e.Property(x => x.ObservacionesResultado).HasMaxLength(500);
+            e.HasOne(x => x.BeneficiarioAdoptado).WithMany().HasForeignKey(x => x.BeneficiarioAdoptadoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.EsalId, x.Estado });
+            // Una persona solo tiene un borrador por fundación: si vuelve, continúa el mismo
+            e.HasIndex(x => new { x.EsalId, x.UsuarioId }).IsUnique().HasFilter("[Estado] = N'Borrador'");
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ---- Sprint 4: tienda (HU-023) ----
+
+        builder.Entity<Producto>(e =>
+        {
+            e.ToTable("Producto");
+            e.Property(x => x.Nombre).HasMaxLength(120).IsRequired();
+            e.Property(x => x.Descripcion).HasMaxLength(2000).IsRequired();
+            e.Property(x => x.Precio).HasPrecision(14, 2);
+            e.Property(x => x.Categoria).HasMaxLength(60);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.CreadoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.Estado });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<FotoProducto>(e =>
+        {
+            e.ToTable("FotoProducto");
+            e.Property(x => x.Ruta).HasMaxLength(300).IsRequired();
+            e.HasOne(x => x.Producto).WithMany(x => x.Fotos).HasForeignKey(x => x.ProductoId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ---- Sprint 4: chat de la tienda (HU-025) ----
+
+        builder.Entity<ConversacionTienda>(e =>
+        {
+            e.ToTable("ConversacionTienda");
+            e.Property(x => x.DonanteId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            // Una sola conversación por donante y producto
+            e.HasIndex(x => new { x.DonanteId, x.ProductoId }).IsUnique();
+            e.HasIndex(x => new { x.EsalId, x.Estado, x.FechaUltimoMensaje });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            // Un producto con conversaciones no se elimina: se oculta
+            e.HasOne(x => x.Producto).WithMany().HasForeignKey(x => x.ProductoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.DonanteId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<MensajeTienda>(e =>
+        {
+            e.ToTable("MensajeTienda");
+            e.Property(x => x.AutorId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.Texto).HasMaxLength(1000).IsRequired();
+            e.HasIndex(x => new { x.ConversacionId, x.Id });
+            e.HasOne(x => x.Conversacion).WithMany(x => x.Mensajes).HasForeignKey(x => x.ConversacionId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ---- Sprint 4: pedidos de la tienda (HU-026) ----
+
+        builder.Entity<Pedido>(e =>
+        {
+            e.ToTable("Pedido");
+            e.Property(x => x.Codigo).HasMaxLength(30).IsRequired();
+            e.HasIndex(x => x.Codigo).IsUnique();
+            e.Property(x => x.DonanteId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.PrecioUnitario).HasPrecision(14, 2);
+            e.Property(x => x.Total).HasPrecision(14, 2);
+            e.Property(x => x.Notas).HasMaxLength(500);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.Estado });
+            e.HasOne(x => x.Conversacion).WithMany().HasForeignKey(x => x.ConversacionId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Producto).WithMany().HasForeignKey(x => x.ProductoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.DonanteId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ---- Sprint 4: boletín (HU-027) ----
+
+        builder.Entity<Publicacion>(e =>
+        {
+            e.ToTable("Publicacion");
+            e.Property(x => x.Titulo).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Resumen).HasMaxLength(300);
+            e.Property(x => x.Contenido).HasMaxLength(8000).IsRequired();
+            e.Property(x => x.Categoria).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.ImagenRuta).HasMaxLength(300);
+            e.Property(x => x.LugarEvento).HasMaxLength(200);
+            e.Property(x => x.CreadaPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.Estado, x.FechaPublicacion });
+            e.HasIndex(x => new { x.Estado, x.Categoria, x.FechaEvento });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Causa).WithMany().HasForeignKey(x => x.CausaId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
@@ -213,6 +508,22 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<DatosDonacion>(builder);
         AplicarFiltroEsal<Donacion>(builder);
         AplicarFiltroEsal<PostulacionVoluntario>(builder);
+        AplicarFiltroEsal<Beneficiario>(builder);
+        AplicarFiltroEsal<HistorialEstadoBeneficiario>(builder);
+        AplicarFiltroEsal<AdoptanteBeneficiario>(builder);
+        AplicarFiltroEsal<EventoClinico>(builder);
+        AplicarFiltroEsal<FotoEventoClinico>(builder);
+        AplicarFiltroEsal<Apadrinamiento>(builder);
+        AplicarFiltroEsal<Causa>(builder);
+        AplicarFiltroEsal<FotoCausa>(builder);
+        AplicarFiltroEsal<ConfigAdopcion>(builder);
+        AplicarFiltroEsal<SolicitudAdopcion>(builder);
+        AplicarFiltroEsal<Producto>(builder);
+        AplicarFiltroEsal<FotoProducto>(builder);
+        AplicarFiltroEsal<ConversacionTienda>(builder);
+        AplicarFiltroEsal<MensajeTienda>(builder);
+        AplicarFiltroEsal<Pedido>(builder);
+        AplicarFiltroEsal<Publicacion>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal

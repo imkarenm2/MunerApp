@@ -1,0 +1,67 @@
+@model RecomendacionesAdopcionViewModel
+@{
+    ViewData["Title"] = "Adoptar en " + Model.NombreEsal;
+    var autenticado = User.Identity?.IsAuthenticated ?? false;
+    var urlRegreso = "/fundaciones/" + Model.Slug + "/adoptar";
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Adopción en")' />
+
+    <h1 class="h2 mb-1">Antes de solicitar una adopción</h1>
+    <p class="text-suave mb-4">Adoptar es una decisión importante. Lee con calma lo que implica y, si estás de acuerdo, continúa con el formulario.</p>
+
+    <section class="mu-card p-4 p-md-5 mb-4" aria-labelledby="tituloRecomendaciones">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="icono-circulo acento flex-shrink-0"><i class="bi bi-house-heart" aria-hidden="true"></i></div>
+            <h2 class="h5 mb-0" id="tituloRecomendaciones">Recomendaciones y responsabilidades</h2>
+        </div>
+        <ul class="lista-check mb-0">
+            @foreach (var r in Model.Recomendaciones)
+            {
+                <li>@r</li>
+            }
+        </ul>
+    </section>
+
+    @if (Model.Aviso is not null)
+    {
+        @* Ya tiene una solicitud en trámite, o es una cuenta de fundación *@
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-info-circle" aria-hidden="true"></i></div>
+            <h2 class="h5 mb-2">@Model.Aviso</h2>
+            <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 mt-3">
+                <a class="btn btn-outline-primary" href="/fundaciones/@Model.Slug#como-ayudar">Otras formas de ayudar</a>
+            </div>
+        </div>
+    }
+    else if (!autenticado)
+    {
+        @* HU-029 escenario 3: sin sesión se pide iniciar sesión o registrarse *@
+        <div class="mu-card p-4 text-center">
+            <p class="mb-3">Para solicitar una adopción necesitas una cuenta. Así podrás guardar tu avance y te avisaremos cuando la fundación revise tu solicitud.</p>
+            <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
+                <a class="btn btn-apoyar" href="/Cuenta/IniciarSesion?returnUrl=@Uri.EscapeDataString(urlRegreso)">Inicia sesión para continuar</a>
+                <a class="btn btn-outline-primary" href="/Cuenta/Registrar?returnUrl=@Uri.EscapeDataString(urlRegreso)">Crear una cuenta</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <form asp-action="Recomendaciones" asp-route-slug="@Model.Slug" method="post" novalidate class="mu-card p-4">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="Acepto" id="Acepto" value="true" @(Model.TieneBorrador ? "checked" : "") />
+                <label class="form-check-label" for="Acepto">
+                    Leí las recomendaciones y acepto las responsabilidades que implica adoptar.
+                </label>
+            </div>
+            <span asp-validation-for="Acepto"></span>
+
+            <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+                <button type="submit" class="btn btn-apoyar btn-lg" data-cargando="Abriendo...">
+                    @(Model.TieneBorrador ? "Continuar mi solicitud" : "Continuar al formulario")
+                </button>
+                <a class="btn btn-link" href="/fundaciones/@Model.Slug">Cancelar</a>
+            </div>
+        </form>
+    }
+</div>

@@ -1,0 +1,63 @@
+@model ApadrinamientoFormViewModel
+@{
+    ViewData["Title"] = "Apadrinamiento de " + Model.NombreBeneficiario;
+    ViewData["Seccion"] = "Beneficiarios";
+}
+<div class="container py-4 py-md-5" style="max-width: 720px">
+    <a asp-action="Detalle" asp-route-id="@Model.BeneficiarioId" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Hoja de vida de @Model.NombreBeneficiario</a>
+    <h1 class="h2 mt-2 mb-1">@(Model.YaApadrinable ? "Editar la información pública" : "Ofrecer para apadrinar")</h1>
+    <p class="text-suave mb-4">Esto es lo único que verán los visitantes de <strong>@Model.NombreBeneficiario</strong>, junto con su nombre, edad, sexo y color. La historia clínica y los datos internos nunca se publican.</p>
+
+    <form asp-action="Apadrinamiento" asp-route-id="@Model.BeneficiarioId" method="post" enctype="multipart/form-data" novalidate class="mu-card p-4 p-md-5"
+          data-confirmar="Cualquier persona podrá ver esta información en el perfil de la fundación."
+          data-confirmar-titulo="@(Model.YaApadrinable ? "¿Guardar los cambios?" : "¿Publicar para apadrinar?")" data-confirmar-boton="Sí, publicar">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label asp-for="HistoriaPublica" class="form-label"></label>
+                <textarea asp-for="HistoriaPublica" class="form-control" rows="5" maxlength="600"
+                          placeholder="Cuenta cómo llegó, cómo es su carácter y qué necesita. Evita datos clínicos o de contacto."></textarea>
+                <span asp-validation-for="HistoriaPublica"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="AporteSugerido" class="form-label"></label>
+                <div class="input-icono">
+                    <i class="bi bi-currency-dollar" aria-hidden="true"></i>
+                    <input asp-for="AporteSugerido" class="form-control" inputmode="numeric" placeholder="30.000" autocomplete="off" data-moneda />
+                </div>
+                <span asp-validation-for="AporteSugerido"></span>
+                <div class="form-text">Cada padrino podrá elegir su propio valor.</div>
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="Foto">Foto pública</label>
+                @if (Model.FotoPublicaUrl is not null)
+                {
+                    <div class="mb-2"><img class="beneficiario-foto-mini" src="@Model.FotoPublicaUrl" alt="Foto pública actual" /></div>
+                }
+                <label class="zona-archivo" for="Foto">
+                    <i class="bi bi-camera" aria-hidden="true"></i>
+                    <span class="fw-semibold" data-nombre-archivo>@(Model.FotoPublicaUrl is null ? "Selecciona la foto que verá el público" : "Elige otra foto para reemplazarla")</span>
+                    <span class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Imagen) Esta foto sí es pública.</span>
+                </label>
+                <input asp-for="Foto" type="file" class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Imagen)" data-archivo />
+                <span asp-validation-for="Foto"></span>
+                @if (Model.FotoPublicaUrl is null && Model.TieneFotoInterna)
+                {
+                    <div class="form-check mt-2">
+                        <input asp-for="UsarFotoInterna" class="form-check-input" />
+                        <label asp-for="UsarFotoInterna" class="form-check-label"></label>
+                        <div class="form-text">Se publicará una copia; la foto interna sigue siendo privada.</div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-primary" data-cargando="Guardando...">@(Model.YaApadrinable ? "Guardar cambios" : "Publicar para apadrinar")</button>
+            <a asp-action="Detalle" asp-route-id="@Model.BeneficiarioId" class="btn btn-link">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

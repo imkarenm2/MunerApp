@@ -1,0 +1,140 @@
+@model BeneficiariosIndexViewModel
+@{
+    ViewData["Title"] = "Beneficiarios";
+    ViewData["Seccion"] = "Beneficiarios";
+    int Conteo(EstadoBeneficiario e) => Model.Conteos.TryGetValue(e, out var c) ? c : 0;
+    var buscando = !string.IsNullOrEmpty(Model.Busqueda);
+    string Enlace(int pagina) => Url.Action("Index", new { estado = Model.Estado, q = Model.Busqueda, pagina }) ?? "#";
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Beneficiarios</h1>
+            <p class="text-suave mb-0">@(Model.PuedeGestionar ? "La hoja de vida de cada uno de los que cuida la fundación." : "Consulta quiénes están en la fundación y cómo se encuentran.") Esta información es interna.</p>
+        </div>
+        @if (Model.PuedeGestionar)
+        {
+            <a class="btn btn-primary" asp-action="Crear"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Registrar beneficiario</a>
+        }
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    @if (Model.TotalGeneral == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-balloon-heart" aria-hidden="true"></i></div>
+            <h2 class="h5">Aún no hay beneficiarios registrados</h2>
+            @if (Model.PuedeGestionar)
+            {
+                <p class="text-suave">Empiecen por crear la hoja de vida del primero: nombre, edad, sexo, color, fecha de rescate y una foto.</p>
+                <a class="btn btn-primary" asp-action="Crear">Registrar el primero</a>
+            }
+            else
+            {
+                <p class="text-suave">Cuando la fundación registre beneficiarios, los verás aquí.</p>
+            }
+        </div>
+    }
+    else
+    {
+        <ul class="nav nav-tabs pestanas mb-3">
+            <li class="nav-item">
+                <a class="nav-link @(Model.Estado is null ? "active" : "")" asp-action="Index" asp-route-q="@Model.Busqueda"
+                   aria-current="@(Model.Estado is null ? "page" : null)">Todos <span class="badge rounded-pill text-bg-light ms-1">@Model.TotalGeneral</span></a>
+            </li>
+            @foreach (var e in Enum.GetValues<EstadoBeneficiario>())
+            {
+                <li class="nav-item">
+                    <a class="nav-link @(Model.Estado == e ? "active" : "")" asp-action="Index" asp-route-estado="@e" asp-route-q="@Model.Busqueda"
+                       aria-current="@(Model.Estado == e ? "page" : null)">@Textos.De(e) <span class="badge rounded-pill text-bg-light ms-1">@Conteo(e)</span></a>
+                </li>
+            }
+        </ul>
+
+        <form method="get" asp-action="Index" role="search" class="buscador mb-4" style="max-width: 520px">
+            @if (Model.Estado is not null)
+            {
+                <input type="hidden" name="estado" value="@Model.Estado" />
+            }
+            <label for="q" class="visually-hidden">Buscar beneficiario por nombre</label>
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input id="q" name="q" type="search" class="form-control" value="@Model.Busqueda" placeholder="Busca por nombre" maxlength="100" autocomplete="off" />
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </form>
+
+        @if (Model.Beneficiarios.Count == 0)
+        {
+            <div class="estado-vacio">
+                <div class="icono-circulo mb-3"><i class="bi bi-search" aria-hidden="true"></i></div>
+                <h2 class="h5">No encontramos beneficiarios con ese filtro</h2>
+                <p class="text-suave">
+                    @if (buscando)
+                    {
+                        <text>Nadie coincide con "@Model.Busqueda"</text>
+                        @if (Model.Estado is not null)
+                        {
+                            <text> en estado "@Textos.De(Model.Estado.Value)"</text>
+                        }
+                        <text>.</text>
+                    }
+                    else
+                    {
+                        <text>No hay nadie en estado "@Textos.De(Model.Estado!.Value)".</text>
+                    }
+                </p>
+                <a class="btn btn-suave" asp-action="Index">Quitar filtros</a>
+            </div>
+        }
+        else
+        {
+            <p class="small text-suave mb-3">@Model.Total @(Model.Total == 1 ? "beneficiario" : "beneficiarios")@(Model.HayFiltros ? " con este filtro" : "")</p>
+            <div class="row g-3">
+                @foreach (var b in Model.Beneficiarios)
+                {
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <a class="mu-card mu-card-hover beneficiario-tarjeta text-decoration-none text-body" asp-action="Detalle" asp-route-id="@b.Id">
+                            @if (b.TieneFoto)
+                            {
+                                <img class="beneficiario-foto" src="@Url.Action("Foto", new { id = b.Id })" alt="Foto de @b.Nombre" loading="lazy" />
+                            }
+                            else
+                            {
+                                <span class="beneficiario-foto beneficiario-sin-foto" aria-hidden="true"><i class="bi bi-camera"></i></span>
+                            }
+                            <span class="beneficiario-datos">
+                                <span class="fw-bold d-block text-truncate">@b.Nombre</span>
+                                <span class="small text-suave d-block">@Formatos.Edad(b.FechaNacimiento) · @Textos.De(b.Sexo)</span>
+                                <span class="d-flex flex-wrap gap-1 mt-2">
+                                    <partial name="_EstadoBeneficiario" model="b.Estado" />
+                                    @if (b.Apadrinable)
+                                    {
+                                        <span class="mu-badge acento"><i class="bi bi-balloon-heart" aria-hidden="true"></i>Apadrinable</span>
+                                    }
+                                    @if (b.FaltaAdoptante)
+                                    {
+                                        <span class="mu-badge alerta"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>Falta adoptante</span>
+                                    }
+                                </span>
+                            </span>
+                        </a>
+                    </div>
+                }
+            </div>
+
+            @if (Model.TotalPaginas > 1)
+            {
+                <nav class="mt-4" aria-label="Páginas de resultados">
+                    <ul class="pagination justify-content-center flex-wrap">
+                        @for (var i = 1; i <= Model.TotalPaginas; i++)
+                        {
+                            <li class="page-item @(i == Model.Pagina ? "active" : "")">
+                                <a class="page-link" href="@Enlace(i)" aria-current="@(i == Model.Pagina ? "page" : null)">@i</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
+        }
+    }
+</div>

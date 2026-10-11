@@ -6,6 +6,7 @@ using MunerApp.Domain.Entities;
 using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Models.Publico;
+using MunerApp.Web.Servicios;
 
 namespace MunerApp.Web.Controllers;
 
@@ -23,12 +24,14 @@ public class FundacionesController : Controller
     private readonly MunerAppDbContext _db;
     private readonly IAlmacenamientoArchivos _archivos;
     private readonly IModuloService _modulos;
+    private readonly CausasPublicas _causas;
 
-    public FundacionesController(MunerAppDbContext db, IAlmacenamientoArchivos archivos, IModuloService modulos)
+    public FundacionesController(MunerAppDbContext db, IAlmacenamientoArchivos archivos, IModuloService modulos, CausasPublicas causas)
     {
         _db = db;
         _archivos = archivos;
         _modulos = modulos;
+        _causas = causas;
     }
 
     // ---------- HU-010: listado y búsqueda ----------
@@ -98,6 +101,10 @@ public class FundacionesController : Controller
 
         var tieneDatos = await _db.DatosDonacion.IgnoreQueryFilters().AnyAsync(d => d.EsalId == esal.Id);
         var activos = (await _modulos.ObtenerActivosAsync(esal.Id)).Select(m => m.Codigo).ToHashSet();
+        var hayApadrinables = activos.Contains(CodigosModulo.Beneficiarios)
+            && await _db.Beneficiarios.IgnoreQueryFilters().AnyAsync(b => b.EsalId == esal.Id && b.Apadrinable);
+        var hayProductos = activos.Contains(CodigosModulo.Tienda)
+            && await _db.Productos.IgnoreQueryFilters().AnyAsync(p => p.EsalId == esal.Id && p.Estado != EstadoProducto.Oculto);
 
         var modelo = new PerfilPublicoViewModel
         {
@@ -122,7 +129,12 @@ public class FundacionesController : Controller
                 d.Extension, d.FechaPublicacion, d.TamanoBytes)).ToList(),
             TieneDatosDonacion = tieneDatos,
             TieneModulosApoyo = activos.Overlaps(new[] { CodigosModulo.Beneficiarios, CodigosModulo.Adopcion, CodigosModulo.Tienda }),
-            FormasAyuda = ConstruirFormasAyuda(esal, activos)
+            FormasAyuda = ConstruirFormasAyuda(esal, activos, hayApadrinables, hayProductos),
+            Causas = await _causas.ListarAsync(esal.Id),
+            Boletin = (await _db.Publicaciones.IgnoreQueryFilters().AsNoTracking().Include(p => p.Esal)
+                    .Where(p => p.EsalId == esal.Id && p.Estado == EstadoPublicacion.Publicada)
+                    .OrderByDescending(p => p.FechaPublicacion).Take(2).ToListAsync())
+                .Select(p => TarjetasBoletin.Desde(p, _archivos)).ToList()
         };
 
         return View(modelo);
@@ -156,8 +168,81 @@ public class FundacionesController : Controller
         });
     }
 
+    // ---------- HU-020: apadrinamiento (solo se muestra la información pública) ----------
+
+    [HttpGet("{slug}/apadrinar")]
+    public async Task<IActionResult> Apadrinar(string slug)
+    {
+        var esal = await BuscarActivaAsync(slug);
+        if (esal is null || !await _modulos.EstaActivoAsync(esal.Id, CodigosModulo.Beneficiarios)) return NoDisponible();
+
+        // Se leen solo los campos públicos: nunca la hoja de vida interna ni la historia clínica
+        var lista = await _db.Beneficiarios.IgnoreQueryFilters().AsNoTracking()
+            .Where(b => b.EsalId == esal.Id && b.Apadrinable)
+            .OrderBy(b => b.Nombre)
+            .Select(b => new { b.Id, b.Nombre, b.FechaNacimiento, b.Sexo, b.Color, b.FotoPublicaRuta, b.HistoriaPublica, b.AporteSugerido })
+            .ToListAsync();
+
+        return View(new ApadrinablesViewModel
+        {
+            Slug = esal.Slug!,
+            Nombre = esal.Nombre,
+            LogoUrl = UrlArchivo(esal.LogoRuta),
+            Beneficiarios = lista.Select(b => TarjetaApadrinable(b.Id, b.Nombre, b.FechaNacimiento, b.Sexo, b.Color, b.FotoPublicaRuta, b.HistoriaPublica, b.AporteSugerido)).ToList()
+        });
+    }
+
+    [HttpGet("{slug}/apadrinar/{id:int}")]
+    public async Task<IActionResult> FichaApadrinable(string slug, int id)
+    {
+        var esal = await BuscarActivaAsync(slug);
+        if (esal is null || !await _modulos.EstaActivoAsync(esal.Id, CodigosModulo.Beneficiarios)) return NoDisponible();
+
+        var b = await _db.Beneficiarios.IgnoreQueryFilters().AsNoTracking()
+            .Where(x => x.Id == id && x.EsalId == esal.Id && x.Apadrinable)
+            .Select(x => new { x.Id, x.Nombre, x.FechaNacimiento, x.Sexo, x.Color, x.FotoPublicaRuta, x.HistoriaPublica, x.AporteSugerido })
+            .FirstOrDefaultAsync();
+        if (b is null)
+        {
+            Response.StatusCode = StatusCodes.Status404NotFound;
+            return View("ApadrinableNoDisponible", new ApadrinablesViewModel { Slug = esal.Slug!, Nombre = esal.Nombre, LogoUrl = UrlArchivo(esal.LogoRuta) });
+        }
+
+        int? propio = null;
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var usuarioId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            propio = await _db.Apadrinamientos.IgnoreQueryFilters().AsNoTracking()
+                .Where(a => a.PadrinoId == usuarioId && a.BeneficiarioId == id && a.Estado == EstadoApadrinamiento.Activo)
+                .Select(a => (int?)a.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        return View(new ApadrinableFichaViewModel
+        {
+            ApadrinamientoPropioId = propio,
+            Slug = esal.Slug!,
+            NombreEsal = esal.Nombre,
+            LogoUrl = UrlArchivo(esal.LogoRuta),
+            Beneficiario = TarjetaApadrinable(b.Id, b.Nombre, b.FechaNacimiento, b.Sexo, b.Color, b.FotoPublicaRuta, b.HistoriaPublica, b.AporteSugerido)
+        });
+    }
+
+    private ApadrinableTarjeta TarjetaApadrinable(int id, string nombre, DateTime nacimiento, SexoBeneficiario sexo, string color,
+        string? fotoRuta, string? historia, decimal? aporte) => new()
+    {
+        Id = id,
+        Nombre = nombre,
+        Edad = Servicios.Formatos.Edad(nacimiento),
+        Sexo = Textos.De(sexo),
+        Color = color,
+        FotoUrl = UrlArchivo(fotoRuta),
+        Historia = historia ?? "",
+        AporteSugerido = aporte ?? 0
+    };
+
     /// <summary>HU-016: las opciones dependen de los módulos activos de la fundación.</summary>
-    private List<FormaAyuda> ConstruirFormasAyuda(Esal esal, ISet<string> activos)
+    private List<FormaAyuda> ConstruirFormasAyuda(Esal esal, ISet<string> activos, bool hayApadrinables, bool hayProductos)
     {
         var slug = esal.Slug!;
         var formas = new List<FormaAyuda>
@@ -172,21 +257,21 @@ public class FundacionesController : Controller
                 "Apoya con tu tiempo o tus conocimientos en las labores que la fundación necesita.",
                 "bi-people", "exito", $"/fundaciones/{slug}/voluntariado", true, true));
 
-        // Módulos configurables: se habilitan en los sprints 3 y 4
+        // Módulos configurables: beneficiarios (Sprint 3), adopción (Sprint 5) y tienda (Sprint 4)
         if (activos.Contains(CodigosModulo.Beneficiarios))
             formas.Add(new(CodigosModulo.Beneficiarios, "Apadrinar",
                 "Acompaña a un beneficiario con un aporte periódico y sigue sus novedades.",
-                "bi-balloon-heart", "", null, true, false));
+                "bi-balloon-heart", "", $"/fundaciones/{slug}/apadrinar", false, hayApadrinables));
 
         if (activos.Contains(CodigosModulo.Adopcion))
             formas.Add(new(CodigosModulo.Adopcion, "Adoptar",
                 "Dale un hogar a uno de los peludos que la fundación tiene en adopción.",
-                "bi-house-heart", "acento", null, true, false));
+                "bi-house-heart", "acento", $"/fundaciones/{slug}/adoptar", true, true));
 
         if (activos.Contains(CodigosModulo.Tienda))
             formas.Add(new(CodigosModulo.Tienda, "Comprar en su tienda",
                 "Productos de la fundación: cada compra también ayuda.",
-                "bi-bag-heart", "alerta", null, false, false));
+                "bi-bag-heart", "alerta", $"/fundaciones/{slug}/tienda", false, hayProductos));
 
         return formas;
     }

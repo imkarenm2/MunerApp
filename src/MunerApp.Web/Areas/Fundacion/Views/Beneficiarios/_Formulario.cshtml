@@ -1,0 +1,80 @@
+@model BeneficiarioFormViewModel
+@{
+    var hoy = DateTime.Today.ToString("yyyy-MM-dd");
+    var editando = Model.Id is not null;
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+<div class="row g-3">
+    <div class="col-12">
+        <label asp-for="Nombre" class="form-label"></label>
+        <input asp-for="Nombre" class="form-control" maxlength="100" placeholder="Ej.: Michi" autocomplete="off" />
+        <span asp-validation-for="Nombre"></span>
+    </div>
+
+    <div class="col-12 col-md-6">
+        <span class="form-label d-block" id="etiqueta-edad">Edad aproximada</span>
+        <div class="row g-2" role="group" aria-labelledby="etiqueta-edad">
+            <div class="col-6">
+                <div class="input-group">
+                    <input asp-for="EdadAnios" type="number" class="form-control" min="0" max="30" inputmode="numeric" aria-label="Años" />
+                    <span class="input-group-text">años</span>
+                </div>
+                <span asp-validation-for="EdadAnios"></span>
+            </div>
+            <div class="col-6">
+                <div class="input-group">
+                    <input asp-for="EdadMeses" type="number" class="form-control" min="0" max="11" inputmode="numeric" aria-label="Meses" />
+                    <span class="input-group-text">meses</span>
+                </div>
+                <span asp-validation-for="EdadMeses"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-6">
+        <label asp-for="FechaRescate" class="form-label"></label>
+        <input asp-for="FechaRescate" type="date" class="form-control" max="@hoy" />
+        <span asp-validation-for="FechaRescate"></span>
+    </div>
+
+    <div class="col-12 col-md-6">
+        <span class="form-label d-block" id="etiqueta-sexo">Sexo</span>
+        <div class="d-flex gap-2" role="radiogroup" aria-labelledby="etiqueta-sexo">
+            @foreach (var s in Enum.GetValues<SexoBeneficiario>())
+            {
+                <div>
+                    <input type="radio" class="btn-check" name="Sexo" id="sexo-@s" value="@s" checked="@(Model.Sexo == s)" data-val="true" data-val-required="Selecciona el sexo." />
+                    <label class="chip" for="sexo-@s">@Textos.De(s)</label>
+                </div>
+            }
+        </div>
+        <span asp-validation-for="Sexo"></span>
+    </div>
+
+    <div class="col-12 col-md-6">
+        <label asp-for="Color" class="form-label"></label>
+        <input asp-for="Color" class="form-control" maxlength="60" placeholder="Ej.: Naranja con blanco" autocomplete="off" />
+        <span asp-validation-for="Color"></span>
+    </div>
+
+    <div class="col-12">
+        <label class="form-label" for="Foto">Foto</label>
+        @if (editando && Model.TieneFoto)
+        {
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <img class="beneficiario-foto-mini" src="@Url.Action("Foto", new { id = Model.Id })" alt="Foto actual" />
+                <div class="form-check mb-0">
+                    <input asp-for="QuitarFoto" class="form-check-input" />
+                    <label asp-for="QuitarFoto" class="form-check-label"></label>
+                </div>
+            </div>
+        }
+        <label class="zona-archivo" for="Foto">
+            <i class="bi bi-camera" aria-hidden="true"></i>
+            <span class="fw-semibold" data-nombre-archivo>@(editando && Model.TieneFoto ? "Elige otra foto para reemplazarla" : "Selecciona una foto")</span>
+            <span class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Imagen) Es una foto interna: no se publica.</span>
+        </label>
+        <input asp-for="Foto" type="file" class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Imagen)" data-archivo />
+        <span asp-validation-for="Foto"></span>
+    </div>
+</div>

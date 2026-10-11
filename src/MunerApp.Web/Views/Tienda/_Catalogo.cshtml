@@ -1,0 +1,67 @@
+@* Filtros (categoría y búsqueda) y tarjetas del catálogo. Lo usan la tienda general y la de cada fundación (HU-024). *@
+@model CatalogoViewModel
+@{
+    var accion = Model.Slug is null ? "/tienda" : $"/fundaciones/{Model.Slug}/tienda";
+    string UrlCategoria(string? c)
+    {
+        var partes = new List<string>();
+        if (c is not null) partes.Add("categoria=" + Uri.EscapeDataString(c));
+        if (Model.Busqueda is not null) partes.Add("q=" + Uri.EscapeDataString(Model.Busqueda));
+        return partes.Count == 0 ? accion : accion + "?" + string.Join("&", partes);
+    }
+    var filtrando = Model.Categoria is not null || Model.Busqueda is not null;
+}
+<form method="get" action="@accion" class="mb-3" role="search">
+    @if (Model.Categoria is not null)
+    {
+        <input type="hidden" name="categoria" value="@Model.Categoria" />
+    }
+    <div class="input-icono" style="max-width: 420px">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input type="search" name="q" value="@Model.Busqueda" class="form-control" maxlength="60" placeholder="Buscar productos" aria-label="Buscar productos" />
+    </div>
+</form>
+
+@if (Model.Categorias.Count > 0)
+{
+    <nav class="d-flex flex-wrap gap-2 mb-4" aria-label="Categorías">
+        <a class="chip text-decoration-none @(Model.Categoria is null ? "activo" : "")" href="@UrlCategoria(null)" aria-current="@(Model.Categoria is null ? "page" : null)">Todas</a>
+        @foreach (var c in Model.Categorias)
+        {
+            <a class="chip text-decoration-none @(Model.Categoria == c ? "activo" : "")" href="@UrlCategoria(c)" aria-current="@(Model.Categoria == c ? "page" : null)">@c</a>
+        }
+    </nav>
+}
+
+@if (Model.Productos.Count == 0)
+{
+    <div class="estado-vacio">
+        <div class="icono-circulo alerta mb-3"><i class="bi bi-bag-heart" aria-hidden="true"></i></div>
+        @if (filtrando)
+        {
+            <h2 class="h5">No encontramos productos con esos filtros</h2>
+            <a class="btn btn-outline-primary" href="@accion">Ver todos los productos</a>
+        }
+        else
+        {
+            <h2 class="h5">Por ahora no hay productos</h2>
+            <p class="text-suave">@(Model.Slug is null ? "Las fundaciones aún no han publicado productos." : "La fundación aún no ha publicado productos. Vuelve pronto o apóyala de otra forma.")</p>
+            @if (Model.Slug is not null)
+            {
+                <a class="btn btn-outline-primary" href="/fundaciones/@Model.Slug#como-ayudar">Ver otras formas de ayudar</a>
+            }
+        }
+    </div>
+}
+else
+{
+    <p class="small text-suave mb-3">@Model.Productos.Count @(Model.Productos.Count == 1 ? "producto" : "productos")</p>
+    <div class="row g-3 g-md-4">
+        @foreach (var p in Model.Productos)
+        {
+            <div class="col-6 col-md-4 col-lg-3">
+                <partial name="_TarjetaProducto" model="p" />
+            </div>
+        }
+    </div>
+}

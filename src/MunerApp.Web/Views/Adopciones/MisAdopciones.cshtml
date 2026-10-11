@@ -1,0 +1,71 @@
+@model List<SolicitudAdopcionItem>
+@{
+    ViewData["Title"] = "Mis adopciones";
+}
+<div class="container py-4 py-md-5" style="max-width: 860px">
+    <h1 class="h2 mb-1">Mis adopciones</h1>
+    <p class="text-suave mb-4">Las solicitudes de adopción que has enviado y en qué van.</p>
+
+    @if (Model.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo acento mb-3"><i class="bi bi-house-heart" aria-hidden="true"></i></div>
+            <h2 class="h5">Todavía no has enviado solicitudes</h2>
+            <p class="text-suave">Entra al perfil de una fundación y elige "Adoptar".</p>
+            <a class="btn btn-primary" href="/fundaciones">Explorar fundaciones</a>
+        </div>
+    }
+    else
+    {
+        <div class="d-grid gap-2">
+            @foreach (var s in Model)
+            {
+                <div class="mu-card p-3">
+                    <div class="fila-lista p-0 border-0 shadow-none bg-transparent">
+                        <partial name="_LogoEsal" model="new LogoEsalModel(s.NombreEsal, s.LogoUrl, 44)" />
+                        <span class="flex-grow-1 min-w-0">
+                            <a class="d-block fw-semibold text-body text-truncate text-decoration-none" href="/fundaciones/@s.SlugEsal">@s.NombreEsal</a>
+                            <span class="d-block small text-suave">@s.Codigo · @Formatos.FechaCorta(s.Fecha)</span>
+                            @if (s.Estado == EstadoSolicitudAdopcion.AprobadaParaCita)
+                            {
+                                <span class="d-block small mt-1">La fundación te asignará la cita presencial para conocer a los gatos.</span>
+                            }
+                            @if (!string.IsNullOrEmpty(s.MotivoRechazo))
+                            {
+                                <span class="d-block small mt-1">Motivo: @s.MotivoRechazo</span>
+                            }
+                            @if (s.Estado == EstadoSolicitudAdopcion.AdopcionConcretada && s.NombreAdoptado is not null)
+                            {
+                                <span class="d-block small mt-1"><i class="bi bi-heart-fill text-acento me-1" aria-hidden="true"></i>Adoptaste a <strong>@s.NombreAdoptado</strong>. ¡Gracias por darle un hogar!</span>
+                            }
+                            @if (s.Estado == EstadoSolicitudAdopcion.NoConcretada)
+                            {
+                                <span class="d-block small mt-1">Esta vez la adopción no se concretó. Puedes volver a solicitar cuando quieras.</span>
+                            }
+                        </span>
+                        <partial name="_EstadoSolicitudAdopcion" model="s.Estado" />
+                    </div>
+
+                    @* HU-034 escenario 1: la cita con sus requisitos *@
+                    @if (s.Estado == EstadoSolicitudAdopcion.CitaAgendada && s.FechaCita is DateTime cita)
+                    {
+                        <div class="bloque-condicional mt-3">
+                            <div class="fw-semibold mb-1"><i class="bi bi-calendar-check me-2 text-principal" aria-hidden="true"></i>@Formatos.FechaHora(cita)</div>
+                            <div class="small mb-2"><i class="bi bi-geo-alt me-2" aria-hidden="true"></i>@s.LugarCita</div>
+                            @if (s.IndicacionesCita is not null)
+                            {
+                                <p class="small mb-2">@s.IndicacionesCita</p>
+                            }
+                            <div class="small fw-semibold mb-1">Lleva a la cita:</div>
+                            <ul class="lista-check small mb-0">
+                                <li>@Formatos.Pesos(s.ValorAporte) para la esterilización y la vacuna</li>
+                                <li>Un huacal para transportar a tu nuevo compañero</li>
+                                <li>Tu documento de identidad</li>
+                            </ul>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>

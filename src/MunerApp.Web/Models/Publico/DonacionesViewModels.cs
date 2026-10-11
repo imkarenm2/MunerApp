@@ -11,6 +11,10 @@ public class ReportarDonacionViewModel
     public string? LogoUrl { get; set; }
     public string MedioPago { get; set; } = string.Empty;
 
+    /// <summary>Si es el aporte de un apadrinamiento (HU-021), cuál es y a quién apadrina.</summary>
+    public int? ApadrinamientoId { get; set; }
+    public string? NombreApadrinado { get; set; }
+
     /// <summary>Se recibe como texto para aceptar "50.000" o "$ 50,000" (pesos sin decimales).</summary>
     [Required(ErrorMessage = "Ingresa el valor que donaste.")]
     [Display(Name = "Valor donado")]
@@ -35,6 +39,9 @@ public class ReportarDonacionViewModel
 
 public class DonacionItem
 {
+    /// <summary>Si es un aporte de apadrinamiento (HU-021), el nombre del apadrinado.</summary>
+    public string? Apadrinado { get; set; }
+
     public string Codigo { get; set; } = string.Empty;
     public string NombreEsal { get; set; } = string.Empty;
     public string? SlugEsal { get; set; }
@@ -53,6 +60,11 @@ public class DonacionDetalleViewModel : DonacionItem
     public string? MotivoRechazo { get; set; }
     public DateTime? FechaRevision { get; set; }
     public bool SoporteEsPdf { get; set; }
+    public int? ApadrinamientoId { get; set; }
+
+    /// <summary>Pagada en línea con Wompi (HU-043): no tiene soporte y la confirma el aviso de Wompi (HU-044).</summary>
+    public bool EnLinea { get; set; }
+    public string? ReferenciaPasarela { get; set; }
 }
 
 public class PostulacionViewModel

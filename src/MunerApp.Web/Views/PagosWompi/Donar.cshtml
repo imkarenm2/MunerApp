@@ -1,0 +1,41 @@
+@model DonarEnLineaViewModel
+@{
+    ViewData["Title"] = "Donar en línea";
+}
+<div class="container py-4 py-md-5" style="max-width: 720px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Donación a")' />
+
+    <h1 class="h2 mb-1">Dona a «@Model.TituloCausa»</h1>
+    <p class="text-suave mb-4">Pagas de forma segura con Wompi (tarjeta, PSE o Nequi) y el dinero llega directo a la cuenta de la fundación.</p>
+
+    <div class="mu-card p-4 mb-3">
+        <div class="d-flex justify-content-between small text-suave mb-1">
+            <span>@Formatos.Pesos(Model.Recaudado) recaudados</span>
+            <span>Meta @Formatos.Pesos(Model.Meta)</span>
+        </div>
+        <div class="mu-progreso" role="progressbar" aria-valuenow="@Model.Porcentaje" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso de la causa">
+            <span style="width: @(Model.Porcentaje)%"></span>
+        </div>
+    </div>
+
+    <form asp-action="Donar" asp-route-slug="@Model.Slug" asp-route-causaId="@Model.CausaId" method="post" novalidate class="mu-card p-4 p-md-5">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <label asp-for="Valor" class="form-label"></label>
+        <div class="input-icono">
+            <i class="bi bi-currency-dollar" aria-hidden="true"></i>
+            <input asp-for="Valor" class="form-control" inputmode="numeric" placeholder="50.000" autocomplete="off" data-moneda />
+        </div>
+        <span asp-validation-for="Valor"></span>
+
+        <div class="alert alert-info small mt-3">
+            <i class="bi bi-shield-lock" aria-hidden="true"></i>
+            <div>Te llevaremos al pago seguro de Wompi. MunerApp no guarda los datos de tu tarjeta ni maneja el dinero.</div>
+        </div>
+
+        <button type="submit" class="btn btn-apoyar btn-lg w-100">
+            <i class="bi bi-credit-card me-2" aria-hidden="true"></i>Continuar al pago
+        </button>
+    </form>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

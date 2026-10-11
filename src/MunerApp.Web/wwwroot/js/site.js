@@ -88,8 +88,9 @@ document.addEventListener('change', function (e) {
     // Revisar el tamaño antes de enviar (máximo 5 MB), para no esperar una subida que el servidor va a rechazar
     const MAX_MB = 5;
     const elegido = input.files[0];
-    if (elegido && elegido.size > MAX_MB * 1024 * 1024) {
-        const mb = (elegido.size / 1024 / 1024).toFixed(1).replace('.', ',');
+    const muyPesado = Array.from(input.files).find(function (f) { return f.size > MAX_MB * 1024 * 1024; });
+    if (muyPesado) {
+        const mb = (muyPesado.size / 1024 / 1024).toFixed(1).replace('.', ',');
         input.value = '';
         const zonaError = input.parentElement.querySelector('[data-nombre-archivo]');
         if (zonaError) {
@@ -113,7 +114,10 @@ document.addEventListener('change', function (e) {
     if (nombre) nombre.classList.remove('text-danger');
     const zona = contenedor.querySelector('.zona-archivo');
     const archivo = input.files[0];
-    if (nombre) nombre.textContent = archivo ? archivo.name : 'Selecciona el archivo';
+    // Con varios archivos (fotos de la historia clínica) se muestra la cantidad
+    const varios = input.multiple && input.files.length > 1;
+    if (nombre) nombre.textContent = varios ? input.files.length + ' fotos seleccionadas'
+        : (archivo ? archivo.name : (input.multiple ? 'Selecciona hasta 5 fotos' : 'Selecciona el archivo'));
     if (zona) zona.classList.toggle('con-archivo', !!archivo);
 
     if (archivo && input.getAttribute('data-vista-previa') === 'logo' && archivo.type.startsWith('image/')) {
@@ -227,4 +231,66 @@ document.querySelectorAll('[data-contador][maxlength]').forEach(function (campo)
     if (tipoLlave) tipoLlave.addEventListener('change', aplicar);
     numero.addEventListener('input', filtrar);
     aplicar();
+})();
+
+// Preguntas condicionales (formulario de adopción, HU-030 a HU-032):
+// <div data-mostrar-si="Campo=Valor1,Valor2"> se muestra solo si el campo "Campo" (select, radio o checkbox)
+// tiene uno de esos valores. El servidor valida igual: esto solo evita mostrar preguntas que no aplican.
+(function () {
+    function valoresDe(nombre) {
+        return Array.from(document.getElementsByName(nombre))
+            .filter(function (c) { return (c.type !== 'radio' && c.type !== 'checkbox') || c.checked; })
+            .map(function (c) { return c.value; });
+    }
+
+    function actualizar() {
+        document.querySelectorAll('[data-mostrar-si]').forEach(function (bloque) {
+            var regla = bloque.getAttribute('data-mostrar-si').split('=');
+            var esperados = (regla[1] || '').split(',');
+            var visible = valoresDe(regla[0]).some(function (v) { return esperados.indexOf(v) >= 0; });
+            bloque.classList.toggle('d-none', !visible);
+        });
+    }
+
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.name) actualizar();
+    });
+    document.addEventListener('DOMContentLoaded', actualizar);
+})();
+
+// ---------- Chat de la tienda (HU-025 / HU-026): baja al último mensaje y trae los nuevos cada 8 segundos ----------
+(function () {
+    const caja = document.querySelector('[data-chat]');
+    if (!caja) return;
+    const url = caja.getAttribute('data-chat-url');
+    const abajo = () => { caja.scrollTop = caja.scrollHeight; };
+    abajo();
+
+    let consultando = false;
+    async function traer() {
+        if (consultando || document.hidden) return;
+        consultando = true;
+        try {
+            const ultimo = caja.getAttribute('data-chat-ultimo') || '0';
+            const r = await fetch(`${url}?despues=${encodeURIComponent(ultimo)}`, { headers: { 'X-Requested-With': 'fetch' } });
+            if (!r.ok) return;
+            const html = (await r.text()).trim();
+            if (!html) return;
+            const estabaAbajo = caja.scrollHeight - caja.scrollTop - caja.clientHeight < 80;
+            caja.insertAdjacentHTML('beforeend', html);
+            const mensajes = caja.querySelectorAll('[data-mensaje-id]');
+            caja.setAttribute('data-chat-ultimo', mensajes[mensajes.length - 1].getAttribute('data-mensaje-id'));
+            if (estabaAbajo) abajo();
+        } catch { /* sin conexión: se intenta en la siguiente vuelta */ }
+        finally { consultando = false; }
+    }
+    setInterval(traer, 8000);
+
+    // Enter envía; Shift+Enter hace un salto de línea
+    document.querySelectorAll('[data-enviar-con-enter]').forEach(t => t.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey && t.value.trim()) {
+            e.preventDefault();
+            t.form.requestSubmit();
+        }
+    }));
 })();

@@ -1,0 +1,84 @@
+@model ProductoFormViewModel
+@{
+    var editando = Model.Id is not null;
+    var maximo = MunerApp.Web.Areas.Fundacion.Controllers.ProductosController.MaxFotos;
+    var cupo = maximo - Model.FotosActuales.Count;
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+<div class="row g-3">
+    <div class="col-12">
+        <label asp-for="Nombre" class="form-label"></label>
+        <input asp-for="Nombre" class="form-control" maxlength="120" placeholder="Ej.: Camiseta «Adopta, no compres»" autocomplete="off" />
+        <span asp-validation-for="Nombre"></span>
+    </div>
+    <div class="col-12 col-sm-6">
+        <label asp-for="Precio" class="form-label"></label>
+        <div class="input-icono">
+            <i class="bi bi-currency-dollar" aria-hidden="true"></i>
+            <input asp-for="Precio" class="form-control" inputmode="numeric" placeholder="35.000" autocomplete="off" data-moneda />
+        </div>
+        <span asp-validation-for="Precio"></span>
+    </div>
+    <div class="col-12 col-sm-6">
+        <label asp-for="Categoria" class="form-label"></label>
+        <input asp-for="Categoria" class="form-control" maxlength="60" placeholder="Ej.: Ropa" autocomplete="off" list="categorias-producto" />
+        <datalist id="categorias-producto">
+            @foreach (var c in Model.CategoriasExistentes)
+            {
+                <option value="@c"></option>
+            }
+        </datalist>
+        <span asp-validation-for="Categoria"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Descripcion" class="form-label"></label>
+        <textarea asp-for="Descripcion" class="form-control" rows="5" maxlength="2000"
+                  placeholder="Materiales, tallas o medidas, colores y a qué se destina lo que se recaude."></textarea>
+        <span asp-validation-for="Descripcion"></span>
+    </div>
+    <div class="col-12">
+        <span class="form-label d-block">Estado</span>
+        <div class="d-flex flex-wrap gap-2" role="radiogroup" aria-label="Estado del producto">
+            @foreach (var (estado, ayuda) in new[]
+            {
+                (EstadoProducto.Disponible, "Se ve en la tienda y se puede pedir"),
+                (EstadoProducto.Agotado, "Se ve, pero no se puede pedir"),
+                (EstadoProducto.Oculto, "No aparece en la tienda")
+            })
+            {
+                <input type="radio" class="btn-check" asp-for="Estado" value="@estado" id="estado-@estado" />
+                <label class="chip" for="estado-@estado" title="@ayuda">@Textos.De(estado)</label>
+            }
+        </div>
+        <div class="form-text">Disponible: se ve y se puede pedir. Agotado: se ve, pero no se puede pedir. Oculto: no aparece en la tienda.</div>
+        <span asp-validation-for="Estado"></span>
+    </div>
+    <div class="col-12">
+        <label class="form-label" for="Fotos">Fotos (@(editando ? $"hasta {maximo} en total" : $"al menos 1, máximo {maximo}"))</label>
+        @if (editando && Model.FotosActuales.Count > 0)
+        {
+            <div class="evento-fotos mb-3">
+                @foreach (var f in Model.FotosActuales)
+                {
+                    <div class="evento-foto position-relative">
+                        <img src="@f.Url" alt="Foto del producto" />
+                        @if (Model.FotosActuales.Count > 1)
+                        {
+                            <button type="submit" form="quitar-foto-@f.Id" class="btn btn-sm btn-light galeria-eliminar" aria-label="Quitar esta foto"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        @if (cupo > 0)
+        {
+            <label class="zona-archivo" for="Fotos">
+                <i class="bi bi-images" aria-hidden="true"></i>
+                <span class="fw-semibold" data-nombre-archivo>@(editando ? $"Agregar fotos (caben {cupo} más)" : "Selecciona las fotos del producto")</span>
+                <span class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Imagen) Serán públicas.</span>
+            </label>
+            <input asp-for="Fotos" type="file" multiple class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Imagen)" data-archivo />
+        }
+        <span asp-validation-for="Fotos"></span>
+    </div>
+</div>

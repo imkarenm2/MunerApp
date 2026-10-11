@@ -1,0 +1,16 @@
+@model CategoriaPublicacion
+@switch (Model)
+{
+    case CategoriaPublicacion.Evento:
+        <span class="mu-badge acento"><i class="bi bi-calendar-event" aria-hidden="true"></i>Evento</span>
+        break;
+    case CategoriaPublicacion.Logro:
+        <span class="mu-badge exito"><i class="bi bi-trophy" aria-hidden="true"></i>Logro</span>
+        break;
+    case CategoriaPublicacion.RendicionCuentas:
+        <span class="mu-badge alerta"><i class="bi bi-clipboard-data" aria-hidden="true"></i>Rendición de cuentas</span>
+        break;
+    default:
+        <span class="mu-badge"><i class="bi bi-newspaper" aria-hidden="true"></i>Noticia</span>
+        break;
+}

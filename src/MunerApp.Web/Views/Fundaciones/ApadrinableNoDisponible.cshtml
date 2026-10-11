@@ -1,0 +1,13 @@
+@model ApadrinablesViewModel
+@{
+    ViewData["Title"] = "Beneficiario no disponible";
+    ViewData["Nav"] = "Fundaciones";
+}
+<div class="container py-5">
+    <div class="estado-vacio">
+        <div class="icono-circulo alerta mb-3"><i class="bi bi-balloon-heart" aria-hidden="true"></i></div>
+        <h1 class="h4">Este beneficiario ya no está disponible para apadrinar</h1>
+        <p class="text-suave">Puede que el enlace esté mal escrito o que la fundación haya dejado de ofrecerlo.</p>
+        <a href="/fundaciones/@Model.Slug/apadrinar" class="btn btn-primary">Ver a quién se puede apadrinar</a>
+    </div>
+</div>

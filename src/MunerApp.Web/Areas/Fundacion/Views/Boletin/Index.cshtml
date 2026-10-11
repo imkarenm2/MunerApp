@@ -1,0 +1,115 @@
+@model BoletinIndexViewModel
+@{
+    ViewData["Title"] = "Boletín";
+    ViewData["Seccion"] = "Boletin";
+    var pestanas = new[]
+    {
+        (Estado: EstadoPublicacion.Publicada, Texto: "Publicadas", Icono: "bi-broadcast", Conteo: Model.Publicadas),
+        (Estado: EstadoPublicacion.Borrador, Texto: "Borradores", Icono: "bi-pencil-square", Conteo: Model.Borradores)
+    };
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Boletín</h1>
+            <p class="text-suave mb-0">Cuéntale a la comunidad las noticias, eventos y logros de la fundación, y rinde cuentas de sus causas.</p>
+        </div>
+        @if (Model.PuedeGestionar)
+        {
+            <a class="btn btn-primary" asp-action="Crear"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nueva publicación</a>
+        }
+    </div>
+
+    <partial name="_NavFundacion" />
+
+    @if (!Model.PuedeGestionar)
+    {
+        <div class="alert alert-info small">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+            <div>Solo el administrador principal puede crear, editar o publicar en el boletín.</div>
+        </div>
+    }
+
+    <ul class="nav nav-tabs pestanas mb-3" role="tablist">
+        @foreach (var p in pestanas)
+        {
+            <li class="nav-item">
+                <a class="nav-link @(Model.Estado == p.Estado ? "active" : "")" asp-action="Index" asp-route-estado="@p.Estado"
+                   aria-current="@(Model.Estado == p.Estado ? "page" : null)">
+                    <i class="bi @p.Icono me-1" aria-hidden="true"></i>@p.Texto
+                    <span class="badge rounded-pill text-bg-light ms-1">@p.Conteo</span>
+                </a>
+            </li>
+        }
+    </ul>
+
+    @if (Model.Publicaciones.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-newspaper" aria-hidden="true"></i></div>
+            <h2 class="h5">@(Model.Estado == EstadoPublicacion.Publicada ? "Aún no han publicado nada" : "No hay borradores")</h2>
+            <p class="text-suave">Escribe una noticia, anuncia un evento o comparte un logro. Puedes guardarlo como borrador y publicarlo después.</p>
+            @if (Model.PuedeGestionar)
+            {
+                <a class="btn btn-primary" asp-action="Crear">Escribir una publicación</a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="d-grid gap-2">
+            @foreach (var p in Model.Publicaciones)
+            {
+                <div class="mu-card fila-lista d-flex flex-wrap flex-md-nowrap align-items-center gap-3 p-3">
+                    @if (p.ImagenUrl is not null)
+                    {
+                        <img class="chat-producto-foto" src="@p.ImagenUrl" alt="" loading="lazy" />
+                    }
+                    else
+                    {
+                        <span class="chat-producto-foto beneficiario-sin-foto" aria-hidden="true"><i class="bi bi-newspaper"></i></span>
+                    }
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                            <partial name="_CategoriaPublicacion" model="p.Categoria" />
+                            @if (p.FechaEvento is DateTime ev)
+                            {
+                                <span class="small @(ev < DateTime.UtcNow ? "text-suave" : "fw-semibold")"><i class="bi bi-calendar-event me-1" aria-hidden="true"></i>@Formatos.FechaHora(ev)@(ev < DateTime.UtcNow ? " (ya pasó)" : "")</span>
+                            }
+                        </div>
+                        <div class="fw-semibold">@p.Titulo</div>
+                        <div class="small text-suave">@(p.FechaPublicacion is DateTime fp ? "Publicada el " + Formatos.FechaCorta(fp) : "Creada el " + Formatos.FechaCorta(p.FechaCreacion))</div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        @if (p.Estado == EstadoPublicacion.Publicada && Model.Slug is not null)
+                        {
+                            <a class="btn btn-sm btn-outline-primary" href="/fundaciones/@Model.Slug/boletin/@p.Id" target="_blank" rel="noopener" aria-label="Ver @p.Titulo en el boletín"><i class="bi bi-eye" aria-hidden="true"></i></a>
+                        }
+                        @if (Model.PuedeGestionar)
+                        {
+                            <a class="btn btn-sm btn-suave" asp-action="Editar" asp-route-id="@p.Id"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar</a>
+                            @if (p.Estado == EstadoPublicacion.Borrador)
+                            {
+                                <form asp-action="Publicar" asp-route-id="@p.Id" method="post"
+                                      data-confirmar="Cualquier persona la podrá ver en el boletín de la fundación." data-confirmar-titulo="¿Publicar &quot;@p.Titulo&quot;?" data-confirmar-boton="Sí, publicar">
+                                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-broadcast me-1" aria-hidden="true"></i>Publicar</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="Despublicar" asp-route-id="@p.Id" method="post"
+                                      data-confirmar="Dejará de verse en el boletín hasta que la vuelvas a publicar." data-confirmar-titulo="¿Volver a borrador?" data-confirmar-boton="Sí, volver a borrador">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">Volver a borrador</button>
+                                </form>
+                            }
+                            <form asp-action="Eliminar" asp-route-id="@p.Id" method="post"
+                                  data-confirmar="Se borra la publicación y su imagen. No se puede deshacer." data-confirmar-titulo="¿Eliminar &quot;@p.Titulo&quot;?" data-confirmar-boton="Sí, eliminar" data-confirmar-tipo="peligro">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="Eliminar @p.Titulo"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

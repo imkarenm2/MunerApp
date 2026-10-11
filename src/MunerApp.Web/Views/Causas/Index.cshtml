@@ -1,0 +1,61 @@
+@model CausasPublicasViewModel
+@{
+    ViewData["Title"] = "Causas de recaudación";
+    ViewData["Nav"] = "Causas";
+    ViewData["Descripcion"] = "Conoce las causas de las fundaciones, mira cuánto falta para cumplir su meta y elige a cuál aportar.";
+}
+<section class="cabecera-pagina">
+    <div class="container">
+        <span class="sobretitulo">Causas</span>
+        <h1 class="mb-2">Aporta a una necesidad concreta</h1>
+        <p class="lead text-suave mb-0" style="max-width: 640px">Cada causa tiene una meta, una fecha límite y una barra que muestra cuánto se ha recaudado.</p>
+    </div>
+</section>
+
+<div class="container py-4 py-md-5">
+    @if (!Model.HayCausas)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo alerta mb-3"><i class="bi bi-bullseye" aria-hidden="true"></i></div>
+            <h2 class="h5">Todavía no hay causas publicadas</h2>
+            <p class="text-suave">Cuando una fundación publique una causa de recaudación, la verás aquí.</p>
+            <a class="btn btn-outline-primary" href="/fundaciones">Explorar fundaciones</a>
+        </div>
+    }
+    else
+    {
+        @if (Model.Abiertas.Count > 0)
+        {
+            <div class="row g-4">
+                @foreach (var c in Model.Abiertas)
+                {
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <partial name="_TarjetaCausa" model="c" />
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="estado-vacio mb-5">
+                <div class="icono-circulo mb-3"><i class="bi bi-bullseye" aria-hidden="true"></i></div>
+                <h2 class="h5">No hay causas activas en este momento</h2>
+                <p class="text-suave">Revisa las causas que ya cerraron o explora las fundaciones.</p>
+            </div>
+        }
+
+        @if (Model.Cerradas.Count > 0)
+        {
+            <h2 class="h4 mt-5 mb-1">Causas cerradas</h2>
+            <p class="text-suave mb-3">Llegaron a su meta o a su fecha límite y ya no reciben donaciones.</p>
+            <div class="row g-4">
+                @foreach (var c in Model.Cerradas)
+                {
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <partial name="_TarjetaCausa" model="c" />
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>

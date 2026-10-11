@@ -1,0 +1,73 @@
+@model EventoClinicoFormViewModel
+@{
+    ViewData["Title"] = "Registrar evento clínico";
+    ViewData["Seccion"] = "Beneficiarios";
+    var hoy = DateTime.Today.ToString("yyyy-MM-dd");
+    var iconos = new Dictionary<TipoEventoClinico, string>
+    {
+        [TipoEventoClinico.Vacuna] = "bi-shield-plus",
+        [TipoEventoClinico.Tratamiento] = "bi-capsule",
+        [TipoEventoClinico.Control] = "bi-clipboard2-pulse",
+        [TipoEventoClinico.Otro] = "bi-journal-medical"
+    };
+}
+<div class="container py-4 py-md-5" style="max-width: 720px">
+    <a asp-action="Index" asp-route-id="@Model.BeneficiarioId" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Historia clínica de @Model.NombreBeneficiario</a>
+    <h1 class="h2 mt-2 mb-1">Registrar evento clínico</h1>
+    <p class="text-suave mb-4">Quedará en la historia clínica de <strong>@Model.NombreBeneficiario</strong>. No se podrá editar después.</p>
+
+    <form asp-action="Crear" asp-route-id="@Model.BeneficiarioId" method="post" enctype="multipart/form-data" novalidate class="mu-card p-4 p-md-5"
+          data-confirmar="El evento quedará en el historial de @Model.NombreBeneficiario y no se podrá editar ni borrar."
+          data-confirmar-titulo="¿Guardar el evento clínico?" data-confirmar-boton="Sí, guardar">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <div class="row g-3">
+            <div class="col-12">
+                <span class="form-label d-block" id="etiqueta-tipo">Tipo de evento</span>
+                <div class="d-flex flex-wrap gap-2" role="radiogroup" aria-labelledby="etiqueta-tipo">
+                    @foreach (var t in Enum.GetValues<TipoEventoClinico>())
+                    {
+                        <div>
+                            <input type="radio" class="btn-check" name="Tipo" id="tipo-@t" value="@t" checked="@(Model.Tipo == t)" data-val="true" data-val-required="Selecciona el tipo de evento." />
+                            <label class="chip" for="tipo-@t"><i class="bi @iconos[t] me-2" aria-hidden="true"></i>@Textos.De(t)</label>
+                        </div>
+                    }
+                </div>
+                <span asp-validation-for="Tipo"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="Fecha" class="form-label"></label>
+                <input asp-for="Fecha" type="date" class="form-control" max="@hoy" />
+                <span asp-validation-for="Fecha"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="Responsable" class="form-label"></label>
+                <input asp-for="Responsable" class="form-control" maxlength="150" placeholder="Quién atendió o aplicó" autocomplete="off" />
+                <span asp-validation-for="Responsable"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Descripcion" class="form-label"></label>
+                <textarea asp-for="Descripcion" class="form-control" rows="4" maxlength="1000"
+                          placeholder="Ej.: Vacuna triple felina, primera dosis. Sin reacciones adversas."></textarea>
+                <span asp-validation-for="Descripcion"></span>
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="Fotos">Fotos (opcional)</label>
+                <label class="zona-archivo" for="Fotos">
+                    <i class="bi bi-images" aria-hidden="true"></i>
+                    <span class="fw-semibold" data-nombre-archivo>Selecciona hasta 5 fotos</span>
+                    <span class="small text-suave">@ValidadorArchivos.Ayuda(TipoArchivo.Imagen) Solo las ve el personal autorizado.</span>
+                </label>
+                <input asp-for="Fotos" type="file" multiple class="visually-hidden" accept="@ValidadorArchivos.Accept(TipoArchivo.Imagen)" data-archivo />
+                <span asp-validation-for="Fotos"></span>
+            </div>
+        </div>
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-primary" data-cargando="Guardando...">Guardar evento</button>
+            <a asp-action="Index" asp-route-id="@Model.BeneficiarioId" class="btn btn-link">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

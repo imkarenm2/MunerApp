@@ -1,0 +1,29 @@
+@* Tarjeta de una publicación del boletín (HU-028) *@
+@model PublicacionTarjeta
+<a class="mu-card mu-card-hover tarjeta-publicacion text-decoration-none text-body" href="@Model.Url" aria-label="Leer @Model.Titulo">
+    @if (Model.ImagenUrl is not null)
+    {
+        <img class="publicacion-imagen" src="@Model.ImagenUrl" alt="" loading="lazy" />
+    }
+    <span class="d-block p-4">
+        <span class="d-flex flex-wrap align-items-center gap-2 mb-2">
+            <partial name="_CategoriaPublicacion" model="Model.Categoria" />
+            <span class="small text-suave">@Formatos.FechaCorta(Model.FechaPublicacion)</span>
+        </span>
+        @if (Model.FechaEvento is DateTime ev)
+        {
+            <span class="d-block small mb-2 @(Model.EventoPasado ? "text-suave" : "fw-semibold text-principal")">
+                <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>@Formatos.FechaHora(ev)@(Model.EventoPasado ? " · ya pasó" : "")
+            </span>
+        }
+        <span class="d-block h5 mb-2">@Model.Titulo</span>
+        @if (Model.Resumen is not null)
+        {
+            <span class="d-block small text-suave texto-recortado">@Model.Resumen</span>
+        }
+        @if (Model.MostrarFundacion)
+        {
+            <span class="d-block small text-suave mt-2"><i class="bi bi-building me-1" aria-hidden="true"></i>@Model.NombreEsal</span>
+        }
+    </span>
+</a>

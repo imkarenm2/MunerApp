@@ -1,5 +1,7 @@
 @model PasarelaViewModel
+@inject MunerApp.Application.Interfaces.IEsalActual EsalActual
 @{
+    var urlEventos = EsalActual.EsalId is int esalId ? MunerApp.Web.Controllers.WompiController.UrlEventos(Context.Request, esalId) : null;
     ViewData["Title"] = "Pagos en línea";
     ViewData["Seccion"] = "Pasarela";
 }
@@ -78,6 +80,17 @@
                     <div>Los secretos se guardan cifrados y nunca se vuelven a mostrar. MunerApp no recibe ni guarda datos de tarjetas.</div>
                 </div>
             </div>
+
+            @* HU-044: URL de eventos para que las donaciones en línea se confirmen solas *@
+            @if (urlEventos is not null)
+            {
+                <div class="mu-card p-4 mt-3">
+                    <h2 class="h6 fw-bold mb-2"><i class="bi bi-lightning-charge me-1 text-principal" aria-hidden="true"></i>Confirmación automática de pagos</h2>
+                    <p class="small text-suave">En tu panel de Wompi, en <strong>Desarrolladores → URL de eventos</strong>, pega esta dirección. Así cada pago aprobado se confirma solo y suma a la causa.</p>
+                    <label for="urlEventos" class="form-label small">URL de eventos</label>
+                    <input id="urlEventos" class="form-control form-control-sm font-monospace" value="@urlEventos" readonly onfocus="this.select()" />
+                </div>
+            }
         </div>
     </div>
 </div>
