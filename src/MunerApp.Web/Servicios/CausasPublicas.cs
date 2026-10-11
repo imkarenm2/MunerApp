@@ -66,10 +66,24 @@ public class CausasPublicas
             if (ruta is not null) rendicion = _archivos.UrlPublica(ruta);
         }
 
+        // HU-046: rendición de cuentas (archivos públicos)
+        RendicionPublica? rendicionPublica = null;
+        var r = await _db.RendicionesCausa.IgnoreQueryFilters().AsNoTracking()
+            .Include(x => x.Archivos)
+            .FirstOrDefaultAsync(x => x.CausaId == c.Id && x.EsalId == esalId);
+        if (r is not null)
+        {
+            var archivos = r.Archivos.OrderBy(a => a.Orden).ToList();
+            rendicionPublica = new RendicionPublica(r.Texto, r.Recaudado, r.Donaciones, r.ValorEjecutado, r.FechaPublicacion,
+                archivos.Where(a => !a.EsSoporte).Select(a => _archivos.UrlPublica(a.Ruta)).ToList(),
+                archivos.Where(a => a.EsSoporte).Select(a => new SoporteRendicion(a.NombreOriginal, _archivos.UrlPublica(a.Ruta))).ToList());
+        }
+
         return new CausaDetalleViewModel
         {
+            Rendicion = rendicionPublica,
             Id = t.Id, Titulo = t.Titulo, FotoUrl = t.FotoUrl, Meta = t.Meta, Recaudado = t.Recaudado, Porcentaje = t.Porcentaje,
-            DiasRestantes = t.DiasRestantes, FechaLimite = t.FechaLimite, Cerrada = t.Cerrada, Pausada = t.Pausada,
+            DiasRestantes = t.DiasRestantes, FechaLimite = t.FechaLimite, FechaFin = t.FechaFin, Cerrada = t.Cerrada, Pausada = t.Pausada,
             NombreEsal = t.NombreEsal, SlugEsal = t.SlugEsal, LogoUrl = t.LogoUrl,
             Descripcion = c.Descripcion,
             Fotos = c.Fotos.OrderBy(f => f.Orden).ThenBy(f => f.Id).Select(f => _archivos.UrlPublica(f.Ruta)).ToList(),
@@ -89,6 +103,8 @@ public class CausasPublicas
         Porcentaje = Formatos.Porcentaje(recaudado, c.Meta),
         DiasRestantes = c.DiasRestantes(hoy),
         FechaLimite = c.FechaLimite,
+        // Por plazo terminó en su fecha límite (la revisión diaria la cierra al día siguiente); por meta o a mano, el día del cierre
+        FechaFin = c.FechaCierre is DateTime cierre && c.MotivoCierre != MotivoCierreCausa.FechaLimite ? Formatos.Local(cierre).Date : c.FechaLimite,
         Cerrada = c.EstaCerrada(recaudado, hoy),
         Pausada = c.Estado == EstadoCausa.Pausada,
         NombreEsal = c.Esal!.Nombre,

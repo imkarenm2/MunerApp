@@ -24,7 +24,7 @@
             {
                 <span class="mu-badge exito"><i class="bi bi-broadcast" aria-hidden="true"></i>Activa</span>
             }
-            <span class="small text-suave">@(Model.Cerrada ? "Terminó el " + Formatos.Fecha(Model.FechaLimite) : Formatos.DiasRestantes(Model.DiasRestantes))</span>
+            <span class="small text-suave">@(Model.Cerrada ? "Terminó el " + Formatos.Fecha(Model.FechaFin) : Formatos.DiasRestantes(Model.DiasRestantes))</span>
         </div>
         <h3 class="h5 mb-3">@Model.Titulo</h3>
         <div class="mu-progreso @(Model.Cerrada ? "cerrada" : "") mb-2" role="progressbar" aria-valuenow="@Model.Porcentaje" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso de la causa @Model.Titulo">
