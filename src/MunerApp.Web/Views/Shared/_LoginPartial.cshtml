@@ -5,6 +5,11 @@
     var esalIdUsuario = EsalActual.EsalId;
     var slugEsal = esalIdUsuario is null ? null : Db.Esales.Where(e => e.Id == esalIdUsuario).Select(e => e.Slug).FirstOrDefault();
     var nombre = User.FindFirst(MunerAppClaims.NombreCompleto)?.Value ?? User.Identity?.Name ?? "";
+    var esSuperAdmin = User.IsInRole(Roles.SuperAdministrador);
+    var esEquipo = User.IsInRole(Roles.AdministradorESAL) || User.IsInRole(Roles.Voluntario);
+    var rol = esSuperAdmin ? "Superadministrador de MunerApp"
+        : User.IsInRole(Roles.AdministradorESAL) ? "Administrador de fundación"
+        : User.IsInRole(Roles.Voluntario) ? "Voluntario de fundación" : "Donante";
     var iniciales = string.Concat(nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
 }
 
@@ -23,13 +28,16 @@
             <li class="px-3 py-2">
                 <div class="fw-semibold">@nombre</div>
                 <div class="small text-suave">@User.Identity?.Name</div>
+                <div class="small text-acento fw-semibold mt-1">@rol</div>
             </li>
             <li><hr class="dropdown-divider" /></li>
-            @if (User.IsInRole(Roles.SuperAdministrador))
+            @if (esSuperAdmin)
             {
-                <li><a class="dropdown-item rounded-2" asp-area="Plataforma" asp-controller="Esales" asp-action="Index"><i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Panel de plataforma</a></li>
+                <li><a class="dropdown-item rounded-2" asp-area="Plataforma" asp-controller="Resumen" asp-action="Index"><i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Resumen de la plataforma</a></li>
+                <li><a class="dropdown-item rounded-2" asp-area="Plataforma" asp-controller="Causas" asp-action="Index"><i class="bi bi-bullseye me-2" aria-hidden="true"></i>Causas por aprobar</a></li>
+                <li><a class="dropdown-item rounded-2" asp-area="Plataforma" asp-controller="Informes" asp-action="Donaciones"><i class="bi bi-graph-up-arrow me-2" aria-hidden="true"></i>Informes</a></li>
             }
-            @if (User.IsInRole(Roles.AdministradorESAL) || User.IsInRole(Roles.Voluntario))
+            else if (esEquipo)
             {
                 <li><a class="dropdown-item rounded-2" asp-area="Fundacion" asp-controller="Panel" asp-action="Index"><i class="bi bi-grid me-2" aria-hidden="true"></i>Panel de mi fundación</a></li>
                 @if (slugEsal is not null)
@@ -37,9 +45,13 @@
                     <li><a class="dropdown-item rounded-2" href="/fundaciones/@slugEsal"><i class="bi bi-globe2 me-2" aria-hidden="true"></i>Ver página pública</a></li>
                 }
             }
-            <li><a class="dropdown-item rounded-2" href="/mis-donaciones"><i class="bi bi-heart me-2" aria-hidden="true"></i>Mis donaciones</a></li>
-            <li><a class="dropdown-item rounded-2" href="/mis-apadrinamientos"><i class="bi bi-balloon-heart me-2" aria-hidden="true"></i>Mis apadrinamientos</a></li>
-            <li><a class="dropdown-item rounded-2" href="/mis-postulaciones"><i class="bi bi-person-raised-hand me-2" aria-hidden="true"></i>Mis postulaciones</a></li>
+            else
+            {
+                @* Solo los donantes donan, apadrinan y se postulan *@
+                <li><a class="dropdown-item rounded-2" href="/mis-donaciones"><i class="bi bi-heart me-2" aria-hidden="true"></i>Mis donaciones</a></li>
+                <li><a class="dropdown-item rounded-2" href="/mis-apadrinamientos"><i class="bi bi-balloon-heart me-2" aria-hidden="true"></i>Mis apadrinamientos</a></li>
+                <li><a class="dropdown-item rounded-2" href="/mis-postulaciones"><i class="bi bi-person-raised-hand me-2" aria-hidden="true"></i>Mis postulaciones</a></li>
+            }
             <li><a class="dropdown-item rounded-2" href="/notificaciones"><i class="bi bi-bell me-2" aria-hidden="true"></i>Notificaciones</a></li>
             <li><hr class="dropdown-divider" /></li>
             <li>

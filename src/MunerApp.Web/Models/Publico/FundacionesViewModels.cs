@@ -106,6 +106,12 @@ public class DonarViewModel
     public string? Numero { get; set; }
     public string? Instrucciones { get; set; }
     public bool PagosEnLineaActivos { get; set; }
+
+    /// <summary>Si viene desde una causa abierta: el reporte quedará asociado a ella.</summary>
+    public int? CausaId { get; set; }
+    public string? NombreCausa { get; set; }
+
+    public string UrlReportar => $"/fundaciones/{Slug}/reportar-donacion" + (CausaId is int c ? $"?causa={c}" : "");
 }
 
 // ---------------- HU-020: apadrinamiento (solo información pública) ----------------

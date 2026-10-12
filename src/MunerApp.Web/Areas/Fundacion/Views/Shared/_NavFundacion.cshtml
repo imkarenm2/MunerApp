@@ -1,46 +1,111 @@
+@* Menú lateral del panel de la fundación. Muestra solo lo que el rol puede usar (ver README, "Roles y permisos"). *@
 @inject MunerApp.Infrastructure.Persistence.MunerAppDbContext Db
 @inject MunerApp.Application.Interfaces.IEsalActual EsalActual
 @inject MunerApp.Application.Interfaces.IModuloService Modulos
+@inject MunerApp.Application.Interfaces.IAlmacenamientoArchivos Archivos
 @{
     var esalId = EsalActual.EsalId;
     var moduloBeneficiarios = esalId is not null && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Beneficiarios);
-    var slug = esalId is null ? null : Db.Esales.Where(e => e.Id == esalId).Select(e => e.Slug).FirstOrDefault();
-    var seccion = ViewData["Seccion"] as string ?? "";
-    var principal = User.IsInRole(Roles.AdministradorESAL) && User.HasClaim(MunerAppClaims.Perfil, Perfiles.Principal);
+    var esal = esalId is null ? null : Db.Esales.Where(e => e.Id == esalId).Select(e => new { e.Nombre, e.Slug, e.LogoRuta }).FirstOrDefault();
+    var principal = Politicas.EsAdminPrincipal(User);
     var admin = User.IsInRole(Roles.AdministradorESAL);
-    string Activa(string s) => s == seccion ? "active" : "";
+    var donacionesPendientes = admin ? Db.Donaciones.Count(d => d.Estado == EstadoDonacion.Pendiente) : 0;
+    var postulacionesPendientes = admin ? Db.PostulacionesVoluntario.Count(p => p.Estado == EstadoPostulacion.Pendiente) : 0;
+    var rolTexto = admin
+        ? (principal ? "Administrador principal" : "Administrador de consulta")
+        : (Politicas.EsVoluntarioSalud(User) ? "Voluntario de salud" : "Voluntario");
+
+    // La sección activa sale del controlador; la historia clínica hace parte de Beneficiarios.
+    var controlador = ViewContext.RouteData.Values["controller"] as string ?? "";
+    var seccion = controlador == "HistoriaClinica" ? "Beneficiarios" : controlador;
+    string Activa(string c) => c == seccion ? "active" : "";
+    string? Actual(string c) => c == seccion ? "page" : null;
+    string TituloSeccion(string c) => c switch
+    {
+        "Panel" => "Inicio", "Beneficiarios" => "Gatos", "Donaciones" => "Donaciones", "Causas" => "Causas",
+        "DatosDonacion" => "Datos para donar", "Pasarela" => "Pagos en línea", "Postulaciones" => "Voluntarios",
+        "Usuarios" => "Equipo", "Perfil" => "Perfil", "Documentos" => "Transparencia", "Redes" => "Redes sociales", _ => ""
+    };
+    var iniciales = string.Concat((esal?.Nombre ?? "M").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
 }
-@if (slug is not null)
-{
-    <div class="vista-publica mb-3">
-        <span class="small text-suave"><i class="bi bi-globe2 me-1" aria-hidden="true"></i>Así ven los visitantes a su fundación:</span>
-        <a class="btn btn-sm btn-outline-primary" href="/fundaciones/@slug" target="_blank" rel="noopener">
-            <i class="bi bi-eye me-1" aria-hidden="true"></i>Ver página pública
-        </a>
+@* Barra del panel con el botón que despliega el menú *@
+<div class="panel-barra">
+    <div class="container-fluid panel-barra-contenido">
+        <button class="btn panel-boton-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuPanel" aria-controls="menuPanel">
+            <i class="bi bi-list" aria-hidden="true"></i><span>Menú</span>
+        </button>
+        <span class="panel-barra-nombre text-truncate">@(esal?.Nombre ?? "Mi fundación")</span>
+        <span class="panel-barra-seccion d-none d-sm-inline">@TituloSeccion(seccion)</span>
     </div>
-}
-<nav class="nav nav-pills nav-panel mb-4 flex-nowrap overflow-auto" aria-label="Secciones del panel">
-    <a class="nav-link @Activa("Inicio")" asp-area="Fundacion" asp-controller="Panel" asp-action="Index"><i class="bi bi-grid me-1" aria-hidden="true"></i>Inicio</a>
-    @if (principal)
+</div>
+
+<aside class="offcanvas offcanvas-start panel-lateral" tabindex="-1" id="menuPanel" aria-labelledby="menuPanelTitulo">
+    <div class="panel-lateral-cabecera">
+        @if (!string.IsNullOrEmpty(esal?.LogoRuta))
+        {
+            <img class="panel-lateral-logo" src="@Archivos.UrlPublica(esal.LogoRuta)" alt="" />
+        }
+        else
+        {
+            <span class="panel-lateral-logo panel-lateral-iniciales" aria-hidden="true">@iniciales</span>
+        }
+        <div class="flex-grow-1 min-w-0">
+            <div class="fw-bold text-truncate" id="menuPanelTitulo">@(esal?.Nombre ?? "Mi fundación")</div>
+            <div class="small text-suave text-truncate">@rolTexto</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#menuPanel" aria-label="Cerrar menú"></button>
+    </div>
+
+    <nav class="panel-lateral-menu" aria-label="Secciones del panel">
+        <a class="panel-enlace @Activa("Panel")" aria-current="@Actual("Panel")" asp-area="Fundacion" asp-controller="Panel" asp-action="Index"><i class="bi bi-house-heart" aria-hidden="true"></i>Inicio</a>
+        @if (moduloBeneficiarios)
+        {
+            <a class="panel-enlace @Activa("Beneficiarios")" aria-current="@Actual("Beneficiarios")" asp-area="Fundacion" asp-controller="Beneficiarios" asp-action="Index"><i class="bi bi-balloon-heart" aria-hidden="true"></i>Gatos</a>
+        }
+
+        @if (admin)
+        {
+            <div class="panel-grupo">Recaudo</div>
+            <a class="panel-enlace @Activa("Donaciones")" aria-current="@Actual("Donaciones")" asp-area="Fundacion" asp-controller="Donaciones" asp-action="Index">
+                <i class="bi bi-cash-coin" aria-hidden="true"></i>Donaciones
+                @if (donacionesPendientes > 0)
+                {
+                    <span class="panel-contador" title="Por confirmar">@donacionesPendientes<span class="visually-hidden"> por confirmar</span></span>
+                }
+            </a>
+            <a class="panel-enlace @Activa("Causas")" aria-current="@Actual("Causas")" asp-area="Fundacion" asp-controller="Causas" asp-action="Index"><i class="bi bi-bullseye" aria-hidden="true"></i>Causas</a>
+            @if (principal)
+            {
+                <a class="panel-enlace @Activa("DatosDonacion")" aria-current="@Actual("DatosDonacion")" asp-area="Fundacion" asp-controller="DatosDonacion" asp-action="Index"><i class="bi bi-bank" aria-hidden="true"></i>Datos para donar</a>
+                <a class="panel-enlace @Activa("Pasarela")" aria-current="@Actual("Pasarela")" asp-area="Fundacion" asp-controller="Pasarela" asp-action="Index"><i class="bi bi-credit-card" aria-hidden="true"></i>Pagos en línea</a>
+            }
+
+            <div class="panel-grupo">Comunidad</div>
+            <a class="panel-enlace @Activa("Postulaciones")" aria-current="@Actual("Postulaciones")" asp-area="Fundacion" asp-controller="Postulaciones" asp-action="Index">
+                <i class="bi bi-person-raised-hand" aria-hidden="true"></i>Voluntarios
+                @if (postulacionesPendientes > 0)
+                {
+                    <span class="panel-contador" title="Nuevas">@postulacionesPendientes<span class="visually-hidden"> nuevas</span></span>
+                }
+            </a>
+            <a class="panel-enlace @Activa("Usuarios")" aria-current="@Actual("Usuarios")" asp-area="Fundacion" asp-controller="Usuarios" asp-action="Index"><i class="bi bi-people" aria-hidden="true"></i>Equipo</a>
+        }
+
+        @if (principal)
+        {
+            <div class="panel-grupo">Página pública</div>
+            <a class="panel-enlace @Activa("Perfil")" aria-current="@Actual("Perfil")" asp-area="Fundacion" asp-controller="Perfil" asp-action="Index"><i class="bi bi-building" aria-hidden="true"></i>Perfil</a>
+            <a class="panel-enlace @Activa("Documentos")" aria-current="@Actual("Documentos")" asp-area="Fundacion" asp-controller="Documentos" asp-action="Index"><i class="bi bi-folder-check" aria-hidden="true"></i>Transparencia</a>
+            <a class="panel-enlace @Activa("Redes")" aria-current="@Actual("Redes")" asp-area="Fundacion" asp-controller="Redes" asp-action="Index"><i class="bi bi-share" aria-hidden="true"></i>Redes sociales</a>
+        }
+    </nav>
+
+    @if (esal?.Slug is not null)
     {
-        <a class="nav-link @Activa("Perfil")" asp-area="Fundacion" asp-controller="Perfil" asp-action="Index"><i class="bi bi-building me-1" aria-hidden="true"></i>Perfil</a>
-        <a class="nav-link @Activa("Documentos")" asp-area="Fundacion" asp-controller="Documentos" asp-action="Index"><i class="bi bi-folder-check me-1" aria-hidden="true"></i>Transparencia</a>
+        <a class="panel-ver-publica" href="/fundaciones/@esal.Slug" target="_blank" rel="noopener">
+            <i class="bi bi-eye" aria-hidden="true"></i>
+            <span class="flex-grow-1">Ver página pública<span class="d-block small fw-normal">Así la ven los visitantes</span></span>
+            <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+        </a>
     }
-    @if (moduloBeneficiarios)
-    {
-        <a class="nav-link @Activa("Beneficiarios")" asp-area="Fundacion" asp-controller="Beneficiarios" asp-action="Index"><i class="bi bi-balloon-heart me-1" aria-hidden="true"></i>Beneficiarios</a>
-    }
-    @if (admin)
-    {
-        <a class="nav-link @Activa("Donaciones")" asp-area="Fundacion" asp-controller="Donaciones" asp-action="Index"><i class="bi bi-cash-coin me-1" aria-hidden="true"></i>Donaciones</a>
-        <a class="nav-link @Activa("Causas")" asp-area="Fundacion" asp-controller="Causas" asp-action="Index"><i class="bi bi-bullseye me-1" aria-hidden="true"></i>Causas</a>
-        <a class="nav-link @Activa("Postulaciones")" asp-area="Fundacion" asp-controller="Postulaciones" asp-action="Index"><i class="bi bi-person-raised-hand me-1" aria-hidden="true"></i>Voluntarios</a>
-        <a class="nav-link @Activa("Usuarios")" asp-area="Fundacion" asp-controller="Usuarios" asp-action="Index"><i class="bi bi-people me-1" aria-hidden="true"></i>Equipo</a>
-    }
-    @if (principal)
-    {
-        <a class="nav-link @Activa("DatosDonacion")" asp-area="Fundacion" asp-controller="DatosDonacion" asp-action="Index"><i class="bi bi-bank me-1" aria-hidden="true"></i>Datos para donar</a>
-        <a class="nav-link @Activa("Redes")" asp-area="Fundacion" asp-controller="Redes" asp-action="Index"><i class="bi bi-share me-1" aria-hidden="true"></i>Redes sociales</a>
-        <a class="nav-link @Activa("Pasarela")" asp-area="Fundacion" asp-controller="Pasarela" asp-action="Index"><i class="bi bi-credit-card me-1" aria-hidden="true"></i>Pagos en línea</a>
-    }
-</nav>
+</aside>

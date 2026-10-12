@@ -9,6 +9,7 @@ using MunerApp.Domain.Entities;
 using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Models.Publico;
+using MunerApp.Web.Seguridad;
 using MunerApp.Web.Servicios;
 
 namespace MunerApp.Web.Controllers;
@@ -47,6 +48,12 @@ public class ApadrinamientosController : Controller
     [HttpGet("fundaciones/{slug}/apadrinar/{id:int}/confirmar")]
     public async Task<IActionResult> Confirmar(string slug, int id)
     {
+        if (!Politicas.PuedeApoyar(User))
+        {
+            TempData["Error"] = Politicas.MensajeCuentaInstitucional;
+            return Redirect($"/fundaciones/{slug}/apadrinar/{id}");
+        }
+
         var (esal, b) = await BuscarApadrinableAsync(slug, id);
         if (esal is null) return NoDisponible("~/Views/Fundaciones/NoDisponible.cshtml", null);
         if (b is null) return NoDisponible("~/Views/Fundaciones/ApadrinableNoDisponible.cshtml", Contexto(esal));
@@ -67,6 +74,12 @@ public class ApadrinamientosController : Controller
     [HttpPost("fundaciones/{slug}/apadrinar/{id:int}/confirmar")]
     public async Task<IActionResult> Confirmar(string slug, int id, ConfirmarApadrinamientoViewModel model)
     {
+        if (!Politicas.PuedeApoyar(User))
+        {
+            TempData["Error"] = Politicas.MensajeCuentaInstitucional;
+            return Redirect($"/fundaciones/{slug}/apadrinar/{id}");
+        }
+
         var (esal, b) = await BuscarApadrinableAsync(slug, id);
         if (esal is null) return NoDisponible("~/Views/Fundaciones/NoDisponible.cshtml", null);
         if (b is null) return NoDisponible("~/Views/Fundaciones/ApadrinableNoDisponible.cshtml", Contexto(esal));
@@ -158,6 +171,7 @@ public class ApadrinamientosController : Controller
         {
             Id = a.Id,
             BeneficiarioId = b.Id,
+            EstadoBeneficiario = b.Estado,
             NombreBeneficiario = b.Nombre,
             BeneficiarioVisible = b.Apadrinable,
             FotoUrl = b.Apadrinable && b.FotoPublicaRuta is not null ? _archivos.UrlPublica(b.FotoPublicaRuta) : null,

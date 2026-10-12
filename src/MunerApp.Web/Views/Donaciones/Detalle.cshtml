@@ -68,6 +68,10 @@
 
             <dl class="row datos-detalle mb-4">
                 <dt class="col-sm-5">Código</dt><dd class="col-sm-7">@Model.Codigo</dd>
+                @if (Model.CausaId is int causaId && Model.Causa is not null)
+                {
+                    <dt class="col-sm-5">Causa</dt><dd class="col-sm-7">@if (Model.SlugEsal is not null) { <a href="/fundaciones/@Model.SlugEsal/causas/@causaId">@Model.Causa</a> } else { @Model.Causa }</dd>
+                }
                 @if (Model.ApadrinamientoId is int apId)
                 {
                     <dt class="col-sm-5">Aporte de</dt><dd class="col-sm-7"><a href="/mis-apadrinamientos/@apId">Apadrinamiento@(Model.Apadrinado is null ? "" : " de " + Model.Apadrinado)</a></dd>

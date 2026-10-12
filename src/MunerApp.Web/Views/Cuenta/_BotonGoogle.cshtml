@@ -1,4 +1,5 @@
 @inject SignInManager<Usuario> SignInManager
+@inject IWebHostEnvironment Entorno
 @{
     var hayGoogle = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any(e => e.Name == "Google");
 }
@@ -11,5 +12,12 @@
             Continuar con Google
         </button>
     </form>
+    <div class="separador-texto my-3">o con tu correo</div>
+}
+else if (Entorno.IsDevelopment())
+{
+    @* Solo en desarrollo: recordatorio para el equipo de que falta configurar Google *@
+    <button type="button" class="btn btn-google btn-lg w-100" disabled>Continuar con Google</button>
+    <p class="small text-suave mt-2 mb-0">[Solo en desarrollo] Falta configurar <code>Autenticacion:Google:ClientId</code> y <code>ClientSecret</code> (ver README).</p>
     <div class="separador-texto my-3">o con tu correo</div>
 }

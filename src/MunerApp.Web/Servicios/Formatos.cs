@@ -12,6 +12,20 @@ public static class Formatos
     public static DateTime Local(DateTime utc) =>
         TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), Zona);
 
+    /// <summary>Convierte una hora de Colombia a UTC (para comparar con fechas guardadas en UTC).</summary>
+    public static DateTime AUtc(DateTime local) =>
+        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), Zona);
+
+    /// <summary>Fecha de hoy en Colombia.</summary>
+    public static DateTime Hoy() => Local(DateTime.UtcNow).Date;
+
+    /// <summary>Jueves, 8 de octubre</summary>
+    public static string DiaLargo(DateTime fecha)
+    {
+        var texto = fecha.ToString("dddd, d 'de' MMMM", Co);
+        return char.ToUpper(texto[0]) + texto[1..];
+    }
+
     /// <summary>$ 50.000</summary>
     public static string Pesos(decimal valor) => valor.ToString("C0", Co);
 
@@ -60,6 +74,18 @@ public static class Formatos
     }
 
     /// <summary>Acepta "50000", "50.000", "$ 50.000" o "50,000" (pesos sin decimales). Devuelve null si no es un valor válido.</summary>
+    /// <summary>Lee un número con decimales escrito como "3,5", "3.5", "38,9°" o "2 seg". Null si no es válido.</summary>
+    public static decimal? LeerDecimal(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto)) return null;
+        var limpio = new string(texto.Trim().Where(c => char.IsDigit(c) || c is ',' or '.').ToArray()).Replace(',', '.');
+        if (limpio.Count(c => c == '.') > 1 || limpio.Length == 0) return null;
+        return decimal.TryParse(limpio, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : null;
+    }
+
+    /// <summary>3,5 (sin ceros de más).</summary>
+    public static string Numero(decimal valor) => valor.ToString("0.##", Co);
+
     public static decimal? LeerPesos(string? texto)
     {
         if (string.IsNullOrWhiteSpace(texto)) return null;

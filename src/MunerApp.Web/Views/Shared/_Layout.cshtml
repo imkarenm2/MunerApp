@@ -27,10 +27,22 @@
                 </button>
                 <div class="collapse navbar-collapse" id="menu">
                     <ul class="navbar-nav mx-lg-auto my-3 my-lg-0 gap-lg-1">
-                        <li class="nav-item"><a class="nav-link @(ViewData["Nav"] as string == "Fundaciones" ? "active" : "")" href="/fundaciones">Fundaciones</a></li>
-                        <li class="nav-item"><a class="nav-link @(ViewData["Nav"] as string == "Causas" ? "active" : "")" href="/causas">Causas</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar">Cómo ayudar</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="transparencia">Transparencia</a></li>
+                        @* El superadmin y el equipo de una fundación trabajan desde su panel: no se les muestra el menú de los donantes *@
+                        @if (User.IsInRole(Roles.SuperAdministrador))
+                        {
+                            <li class="nav-item"><a class="nav-link active" asp-area="Plataforma" asp-controller="Resumen" asp-action="Index">Administración de MunerApp</a></li>
+                        }
+                        else if (User.IsInRole(Roles.AdministradorESAL) || User.IsInRole(Roles.Voluntario))
+                        {
+                            <li class="nav-item"><a class="nav-link active" asp-area="Fundacion" asp-controller="Panel" asp-action="Index">Mi fundación</a></li>
+                        }
+                        else
+                        {
+                            <li class="nav-item"><a class="nav-link @(ViewData["Nav"] as string == "Fundaciones" ? "active" : "")" href="/fundaciones">Fundaciones</a></li>
+                            <li class="nav-item"><a class="nav-link @(ViewData["Nav"] as string == "Causas" ? "active" : "")" href="/causas">Causas</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar">Cómo ayudar</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="transparencia">Transparencia</a></li>
+                        }
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>
@@ -39,29 +51,15 @@
     </header>
 
     <main id="contenido" class="flex-grow-1">
-        @if (TempData["Mensaje"] is string mensaje)
+        @if (ViewData["Panel"] is not true)
         {
-            <div class="container pt-4">
-                <div class="alert alert-success alert-dismissible fade show" role="status">
-                    <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
-                    <div>@mensaje</div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-                </div>
-            </div>
-        }
-        @if (TempData["Error"] is string error)
-        {
-            <div class="container pt-4">
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
-                    <div>@error</div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-                </div>
-            </div>
+            <partial name="_Alertas" />
         }
         @RenderBody()
     </main>
 
+    @if (ViewData["Panel"] is not true)
+    {
     <footer class="mu-footer mt-auto">
         <div class="container">
             <div class="row gy-4">
@@ -89,6 +87,7 @@
             <p class="small text-suave mb-0">© @DateTime.Now.Year MunerApp</p>
         </div>
     </footer>
+    }
 
     <!-- Ventana de confirmación general: se usa con <form data-confirmar="..."> (ver site.js) -->
     <div class="modal fade" id="modalConfirmar" tabindex="-1" aria-labelledby="modalConfirmarTitulo" aria-hidden="true">

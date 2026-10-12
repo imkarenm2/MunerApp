@@ -10,6 +10,7 @@ using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Identity;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Models.Publico;
+using MunerApp.Web.Seguridad;
 using MunerApp.Web.Servicios;
 using MunerApp.Web.Validacion;
 
@@ -27,14 +28,16 @@ public class DonacionesController : Controller
     private readonly IAlmacenamientoArchivos _archivos;
     private readonly INotificacionService _notificaciones;
     private readonly IComprobanteService _comprobantes;
+    private readonly CausasPublicas _causas;
 
     public DonacionesController(MunerAppDbContext db, IAlmacenamientoArchivos archivos,
-        INotificacionService notificaciones, IComprobanteService comprobantes)
+        INotificacionService notificaciones, IComprobanteService comprobantes, CausasPublicas causas)
     {
         _db = db;
         _archivos = archivos;
         _notificaciones = notificaciones;
         _comprobantes = comprobantes;
+        _causas = causas;
     }
 
     private string UsuarioId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -42,8 +45,10 @@ public class DonacionesController : Controller
     // ---------- Reportar donación ----------
 
     [HttpGet("fundaciones/{slug}/reportar-donacion")]
-    public async Task<IActionResult> Reportar(string slug, int? apadrinamiento)
+    public async Task<IActionResult> Reportar(string slug, int? apadrinamiento, int? causa)
     {
+        if (!Politicas.PuedeApoyar(User)) return CuentaInstitucional(slug);
+
         var (esal, datos) = await BuscarAsync(slug);
         if (esal is null) return NotFound();
         if (datos is null)
@@ -66,6 +71,17 @@ public class DonacionesController : Controller
             modelo.ApadrinamientoId = ap.Id;
             modelo.Valor = ((long)ap.ValorMensual).ToString("N0", new System.Globalization.CultureInfo("es-CO"));
         }
+        // Donación para una causa: solo si la causa está recibiendo donaciones (no pausada ni cerrada)
+        else if (causa is int causaId)
+        {
+            var c = await _causas.ObtenerAsync(esal.Id, causaId);
+            if (c is null || !c.RecibeDonaciones)
+            {
+                TempData["Error"] = "Esa causa no está recibiendo donaciones en este momento.";
+                return Redirect(c is null ? $"/fundaciones/{slug}" : $"/fundaciones/{slug}/causas/{causaId}");
+            }
+            modelo.CausaId = causaId;
+        }
 
         return View(Preparar(modelo, esal, datos));
     }
@@ -74,6 +90,8 @@ public class DonacionesController : Controller
     [RequestSizeLimit(ValidadorArchivos.LimitePeticionBytes)]
     public async Task<IActionResult> Reportar(string slug, ReportarDonacionViewModel model)
     {
+        if (!Politicas.PuedeApoyar(User)) return CuentaInstitucional(slug);
+
         var (esal, datos) = await BuscarAsync(slug);
         if (esal is null) return NotFound();
         if (datos is null) return Redirect($"/fundaciones/{slug}/donar");
@@ -87,6 +105,19 @@ public class DonacionesController : Controller
                 TempData["Error"] = "Ese apadrinamiento ya no está activo, así que no se puede reportar un aporte.";
                 return Redirect("/mis-apadrinamientos");
             }
+            model.CausaId = null;
+        }
+
+        string? tituloCausa = null;
+        if (model.CausaId is int causaId)
+        {
+            var c = await _causas.ObtenerAsync(esal.Id, causaId);
+            if (c is null || !c.RecibeDonaciones)
+            {
+                TempData["Error"] = "Esa causa dejó de recibir donaciones. Si ya transferiste, repórtala como donación general.";
+                return Redirect($"/fundaciones/{slug}/reportar-donacion");
+            }
+            tituloCausa = c.Titulo;
         }
 
         var valor = LeerValor(model.Valor);
@@ -134,15 +165,19 @@ public class DonacionesController : Controller
             ReferenciaPago = model.ReferenciaPago?.Trim(),
             Mensaje = model.Mensaje?.Trim(),
             SoporteRuta = clave,
-            ApadrinamientoId = apadrinamiento?.Id
+            ApadrinamientoId = apadrinamiento?.Id,
+            CausaId = tituloCausa is null ? null : model.CausaId
         };
         _db.Donaciones.Add(donacion);
         await _db.SaveChangesAsync();
 
         donacion.Codigo = $"DON-{DateTime.UtcNow:yyyy}-{donacion.Id:D6}";
+        var queReporto = apadrinamiento is not null ? $"su aporte de apadrinamiento de {apadrinamiento.Beneficiario!.Nombre}"
+            : tituloCausa is not null ? $"una donación para la causa \"{tituloCausa}\""
+            : "una donación";
         await _notificaciones.AgregarAAdministradoresAsync(esal.Id,
             apadrinamiento is null ? "Nueva donación por confirmar" : "Nuevo aporte de apadrinamiento por confirmar",
-            $"{User.FindFirstValue(MunerAppClaims.NombreCompleto) ?? "Un donante"} reportó {(apadrinamiento is null ? "una donación" : $"su aporte de apadrinamiento de {apadrinamiento.Beneficiario!.Nombre}")} de {valor:C0}. Revisa el soporte y confírmalo.",
+            $"{User.FindFirstValue(MunerAppClaims.NombreCompleto) ?? "Un donante"} reportó {queReporto} de {valor:C0}. Revisa el soporte y confírmalo.",
             $"/Fundacion/Donaciones/Detalle/{donacion.Id}", "bi-cash-coin");
         await _db.SaveChangesAsync();
         await transaccion.CommitAsync();
@@ -153,14 +188,19 @@ public class DonacionesController : Controller
 
     // ---------- Escenario 3: historial ----------
 
+    /// <summary>
+    /// Se llama MisDonaciones y no Index: el área Fundacion tiene un DonacionesController con Index
+    /// y, con el mismo nombre, los enlaces del panel de la fundación terminaban en /mis-donaciones.
+    /// </summary>
     [HttpGet("mis-donaciones")]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> MisDonaciones()
     {
         var donaciones = await _db.Donaciones.IgnoreQueryFilters().AsNoTracking()
             .Where(d => d.DonanteId == UsuarioId)
             .OrderByDescending(d => d.FechaReporte)
             .Select(d => new { d.Codigo, d.Esal!.Nombre, d.Esal.Slug, d.Esal.LogoRuta, d.Valor, d.FechaTransferencia, d.FechaReporte, d.Estado,
-                Apadrinado = d.Apadrinamiento != null ? d.Apadrinamiento.Beneficiario!.Nombre : null })
+                Apadrinado = d.Apadrinamiento != null ? d.Apadrinamiento.Beneficiario!.Nombre : null,
+                Causa = d.Causa != null ? d.Causa.Titulo : null })
             .ToListAsync();
 
         return View(donaciones.Select(d => new DonacionItem
@@ -173,7 +213,8 @@ public class DonacionesController : Controller
             FechaTransferencia = d.FechaTransferencia,
             FechaReporte = d.FechaReporte,
             Estado = d.Estado,
-            Apadrinado = d.Apadrinado
+            Apadrinado = d.Apadrinado,
+            Causa = d.Causa
         }).ToList());
     }
 
@@ -200,7 +241,9 @@ public class DonacionesController : Controller
             FechaRevision = d.FechaRevision,
             SoporteEsPdf = d.SoporteRuta.EndsWith(".pdf"),
             ApadrinamientoId = d.ApadrinamientoId,
-            Apadrinado = d.Apadrinamiento?.Beneficiario?.Nombre
+            Apadrinado = d.Apadrinamiento?.Beneficiario?.Nombre,
+            CausaId = d.CausaId,
+            Causa = d.Causa?.Titulo
         });
     }
 
@@ -228,6 +271,13 @@ public class DonacionesController : Controller
 
     // ---------- Auxiliares ----------
 
+    /// <summary>Las cuentas de fundación y el superadministrador no reportan donaciones (ver Politicas.PuedeApoyar).</summary>
+    private IActionResult CuentaInstitucional(string slug)
+    {
+        TempData["Error"] = Politicas.MensajeCuentaInstitucional;
+        return Redirect($"/fundaciones/{slug}/donar");
+    }
+
     private async Task<(Esal? Esal, DatosDonacion? Datos)> BuscarAsync(string slug)
     {
         var esal = await _db.Esales.AsNoTracking().FirstOrDefaultAsync(e => e.Slug == slug && e.Activa);
@@ -239,6 +289,7 @@ public class DonacionesController : Controller
     private Task<Donacion?> BuscarPropiaAsync(string codigo)
         => _db.Donaciones.IgnoreQueryFilters().AsNoTracking().Include(d => d.Esal)
             .Include(d => d.Apadrinamiento!).ThenInclude(a => a.Beneficiario)
+            .Include(d => d.Causa)
             .FirstOrDefaultAsync(d => d.Codigo == codigo && d.DonanteId == UsuarioId);
 
     /// <summary>HU-021: un apadrinamiento activo del usuario, de la misma fundación a la que se reporta.</summary>
@@ -251,6 +302,9 @@ public class DonacionesController : Controller
         if (model.ApadrinamientoId is int apId)
             model.NombreApadrinado = _db.Apadrinamientos.IgnoreQueryFilters().AsNoTracking()
                 .Where(a => a.Id == apId && a.PadrinoId == UsuarioId).Select(a => a.Beneficiario!.Nombre).FirstOrDefault();
+        if (model.CausaId is int causaId)
+            model.NombreCausa = _db.Causas.IgnoreQueryFilters().AsNoTracking()
+                .Where(c => c.Id == causaId && c.EsalId == esal.Id).Select(c => c.Titulo).FirstOrDefault();
         model.Slug = esal.Slug!;
         model.NombreEsal = esal.Nombre;
         model.LogoUrl = esal.LogoRuta is null ? null : _archivos.UrlPublica(esal.LogoRuta);

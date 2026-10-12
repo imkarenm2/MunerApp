@@ -21,6 +21,10 @@
                     {
                         <dt class="col-sm-5">Tipo de aporte</dt><dd class="col-sm-7">Apadrinamiento de @Model.Apadrinado</dd>
                     }
+                    @if (Model.Causa is not null)
+                    {
+                        <dt class="col-sm-5">Para la causa</dt><dd class="col-sm-7">@Model.Causa</dd>
+                    }
                     <dt class="col-sm-5">Donante</dt><dd class="col-sm-7">@Model.Donante<div class="small text-suave">@Model.CorreoDonante</div></dd>
                     <dt class="col-sm-5">Fecha de la transferencia</dt><dd class="col-sm-7">@Formatos.Fecha(Model.FechaTransferencia)</dd>
                     <dt class="col-sm-5">Cuenta de destino</dt><dd class="col-sm-7">@Model.MedioPago</dd>

@@ -16,9 +16,53 @@ public class Beneficiario : IPerteneceAEsal
     /// <summary>Fecha de nacimiento aproximada: se calcula a partir de la edad que escribe la fundación.</summary>
     public DateTime FechaNacimiento { get; set; }
 
+    /// <summary>true si se conoce la fecha exacta; false si se calculó a partir de la edad aproximada.</summary>
+    public bool FechaNacimientoExacta { get; set; }
+
     public SexoBeneficiario Sexo { get; set; }
     public string Color { get; set; } = string.Empty;
+
+    /// <summary>Fecha de ingreso a la fundación.</summary>
     public DateTime FechaRescate { get; set; }
+
+    // ---- Reseña del paciente (formato "Historia clínica e ingreso" de la fundación) ----
+
+    public string Especie { get; set; } = "Felino";
+    public string? Raza { get; set; }
+    public decimal? PesoIngresoKg { get; set; }
+    public Procedencia? Procedencia { get; set; }
+    public string? DetallesProcedencia { get; set; }
+    public EstadoReproductivo? EstadoReproductivo { get; set; }
+    public string? SenalesParticulares { get; set; }
+
+    // ---- Examen semiológico de ingreso (información clínica) ----
+
+    /// <summary>Frecuencia respiratoria (respiraciones por minuto).</summary>
+    public int? FrecuenciaRespiratoria { get; set; }
+
+    /// <summary>Frecuencia cardiaca (latidos por minuto).</summary>
+    public int? FrecuenciaCardiaca { get; set; }
+
+    /// <summary>Tiempo de llenado capilar, en segundos.</summary>
+    public decimal? Tllc { get; set; }
+
+    /// <summary>Reflejo pupilar a la luz (RPC), en segundos.</summary>
+    public decimal? Rpc { get; set; }
+
+    /// <summary>Temperatura en °C.</summary>
+    public decimal? Temperatura { get; set; }
+
+    /// <summary>Condición corporal de 1 a 5.</summary>
+    public int? CondicionCorporal { get; set; }
+
+    public string? MucosaConjuntival { get; set; }
+    public string? MucosaOral { get; set; }
+    public string? MucosaRectal { get; set; }
+    public string? MucosaVulvarPrepucial { get; set; }
+    public EstadoConciencia? EstadoConciencia { get; set; }
+    public string? ObservacionesIngreso { get; set; }
+    public DateTime? FechaExamenIngreso { get; set; }
+    public string? ExamenIngresoPorId { get; set; }
     public EstadoBeneficiario Estado { get; set; } = EstadoBeneficiario.EnLaFundacion;
 
     /// <summary>Foto interna (archivo privado: solo la ven los usuarios de la fundación).</summary>

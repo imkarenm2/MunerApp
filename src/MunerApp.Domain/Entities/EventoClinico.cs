@@ -20,6 +20,18 @@ public class EventoClinico : IPerteneceAEsal
 
     public string Descripcion { get; set; } = string.Empty;
 
+    /// <summary>Vacuna aplicada, desparasitante o prueba (p. ej. "Triple felina", "Galgocal 200", "VIF").</summary>
+    public string? Producto { get; set; }
+
+    /// <summary>Laboratorio de la vacuna (p. ej. Feligen, Virbac).</summary>
+    public string? Laboratorio { get; set; }
+
+    /// <summary>Peso del día (desparasitación y controles).</summary>
+    public decimal? PesoKg { get; set; }
+
+    /// <summary>Resultado de una prueba (p. ej. VIF negativo).</summary>
+    public string? Resultado { get; set; }
+
     /// <summary>Quien atendió o aplicó (puede ser un veterinario externo).</summary>
     public string Responsable { get; set; } = string.Empty;
 

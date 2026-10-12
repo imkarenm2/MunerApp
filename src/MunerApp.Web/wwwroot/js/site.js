@@ -232,3 +232,22 @@ document.querySelectorAll('[data-contador][maxlength]').forEach(function (campo)
     numero.addEventListener('input', filtrar);
     aplicar();
 })();
+
+// Evento clínico: mostrar solo los campos que aplican al tipo (vacuna, desparasitación, prueba viral...)
+(function () {
+    const radios = document.querySelectorAll('[data-tipo-evento]');
+    if (!radios.length) return;
+    const campos = document.querySelectorAll('[data-campo-evento]');
+    const etiqueta = document.querySelector('[data-etiqueta-producto]');
+    const textos = { Vacuna: 'Vacuna aplicada', Desparasitacion: 'Desparasitante', PruebaViral: 'Prueba', Tratamiento: 'Medicamento', Cirugia: 'Procedimiento' };
+    function aplicar() {
+        const elegido = document.querySelector('[data-tipo-evento]:checked');
+        const tipo = elegido ? elegido.value : '';
+        campos.forEach(function (c) {
+            c.classList.toggle('d-none', !c.getAttribute('data-campo-evento').split(' ').includes(tipo));
+        });
+        if (etiqueta) etiqueta.textContent = textos[tipo] || 'Vacuna, desparasitante o prueba';
+    }
+    radios.forEach(function (r) { r.addEventListener('change', aplicar); });
+    aplicar();
+})();

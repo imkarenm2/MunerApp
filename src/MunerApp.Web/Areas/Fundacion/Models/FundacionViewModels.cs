@@ -6,25 +6,50 @@ namespace MunerApp.Web.Areas.Fundacion.Models;
 
 public record ModuloActivo(string Codigo, string Nombre, bool EsConfigurable);
 
+/// <summary>Inicio del panel: tablero con lo que pasa hoy en la fundación.</summary>
 public class PanelViewModel
 {
     public string NombreEsal { get; set; } = string.Empty;
+    public string NombreUsuario { get; set; } = string.Empty;
+    public string RolTexto { get; set; } = string.Empty;
+    public DateTime Hoy { get; set; }
     public bool EsAdmin { get; set; }
     public bool EsAdminPrincipal { get; set; }
-    public string? Perfil { get; set; }
-    public IReadOnlyList<ModuloActivo> Modulos { get; set; } = Array.Empty<ModuloActivo>();
-    public int UsuariosActivos { get; set; }
-    public bool PasarelaActiva { get; set; }
-    public int RedesConfiguradas { get; set; }
-
-    // Sprint 2
+    public bool AccesoClinico { get; set; }
+    public bool ModuloBeneficiarios { get; set; }
     public string? Slug { get; set; }
-    public int PerfilCompleto { get; set; }
-    public int DocumentosVisibles { get; set; }
-    public bool DatosDonacionConfigurados { get; set; }
-    public int DonacionesPendientes { get; set; }
-    public int PostulacionesPendientes { get; set; }
+
+    /// <summary>Foto de la galería de la fundación para la cabecera; si no hay se muestra la ilustración.</summary>
+    public string? FotoPortada { get; set; }
+
+    /// <summary>Algunos gatos que están en la fundación (con foto) para la cabecera.</summary>
+    public IReadOnlyList<GatoMini> Gatos { get; set; } = Array.Empty<GatoMini>();
+
+    // ---- Indicadores ----
+    public int GatosEnCasa { get; set; }
+    public int EnTratamiento { get; set; }
+    public int Adoptables { get; set; }
+    public int EnLaFundacion { get; set; }
+    public int HogaresEsteMes { get; set; }
+    public int HogaresTotal { get; set; }
+    public decimal DonadoEsteMes { get; set; }
+    public int DonacionesEsteMes { get; set; }
+    public int PadrinosActivos { get; set; }
+    public decimal AporteMensualPadrinos { get; set; }
+
+    public IReadOnlyList<TareaPanel> Tareas { get; set; } = Array.Empty<TareaPanel>();
+    public IReadOnlyList<CausaPanel> Causas { get; set; } = Array.Empty<CausaPanel>();
+    public IReadOnlyList<ActividadPanel> Actividad { get; set; } = Array.Empty<ActividadPanel>();
 }
+
+public record GatoMini(int Id, string Nombre);
+
+/// <summary>Algo pendiente que el equipo debería atender. Tono: alerta, error, exito o vacío (principal).</summary>
+public record TareaPanel(string Icono, string Tono, string Titulo, string Detalle, string Url);
+
+public record CausaPanel(int Id, string Titulo, decimal Meta, decimal Recaudado, int DiasRestantes);
+
+public record ActividadPanel(DateTime FechaUtc, string Icono, string Texto, string? Url);
 
 public class UsuarioEsalItem
 {
