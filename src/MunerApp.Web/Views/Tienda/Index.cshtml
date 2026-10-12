@@ -1,0 +1,14 @@
+@model CatalogoViewModel
+@{
+    ViewData["Title"] = "Tienda · " + Model.NombreEsal;
+    ViewData["Nav"] = "Tienda";
+    ViewData["Descripcion"] = $"Productos de {Model.NombreEsal}: cada compra ayuda a la fundación.";
+}
+<div class="container py-4 py-md-5">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal!, Model.LogoUrl, 48), Model.Slug!, "Volver al perfil de")' />
+
+    <h1 class="h2 mb-2">Tienda de @Model.NombreEsal</h1>
+    <p class="text-suave mb-4">Cada compra ayuda a la fundación. Elige un producto y acuerda la compra directamente con ella.</p>
+
+    <partial name="_Catalogo" model="Model" />
+</div>

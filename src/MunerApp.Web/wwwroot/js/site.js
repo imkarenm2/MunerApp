@@ -251,3 +251,65 @@ document.querySelectorAll('[data-contador][maxlength]').forEach(function (campo)
     radios.forEach(function (r) { r.addEventListener('change', aplicar); });
     aplicar();
 })();
+
+// Preguntas condicionales (formulario de adopción, HU-030 a HU-032):
+// <div data-mostrar-si="Campo=Valor1,Valor2"> se muestra solo si el campo "Campo" (select, radio o checkbox)
+// tiene uno de esos valores. El servidor valida igual: esto solo evita mostrar preguntas que no aplican.
+(function () {
+    function valoresDe(nombre) {
+        return Array.from(document.getElementsByName(nombre))
+            .filter(function (c) { return (c.type !== 'radio' && c.type !== 'checkbox') || c.checked; })
+            .map(function (c) { return c.value; });
+    }
+
+    function actualizar() {
+        document.querySelectorAll('[data-mostrar-si]').forEach(function (bloque) {
+            var regla = bloque.getAttribute('data-mostrar-si').split('=');
+            var esperados = (regla[1] || '').split(',');
+            var visible = valoresDe(regla[0]).some(function (v) { return esperados.indexOf(v) >= 0; });
+            bloque.classList.toggle('d-none', !visible);
+        });
+    }
+
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.name) actualizar();
+    });
+    document.addEventListener('DOMContentLoaded', actualizar);
+})();
+
+// ---------- Chat de la tienda (HU-025 / HU-026): baja al último mensaje y trae los nuevos cada 8 segundos ----------
+(function () {
+    const caja = document.querySelector('[data-chat]');
+    if (!caja) return;
+    const url = caja.getAttribute('data-chat-url');
+    const abajo = () => { caja.scrollTop = caja.scrollHeight; };
+    abajo();
+
+    let consultando = false;
+    async function traer() {
+        if (consultando || document.hidden) return;
+        consultando = true;
+        try {
+            const ultimo = caja.getAttribute('data-chat-ultimo') || '0';
+            const r = await fetch(`${url}?despues=${encodeURIComponent(ultimo)}`, { headers: { 'X-Requested-With': 'fetch' } });
+            if (!r.ok) return;
+            const html = (await r.text()).trim();
+            if (!html) return;
+            const estabaAbajo = caja.scrollHeight - caja.scrollTop - caja.clientHeight < 80;
+            caja.insertAdjacentHTML('beforeend', html);
+            const mensajes = caja.querySelectorAll('[data-mensaje-id]');
+            caja.setAttribute('data-chat-ultimo', mensajes[mensajes.length - 1].getAttribute('data-mensaje-id'));
+            if (estabaAbajo) abajo();
+        } catch { /* sin conexión: se intenta en la siguiente vuelta */ }
+        finally { consultando = false; }
+    }
+    setInterval(traer, 8000);
+
+    // Enter envía; Shift+Enter hace un salto de línea
+    document.querySelectorAll('[data-enviar-con-enter]').forEach(t => t.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey && t.value.trim()) {
+            e.preventDefault();
+            t.form.requestSubmit();
+        }
+    }));
+})();

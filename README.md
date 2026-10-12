@@ -215,6 +215,102 @@ La hoja de vida sigue el formato "Historia clínica e ingreso" que usa la fundac
 | Etograma antes y después de la castración | Hoja de vida → Comportamiento | Admin principal o voluntario de salud |
 
 El examen de ingreso es información clínica: solo lo ven los administradores y los voluntarios de salud.
+## Sprint 4: tienda y boletín
+
+| HU | Historia | Dónde está |
+|---|---|---|
+| 023 | Gestión de productos (administrador) | `Areas/Fundacion/Controllers/ProductosController.cs` (`/Fundacion/Productos`) |
+| 024 | Catálogo en tarjetas (visitante) | `Controllers/TiendaController.cs` (`/tienda`, `/fundaciones/{slug}/tienda`, `/fundaciones/{slug}/tienda/{id}`) |
+| 025 | Chat del donante con la tienda | `Controllers/ChatsTiendaController.cs` (`/fundaciones/{slug}/tienda/{id}/chat`, `/mis-chats`) |
+| 026 | Atención de chats y pedidos (administrador) | `Areas/Fundacion/Controllers/ChatsTiendaController.cs` y `PedidosController.cs` (`/Fundacion/ChatsTienda`, `/Fundacion/Pedidos`) |
+| 027 | Publicaciones del boletín (administrador) | `Areas/Fundacion/Controllers/BoletinController.cs` (`/Fundacion/Boletin`) |
+| 028 | Consulta del boletín y eventos (visitante) | `Controllers/BoletinController.cs` (`/boletin`, `/fundaciones/{slug}/boletin`, `/fundaciones/{slug}/boletin/{id}`) |
+
+Migraciones, en orden: `HU023_Productos`, `HU025_ChatTienda`, `HU026_Pedidos`, `HU027_Boletin`.
+
+### Tienda
+
+- La tienda requiere el módulo **Tienda** (configurable). MunerApp no cobra en la tienda: el donante acuerda la compra con la fundación por chat y lo que paga le llega a ella.
+- Producto: nombre, descripción, precio, categoría opcional y de 1 a 4 fotos públicas. Estado **Disponible** (se ve y se puede pedir), **Agotado** (se ve, no se puede pedir) u **Oculto** (no se ve). Un producto con chats no se elimina: se oculta, porque los chats y pedidos guardan de qué producto hablaban.
+- Crear y editar productos es del administrador principal. Los chats y los pedidos los atiende cualquier administrador de la fundación, como las donaciones.
+- Hay **una conversación por donante y producto** (índice único): si vuelve a escribir, continúa la misma. Las cuentas de una fundación no compran como donantes.
+- Mensajes sin leer: cada conversación guarda hasta cuándo leyó cada lado (`UltimaLecturaDonante`, `UltimaLecturaFundacion`). Solo se notifica el primer mensaje sin leer, para no llenar de avisos al otro lado. El chat trae los mensajes nuevos cada 8 segundos sin recargar (`site.js`).
+- La fundación cierra la conversación cuando termina; si el donante vuelve a escribir, se reabre.
+- Pedido: se registra desde el chat (cantidad y precio por unidad; el total se calcula) con código `PED-2026-000001`. Estados: **Acordado → Pagado → Entregado**; antes de entregarse se puede **cancelar**. Cada cambio se le notifica al donante, que ve sus pedidos en el chat.
+- Los controladores públicos usan acciones con nombres distintos a `Index` (`MisChats`, `General`, `DeFundacion`...) porque el área `Fundacion` tiene controladores con el mismo nombre (`ChatsTienda`, `Boletin`) y si no, los enlaces del panel se confunden con las rutas públicas.
+
+### Boletín
+
+- El módulo **Boletín** es general (siempre activo). Categorías: Noticia, Evento, Logro y **RendicionCuentas**.
+- Una publicación nace como **Borrador** (solo la ve el equipo) o se publica de una vez; puede volver a borrador. Crear, editar y publicar es del administrador principal.
+- Un **evento** exige fecha y hora futuras (se escriben en hora de Colombia y se guardan en UTC) y lugar. En el boletín público los próximos eventos se destacan arriba; los pasados quedan marcados. El detalle de un evento futuro tiene "Agregar a mi calendario" (Google Calendar).
+- `CausaId` es opcional: liga la publicación a una causa de la fundación. **Para HU-046:** la rendición de cuentas de una causa cerrada se publica como `Publicacion` con `Categoria = RendicionCuentas`, `Estado = Publicada`, `FechaPublicacion` y `CausaId`.
+- El perfil de la fundación muestra las 2 publicaciones más recientes con un enlace a todo su boletín.
+- **El periódico de MunerApp** (`Servicios/PeriodicoMunerApp.cs`, vista `Shared/_Periodico.cshtml`): portada pública en el inicio y arriba de `/boletin`, sin iniciar sesión. Tiene el titular (el próximo evento de los siguientes 60 días o la publicación más reciente), los próximos eventos, lo último del boletín de todas las fundaciones, las cifras de la plataforma (fundaciones, peludos adoptados, causas cumplidas y total donado) y **buenas noticias que se generan solas** con la actividad de los últimos 90 días: adopciones, causas que llegan a su meta, fundaciones nuevas y productos nuevos en las tiendas. De los donantes solo se publican totales; de las adopciones, el nombre del peludo, nunca el de la familia.
+- **Boletín de demostración:** con `Seed:BoletinDemo = true` (ya está en `appsettings.Development.json`), al arrancar la app se crean publicaciones ficticias en cada fundación activa que aún no tenga ninguna: noticias, un logro, un evento pasado y eventos próximos, entre ellos **"Tu gato secreto"** (el amigo secreto, pero con gatos) en diciembre. Las fechas se calculan desde el día en que se siembran. Está en `Infrastructure/Persistence/BoletinDemo.cs`. En producción no se activa.
+## Sprint 4: donación en línea (HU-043)
+
+| HU | Historia | Dónde está |
+|---|---|---|
+| 043 | Donación en línea a una causa con Wompi | `Controllers/PagosWompiController.cs` (`/fundaciones/{slug}/causas/{id}/donar-en-linea`, `/pagos/resultado/{referencia}`) · `Infrastructure/Servicios/WompiService.cs` |
+
+### Donación en línea con Wompi (HU-043)
+
+- En el detalle de una causa que recibe donaciones, si la fundación tiene **Pagos en línea** activos, aparece "Donar en línea". Si no, queda el flujo por transferencia.
+- El donante escribe el valor (de $5.000 a $50.000.000, constantes en el controlador). Se crea la `Donacion` en **Pendiente** con el contrato de HU-044 y se envía al Web Checkout de Wompi con la firma de integridad: SHA256 de `referencia + montoEnCentavos + moneda + secretoIntegridad` (el secreto se descifra con `ISecretosService`).
+- Al volver del checkout (`/pagos/resultado/{referencia}?id=...`), la página consulta la transacción en el API de Wompi y **solo muestra** el resultado; no cambia la donación. La confirmación oficial, la suma a la causa y el comprobante llegan con el aviso de Wompi (HU-044).
+- En **Mis donaciones**, una donación en línea no tiene soporte; mientras está pendiente muestra "Consultar el pago".
+- Si el donante abandona el checkout, la donación se queda en Pendiente y nunca suma a la causa.
+- **Probar en local:** Wompi responde 403 si la dirección de regreso es `localhost` o `127.0.0.1`. Abre la app desde un túnel público (Dev Tunnels de Visual Studio, ngrok o cloudflared). En Development la app lee `X-Forwarded-Host` para armar la dirección de regreso con el dominio del túnel. El mismo túnel sirve como URL de eventos de HU-044.
+
+## Sprint 5: estado del código
+
+| HU | Historia | Dónde está |
+|---|---|---|
+| 029 | Recomendaciones y responsabilidades antes de adoptar | `Controllers/AdopcionesController.cs` → `Recomendaciones` (`/fundaciones/{slug}/adoptar`) · configuración de la fundación en `Areas/Fundacion/Controllers/AdopcionesController.cs` |
+| 030 | Datos personales y de contacto del adoptante | `AdopcionesController` → `Datos` (`/fundaciones/{slug}/adoptar/formulario/datos`) · `Validacion/ValidadorPersonas.cs` |
+| 031 | Sección de mascotas con preguntas condicionales | `AdopcionesController` → `Mascotas`, `Carne` (`/fundaciones/{slug}/adoptar/formulario/mascotas`) |
+| 032 | Hogar y compromisos, y envío de la solicitud | `AdopcionesController` → `Hogar` (`/fundaciones/{slug}/adoptar/formulario/hogar`), `MisAdopciones` (`/mis-adopciones`) · aporte y toxoplasmosis en `Areas/Fundacion/Controllers/AdopcionesController.cs` → `Configuracion` |
+| 033 | Panel de solicitudes: aprobar para cita o rechazar | `Areas/Fundacion/Controllers/AdopcionesController.cs` → `Index`, `Detalle`, `Aprobar`, `Rechazar` (`/Fundacion/Adopciones`) |
+| 034 | Cita presencial: agendar, reprogramar y registrar el resultado | `Areas/Fundacion/Controllers/AdopcionesController.cs` → `AgendarCita`, `RegistrarResultado` · `Servicios/EstadosBeneficiario.cs` |
+| 044 | Confirmación automática de donaciones en línea con el aviso de Wompi | `Controllers/WompiController.cs` (`POST /api/wompi/eventos/{esalId}`) · `Servicios/ConfirmacionPagosWompi.cs` · `Infrastructure/Servicios/WompiFirmaEventos.cs` |
+
+### Solicitud de adopción
+
+- La solicitud (`SolicitudAdopcion`) nace en estado **Borrador** cuando la persona acepta las recomendaciones. Una persona solo tiene un borrador por fundación: si vuelve, continúa el mismo.
+- El formulario (`/fundaciones/{slug}/adoptar/formulario`) solo se abre si existe ese borrador, así no se puede entrar por URL sin aceptar.
+- Tiene 3 secciones (datos personales, mascotas, hogar y compromisos). Cada una guarda el avance en `SeccionesCompletadas`; `/formulario` lleva a la sección donde quedó la persona y no se puede saltar a una sección sin guardar las anteriores.
+- Cédula (6 a 10 dígitos) y celulares (10 dígitos, empiezan por 3; se acepta +57) se guardan solo con dígitos. La referencia personal debe tener un celular distinto al del solicitante.
+- Mascotas: si tiene, elige gato, perro u otra y responde las preguntas de cada tipo; si tuvo, cuenta qué ocurrió. Solo se guardan las respuestas que aplican. El carné de vacunas del gato es opcional (vacunas a o c), se guarda como archivo **privado** y se elimina si se reemplaza, se quita o deja de aplicar.
+- Preguntas condicionales: `<div data-mostrar-si="Campo=Valor1,Valor2">` en las vistas (ver `site.js`). El servidor valida lo mismo, así que ocultar un campo nunca reemplaza la validación.
+- Las recomendaciones se leen sin cuenta; para aceptarlas se pide iniciar sesión. Las cuentas de una fundación no pueden solicitar adopciones.
+- Cada fundación configura en **Panel → Adopción**: sus recomendaciones (una por línea), el valor del aporte al adoptar y el mensaje e imagen sobre toxoplasmosis. Mientras no los guarde, se usan los predeterminados de `ConfigAdopcion`.
+- Hogar y compromisos: si hay niños se pregunta si han interactuado con mascotas; al responder sobre embarazo aparece la información de toxoplasmosis; si la vivienda es arrendada se pregunta si el arrendador permite mascotas.
+- Al enviar se exigen el requisito (aporte y huacal), el contrato y la autorización de datos (Ley 1581, con fecha). La solicitud pasa a **Recibida** con su código (`ADO-2026-000001`), se notifica a los administradores de la fundación y la persona la ve en **Mis adopciones**. No puede iniciar otra en la misma fundación mientras esté en trámite.
+- La fundación revisa en **Panel → Adopción** (administradores principal y de consulta): pestañas por estado, detalle completo con el carné y botón de WhatsApp. **Aprobar** la deja en *Aprobada para cita*; **rechazar** exige un motivo que ve la persona. En ambos casos se notifica al solicitante. Una solicitud rechazada deja de estar en trámite: la persona puede volver a solicitar.
+- Cita (HU-034): a una solicitud aprobada se le agenda fecha, hora (de Colombia; se guarda en UTC) y lugar. La persona recibe la cita con los requisitos (aporte configurado, huacal y documento) y la ve en Mis adopciones. Se puede reprogramar (se cuenta y se avisa). Desde el día de la cita se registra el resultado: si se concretó, el beneficiario elegido pasa a **Adoptado** y se crean sus datos de adoptante con los de la solicitud; si no, se guardan las observaciones y la persona puede volver a solicitar.
+- `Servicios/EstadosBeneficiario.cs` concentra el cambio de estado de un beneficiario (historial, retiro del apadrinamiento y aviso a los padrinos). Lo usan la hoja de vida (Sprint 3) y la adopción concretada, para que las reglas estén en un solo lugar.
+- La acción pública se llama `MisAdopciones` (no `Index`) para que los enlaces del área `Fundacion` no se confundan con `/mis-adopciones`: ambos controladores se llaman `Adopciones`.
+- Requiere el módulo **Adopción** activo en la fundación.
+
+### Confirmación automática con Wompi (HU-044)
+
+- Cada fundación pega en su panel de Wompi (**Desarrolladores → URL de eventos**) la URL que muestra **Panel → Pagos en línea**: `https://{dominio}/api/wompi/eventos/{esalId}`.
+- La firma se valida con el secreto de eventos de la fundación: SHA256 de los valores de `signature.properties` + `timestamp` + secreto ([documentación de Wompi](https://docs.wompi.co/docs/colombia/eventos/)). Si no coincide, se responde 401 y no se toca ninguna donación.
+- La donación se busca por `ReferenciaPasarela` (la genera HU-043) y debe tener `Origen = Wompi`. `APPROVED` → Confirmada; `DECLINED`, `VOIDED` o `ERROR` → Rechazada; `PENDING` no cambia nada. El valor pagado debe coincidir con el de la donación.
+- La donación solo cambia si sigue Pendiente (actualización atómica): un aviso repetido, o varios a la vez, no la procesan dos veces. El recaudado de la causa se calcula con las donaciones confirmadas, así que nunca se suma doble.
+- Cada aviso queda en la tabla `EventoPasarela` con su resultado (Procesado, FirmaInvalida, Duplicado, MontoNoCoincide...).
+- Una donación en línea no se confirma ni rechaza a mano desde el panel de donaciones.
+- **Contrato con HU-043:** al iniciar el pago se crea la `Donacion` en Pendiente con `Origen = Wompi`, `ReferenciaPasarela` única, `CausaId`, `MedioPago = "Wompi"` y `SoporteRuta` vacío.
+- Para probar en local se necesita una URL pública (por ejemplo, un túnel de Visual Studio o ngrok) registrada como URL de eventos en el sandbox de Wompi.
+
+## Pruebas automatizadas
+
+```bash
+dotnet test
+```
+
+`tests/MunerApp.Tests` (xUnit) prueba la validación de la firma de los eventos de Wompi.
 
 ## Cómo se protege un módulo
 

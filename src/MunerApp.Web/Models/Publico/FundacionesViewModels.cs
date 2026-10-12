@@ -84,6 +84,9 @@ public class PerfilPublicoViewModel
 
     /// <summary>Causas de recaudación de la fundación (HU-041 / HU-042).</summary>
     public CausasPublicasViewModel Causas { get; set; } = new();
+
+    /// <summary>Últimas publicaciones del boletín (HU-028).</summary>
+    public IReadOnlyList<PublicacionTarjeta> Boletin { get; set; } = Array.Empty<PublicacionTarjeta>();
     public bool TieneDatosDonacion { get; set; }
 
     /// <summary>true si la fundación tiene algún módulo configurable de apoyo activo.</summary>

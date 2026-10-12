@@ -1,0 +1,52 @@
+@model List<ChatItem>
+@{
+    ViewData["Title"] = "Mis chats";
+}
+<div class="container py-4 py-md-5" style="max-width: 860px">
+    <h1 class="h2 mb-1">Mis chats</h1>
+    <p class="text-suave mb-4">Tus conversaciones con las fundaciones sobre los productos de sus tiendas.</p>
+
+    @if (Model.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-chat-heart" aria-hidden="true"></i></div>
+            <h2 class="h5">Aún no has escrito a ninguna tienda</h2>
+            <p class="text-suave">Cuando un producto te interese, escríbele a la fundación desde su página para acordar la compra.</p>
+            <a class="btn btn-primary" href="/tienda">Ver la tienda solidaria</a>
+        </div>
+    }
+    else
+    {
+        <div class="d-grid gap-2">
+            @foreach (var c in Model)
+            {
+                <a class="mu-card mu-card-hover fila-lista d-flex align-items-center gap-3 p-3 text-decoration-none text-body" href="/mis-chats/@c.Id">
+                    @if (c.FotoUrl is not null)
+                    {
+                        <img class="chat-producto-foto" src="@c.FotoUrl" alt="" loading="lazy" />
+                    }
+                    else
+                    {
+                        <span class="chat-producto-foto beneficiario-sin-foto" aria-hidden="true"><i class="bi bi-bag-heart"></i></span>
+                    }
+                    <span class="flex-grow-1 min-w-0">
+                        <span class="d-flex flex-wrap align-items-center gap-2">
+                            <span class="fw-semibold">@c.NombreProducto</span>
+                            @if (c.Estado == EstadoConversacion.Cerrada)
+                            {
+                                <span class="mu-badge"><i class="bi bi-check2" aria-hidden="true"></i>Cerrada</span>
+                            }
+                        </span>
+                        <span class="d-block small text-suave">@c.NombreEsal · @Formatos.Hace(c.FechaUltimoMensaje)</span>
+                        <span class="d-block small text-truncate @(c.NoLeidos > 0 ? "fw-semibold" : "text-suave")">@c.UltimoMensaje</span>
+                    </span>
+                    @if (c.NoLeidos > 0)
+                    {
+                        <span class="badge rounded-pill text-bg-danger" aria-label="@c.NoLeidos sin leer">@c.NoLeidos</span>
+                    }
+                    <i class="bi bi-chevron-right text-suave" aria-hidden="true"></i>
+                </a>
+            }
+        </div>
+    }
+</div>

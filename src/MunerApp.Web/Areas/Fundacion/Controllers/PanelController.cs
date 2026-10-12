@@ -188,6 +188,27 @@ public class PanelController : Controller
                     "Revisen sus postulaciones y respóndanles.",
                     Url.Action("Index", "Postulaciones")!));
 
+            // Adopción (Sprint 5) y tienda (Sprint 4), si la fundación tiene esos módulos
+            if (await _modulos.EstaActivoAsync(esalId, CodigosModulo.Adopcion))
+            {
+                var solicitudes = await _db.SolicitudesAdopcion.CountAsync(x => x.Estado == EstadoSolicitudAdopcion.Recibida);
+                if (solicitudes > 0)
+                    tareas.Add(new TareaPanel("bi-house-heart", "exito",
+                        solicitudes == 1 ? "1 solicitud de adopción por revisar" : $"{solicitudes} solicitudes de adopción por revisar",
+                        "Personas que quieren darle un hogar a uno de sus gatos.",
+                        Url.Action("Index", "Adopciones")!));
+            }
+            if (await _modulos.EstaActivoAsync(esalId, CodigosModulo.Tienda))
+            {
+                var chatsSinLeer = await _db.ConversacionesTienda.CountAsync(c => c.Mensajes.Any(m => !m.DeLaFundacion
+                    && (c.UltimaLecturaFundacion == null || m.Fecha > c.UltimaLecturaFundacion)));
+                if (chatsSinLeer > 0)
+                    tareas.Add(new TareaPanel("bi-chat-heart", "alerta",
+                        chatsSinLeer == 1 ? "1 chat de la tienda sin leer" : $"{chatsSinLeer} chats de la tienda sin leer",
+                        "Donantes preguntando por sus productos.",
+                        Url.Action("Index", "ChatsTienda")!));
+            }
+
             // Causas activas con su avance
             var causas = await _db.Causas.AsNoTracking()
                 .Where(c => c.Estado == EstadoCausa.Activa && c.FechaLimite >= hoy)

@@ -26,6 +26,10 @@ public static class Formatos
         return char.ToUpper(texto[0]) + texto[1..];
     }
 
+    /// <summary>Convierte una fecha y hora de Colombia (por ejemplo, la de una cita) a UTC para guardarla.</summary>
+    public static DateTime Utc(DateTime local) =>
+        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), Zona);
+
     /// <summary>$ 50.000</summary>
     public static string Pesos(decimal valor) => valor.ToString("C0", Co);
 

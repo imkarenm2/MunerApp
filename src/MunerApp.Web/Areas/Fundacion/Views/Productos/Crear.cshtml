@@ -1,0 +1,22 @@
+@model ProductoFormViewModel
+@{
+    ViewData["Title"] = "Nuevo producto";
+    ViewData["Seccion"] = "Tienda";
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Tienda</a>
+    <h1 class="h2 mt-2 mb-1">Nuevo producto</h1>
+    <p class="text-suave mb-4">Si lo dejas disponible, aparece de inmediato en la tienda de la fundación.</p>
+
+    <form asp-action="Crear" method="post" enctype="multipart/form-data" novalidate class="mu-card p-4 p-md-5">
+        <partial name="_Formulario" model="Model" />
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-primary" data-cargando="Guardando...">Guardar producto</button>
+            <a asp-action="Index" class="btn btn-link">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

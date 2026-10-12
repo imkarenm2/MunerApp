@@ -6,6 +6,8 @@
 @{
     var esalId = EsalActual.EsalId;
     var moduloBeneficiarios = esalId is not null && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Beneficiarios);
+    var moduloAdopcion = esalId is not null && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Adopcion);
+    var moduloTienda = esalId is not null && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Tienda);
     var esal = esalId is null ? null : Db.Esales.Where(e => e.Id == esalId).Select(e => new { e.Nombre, e.Slug, e.LogoRuta }).FirstOrDefault();
     var principal = Politicas.EsAdminPrincipal(User);
     var admin = User.IsInRole(Roles.AdministradorESAL);
@@ -17,14 +19,19 @@
 
     // La sección activa sale del controlador; la historia clínica hace parte de Beneficiarios.
     var controlador = ViewContext.RouteData.Values["controller"] as string ?? "";
-    var seccion = controlador == "HistoriaClinica" ? "Beneficiarios" : controlador;
+    var seccion = controlador switch
+    {
+        "HistoriaClinica" => "Beneficiarios",
+        "Productos" or "Pedidos" or "ChatsTienda" => "Tienda",
+        _ => controlador
+    };
     string Activa(string c) => c == seccion ? "active" : "";
     string? Actual(string c) => c == seccion ? "page" : null;
     string TituloSeccion(string c) => c switch
     {
         "Panel" => "Inicio", "Beneficiarios" => "Gatos", "Donaciones" => "Donaciones", "Causas" => "Causas",
         "DatosDonacion" => "Datos para donar", "Pasarela" => "Pagos en línea", "Postulaciones" => "Voluntarios",
-        "Usuarios" => "Equipo", "Perfil" => "Perfil", "Documentos" => "Transparencia", "Redes" => "Redes sociales", _ => ""
+        "Usuarios" => "Equipo", "Adopciones" => "Adopción", "Tienda" => "Tienda", "Boletin" => "Boletín", "Perfil" => "Perfil", "Documentos" => "Transparencia", "Redes" => "Redes sociales", _ => ""
     };
     var iniciales = string.Concat((esal?.Nombre ?? "M").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
 }
@@ -62,6 +69,10 @@
         {
             <a class="panel-enlace @Activa("Beneficiarios")" aria-current="@Actual("Beneficiarios")" asp-area="Fundacion" asp-controller="Beneficiarios" asp-action="Index"><i class="bi bi-balloon-heart" aria-hidden="true"></i>Gatos</a>
         }
+        @if (admin && moduloAdopcion)
+        {
+            <a class="panel-enlace @Activa("Adopciones")" aria-current="@Actual("Adopciones")" asp-area="Fundacion" asp-controller="Adopciones" asp-action="Index"><i class="bi bi-house-heart" aria-hidden="true"></i>Adopción</a>
+        }
 
         @if (admin)
         {
@@ -74,6 +85,10 @@
                 }
             </a>
             <a class="panel-enlace @Activa("Causas")" aria-current="@Actual("Causas")" asp-area="Fundacion" asp-controller="Causas" asp-action="Index"><i class="bi bi-bullseye" aria-hidden="true"></i>Causas</a>
+            @if (moduloTienda)
+            {
+                <a class="panel-enlace @Activa("Tienda")" aria-current="@Actual("Tienda")" asp-area="Fundacion" asp-controller="Productos" asp-action="Index"><i class="bi bi-bag-heart" aria-hidden="true"></i>Tienda</a>
+            }
             @if (principal)
             {
                 <a class="panel-enlace @Activa("DatosDonacion")" aria-current="@Actual("DatosDonacion")" asp-area="Fundacion" asp-controller="DatosDonacion" asp-action="Index"><i class="bi bi-bank" aria-hidden="true"></i>Datos para donar</a>
@@ -81,6 +96,7 @@
             }
 
             <div class="panel-grupo">Comunidad</div>
+            <a class="panel-enlace @Activa("Boletin")" aria-current="@Actual("Boletin")" asp-area="Fundacion" asp-controller="Boletin" asp-action="Index"><i class="bi bi-newspaper" aria-hidden="true"></i>Boletín</a>
             <a class="panel-enlace @Activa("Postulaciones")" aria-current="@Actual("Postulaciones")" asp-area="Fundacion" asp-controller="Postulaciones" asp-action="Index">
                 <i class="bi bi-person-raised-hand" aria-hidden="true"></i>Voluntarios
                 @if (postulacionesPendientes > 0)

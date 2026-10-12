@@ -19,13 +19,16 @@ public class HomeController : Controller
     private readonly MunerAppDbContext _db;
     private readonly IAlmacenamientoArchivos _archivos;
     private readonly CausasPublicas _causas;
+    private readonly PeriodicoMunerApp _periodico;
 
-    public HomeController(IWebHostEnvironment entorno, MunerAppDbContext db, IAlmacenamientoArchivos archivos, CausasPublicas causas)
+    public HomeController(IWebHostEnvironment entorno, MunerAppDbContext db, IAlmacenamientoArchivos archivos,
+        CausasPublicas causas, PeriodicoMunerApp periodico)
     {
         _entorno = entorno;
         _db = db;
         _archivos = archivos;
         _causas = causas;
+        _periodico = periodico;
     }
 
     public async Task<IActionResult> Index()
@@ -61,6 +64,9 @@ public class HomeController : Controller
             .Where(f => idsPublicas.Contains(f.EsalId))
             .OrderBy(f => f.Orden).ThenByDescending(f => f.Id)
             .Select(f => f.Ruta).Take(3).ToListAsync();
+
+        // HU-028: "El periódico de MunerApp" con lo bueno que pasa en las fundaciones, visible sin cuenta
+        ViewData["Periodico"] = await _periodico.ArmarAsync(recientes: 3);
 
         var modelo = new HomeViewModel
         {

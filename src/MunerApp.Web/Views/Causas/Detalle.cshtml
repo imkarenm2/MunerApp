@@ -64,11 +64,23 @@
 
                 @if (Model.RecibeDonaciones)
                 {
-                    <a class="btn btn-apoyar btn-lg w-100" href="/fundaciones/@Model.SlugEsal/donar?causa=@Model.Id"><i class="bi bi-heart me-2" aria-hidden="true"></i>Donar a esta causa</a>
-                    <p class="small text-suave mt-3 mb-0">
-                        <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
-                        Transfiere a la cuenta oficial de la fundación y reporta tu donación: cuando la fundación la confirme, suma a esta barra. El pago en línea (tarjeta, PSE y Nequi) llegará pronto.
-                    </p>
+                    @if (Model.PagosEnLineaActivos)
+                    {
+                        <a class="btn btn-apoyar btn-lg w-100" href="/fundaciones/@Model.SlugEsal/causas/@Model.Id/donar-en-linea"><i class="bi bi-credit-card me-2" aria-hidden="true"></i>Donar en línea a esta causa</a>
+                        <p class="small text-suave mt-3 mb-2">
+                            <i class="bi bi-shield-lock me-1" aria-hidden="true"></i>
+                            Pago seguro con tarjeta, PSE o Nequi. Tu aporte suma a esta barra apenas Wompi lo confirma.
+                        </p>
+                        <a class="small" href="/fundaciones/@Model.SlugEsal/donar?causa=@Model.Id">Prefiero donar por transferencia</a>
+                    }
+                    else
+                    {
+                        <a class="btn btn-apoyar btn-lg w-100" href="/fundaciones/@Model.SlugEsal/donar?causa=@Model.Id"><i class="bi bi-heart me-2" aria-hidden="true"></i>Donar a esta causa</a>
+                        <p class="small text-suave mt-3 mb-0">
+                            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+                            Transfiere a la cuenta oficial de la fundación y reporta tu donación: cuando la fundación la confirme, suma a esta barra.
+                        </p>
+                    }
                 }
                 else if (Model.Cerrada)
                 {

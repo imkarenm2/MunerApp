@@ -1,0 +1,31 @@
+@* Tarjeta de un producto de la tienda: foto, nombre, precio y si está agotado (HU-024) *@
+@model ProductoTarjeta
+<a class="mu-card mu-card-hover tarjeta-producto text-decoration-none text-body @(Model.Agotado ? "agotado" : "")" href="@Model.Url"
+   aria-label="Ver @Model.Nombre">
+    @if (Model.FotoUrl is not null)
+    {
+        <img class="producto-foto" src="@Model.FotoUrl" alt="Foto de @Model.Nombre" loading="lazy" />
+    }
+    else
+    {
+        <span class="producto-foto beneficiario-sin-foto" aria-hidden="true"><i class="bi bi-bag-heart"></i></span>
+    }
+    <span class="d-block p-3">
+        <span class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            @if (Model.Agotado)
+            {
+                <span class="mu-badge alerta"><i class="bi bi-hourglass" aria-hidden="true"></i>Agotado</span>
+            }
+            @if (Model.Categoria is not null)
+            {
+                <span class="small text-suave">@Model.Categoria</span>
+            }
+        </span>
+        <span class="d-block fw-semibold mb-1">@Model.Nombre</span>
+        <span class="d-block fw-bold text-principal">@Formatos.Pesos(Model.Precio)</span>
+        @if (Model.MostrarFundacion)
+        {
+            <span class="d-block small text-suave mt-2"><i class="bi bi-building me-1" aria-hidden="true"></i>@Model.NombreEsal</span>
+        }
+    </span>
+</a>
