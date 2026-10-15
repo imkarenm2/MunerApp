@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
@@ -7,6 +8,7 @@ using MunerApp.Application.Seguridad;
 using MunerApp.Domain.Constantes;
 using MunerApp.Domain.Entities;
 using MunerApp.Domain.Enums;
+using MunerApp.Infrastructure.Identity;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Areas.Fundacion.Models;
 using MunerApp.Web.Seguridad;
@@ -16,27 +18,32 @@ using MunerApp.Web.Validacion;
 namespace MunerApp.Web.Areas.Fundacion.Controllers;
 
 /// <summary>
-/// HU-041: causas de recaudación (vakis). Los administradores de la ESAL ven el listado; publicar, editar y pausar
-/// es del administrador principal, porque son contenidos públicos de la fundación (igual que el perfil y la transparencia).
-/// El filtro global por ESAL garantiza que nunca se vea ni se modifique una causa de otra fundación.
+/// HU-041: causas de recaudación (vakis). Los administradores de la ESAL ven el listado; proponer, editar y pausar
+/// es del administrador principal. Cada causa nueva lleva una justificación y queda "Por aprobar" hasta que el
+/// superadministrador la revisa: solo entonces se publica. El filtro global por ESAL impide tocar causas de otra fundación.
 /// </summary>
 [Area("Fundacion")]
 [Authorize(Roles = Roles.AdministradorESAL)]
 public class CausasController : Controller
 {
-    public const int MaxFotos = 5;
-    private const long LimitePeticion = 32L * 1024 * 1024; // 5 fotos de hasta 5 MB y los demás campos
-    private const decimal MetaMaxima = 1_000_000_000;
+    private const long LimitePeticion = FormularioCausa.LimitePeticion;
 
     private readonly MunerAppDbContext _db;
     private readonly IEsalActual _esalActual;
     private readonly IAlmacenamientoArchivos _archivos;
+    private readonly UserManager<Usuario> _usuarios;
+    private readonly INotificacionService _notificaciones;
+    private readonly AvisosCorreo _avisos;
 
-    public CausasController(MunerAppDbContext db, IEsalActual esalActual, IAlmacenamientoArchivos archivos)
+    public CausasController(MunerAppDbContext db, IEsalActual esalActual, IAlmacenamientoArchivos archivos,
+        UserManager<Usuario> usuarios, INotificacionService notificaciones, AvisosCorreo avisos)
     {
         _db = db;
         _esalActual = esalActual;
         _archivos = archivos;
+        _usuarios = usuarios;
+        _notificaciones = notificaciones;
+        _avisos = avisos;
     }
 
     private string UsuarioId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -60,7 +67,7 @@ public class CausasController : Controller
             PuedeGestionar = User.HasClaim(MunerAppClaims.Perfil, Perfiles.Principal),
             Causas = causas
                 .Select(c => Item(c, recaudos.GetValueOrDefault(c.Id), hoy))
-                .OrderBy(c => c.Cerrada).ThenByDescending(c => c.Id)
+                .OrderByDescending(c => c.EnRevision).ThenBy(c => c.Cerrada).ThenByDescending(c => c.Id)
                 .ToList()
         });
     }
@@ -69,18 +76,24 @@ public class CausasController : Controller
 
     [HttpGet]
     [Authorize(Policy = Politicas.AdminEsalPrincipal)]
-    public IActionResult Crear() => View(new CausaFormViewModel { FechaLimite = DateTime.Today.AddDays(30) });
+    public async Task<IActionResult> Crear()
+    {
+        if (!await _db.DatosDonacion.AnyAsync()) return SinDatosParaDonar();
+        return View(new CausaFormViewModel { FechaLimite = DateTime.Today.AddDays(30), PideJustificacion = true });
+    }
 
     [HttpPost]
     [Authorize(Policy = Politicas.AdminEsalPrincipal)]
     [RequestSizeLimit(LimitePeticion)]
     public async Task<IActionResult> Crear(CausaFormViewModel model)
     {
-        var meta = ValidarCampos(model, recaudado: 0);
+        if (!await _db.DatosDonacion.AnyAsync()) return SinDatosParaDonar();
+
+        model.PideJustificacion = true;
+        var meta = FormularioCausa.ValidarCampos(ModelState, model, recaudado: 0);
 
         // Al menos una foto
-        var fotos = (model.Fotos ?? new List<IFormFile>()).Where(f => f.Length > 0).ToList();
-        var validadas = await ValidarFotosAsync(model, fotos, fotosExistentes: 0, exigirUna: true);
+        var validadas = await FormularioCausa.ValidarFotosAsync(ModelState, FormularioCausa.FotosEnviadas(model), fotosExistentes: 0, exigirUna: true);
 
         if (!ModelState.IsValid) return View(model);
 
@@ -89,16 +102,18 @@ public class CausasController : Controller
             EsalId = EsalId,
             Titulo = model.Titulo.Trim(),
             Descripcion = model.Descripcion.Trim(),
+            Justificacion = model.Justificacion!.Trim(),
             Meta = meta!.Value,
             FechaLimite = model.FechaLimite!.Value.Date,
-            Estado = EstadoCausa.Activa,
+            Estado = EstadoCausa.PorAprobar,
             CreadaPorId = UsuarioId
         };
-        await AgregarFotosAsync(causa, validadas, ordenInicial: 0);
+        await FormularioCausa.AgregarFotosAsync(_archivos, causa, validadas, ordenInicial: 0);
         _db.Causas.Add(causa);
         await _db.SaveChangesAsync();
+        await AvisarSuperadminsAsync(causa, corregida: false);
 
-        TempData["Mensaje"] = $"Publicaste \"{causa.Titulo}\". Ya aparece en el perfil de la fundación con su barra de progreso en 0 %.";
+        TempData["Mensaje"] = $"Enviaste \"{causa.Titulo}\" para aprobación. El equipo de MunerApp la revisará y te avisaremos cuando quede publicada.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -123,7 +138,8 @@ public class CausasController : Controller
             Titulo = c.Titulo,
             Descripcion = c.Descripcion,
             Meta = ((long)c.Meta).ToString("N0", new System.Globalization.CultureInfo("es-CO")),
-            FechaLimite = c.FechaLimite
+            FechaLimite = c.FechaLimite,
+            Justificacion = c.Justificacion
         }));
     }
 
@@ -142,19 +158,31 @@ public class CausasController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        var meta = ValidarCampos(model, recaudado);
-        var fotos = (model.Fotos ?? new List<IFormFile>()).Where(f => f.Length > 0).ToList();
-        var validadas = await ValidarFotosAsync(model, fotos, c.Fotos.Count, exigirUna: false);
+        model.PideJustificacion = c.EnRevision;
+        var meta = FormularioCausa.ValidarCampos(ModelState, model, recaudado);
+        var validadas = await FormularioCausa.ValidarFotosAsync(ModelState, FormularioCausa.FotosEnviadas(model), c.Fotos.Count, exigirUna: false);
         if (!ModelState.IsValid) return View(Formulario(c, recaudado, model));
 
         c.Titulo = model.Titulo.Trim();
         c.Descripcion = model.Descripcion.Trim();
         c.Meta = meta!.Value;
         c.FechaLimite = model.FechaLimite!.Value.Date;
-        await AgregarFotosAsync(c, validadas, ordenInicial: c.Fotos.Count == 0 ? 0 : c.Fotos.Max(f => f.Orden) + 1);
-        await _db.SaveChangesAsync();
+        await FormularioCausa.AgregarFotosAsync(_archivos, c, validadas, ordenInicial: c.Fotos.Count == 0 ? 0 : c.Fotos.Max(f => f.Orden) + 1);
 
-        TempData["Mensaje"] = $"Guardaste los cambios de \"{c.Titulo}\". Ya se ven en el perfil.";
+        // Una causa rechazada que se corrige vuelve a revisión
+        var reenviada = c.Estado == EstadoCausa.Rechazada;
+        if (c.EnRevision)
+        {
+            c.Justificacion = model.Justificacion!.Trim();
+            c.Estado = EstadoCausa.PorAprobar;
+            c.MotivoRechazo = null;
+        }
+        await _db.SaveChangesAsync();
+        if (reenviada) await AvisarSuperadminsAsync(c, corregida: true);
+
+        TempData["Mensaje"] = c.Estado == EstadoCausa.PorAprobar
+            ? $"Guardaste \"{c.Titulo}\". Sigue en revisión: se publicará cuando el equipo de MunerApp la apruebe."
+            : $"Guardaste los cambios de \"{c.Titulo}\". Ya se ven en el perfil.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -200,6 +228,13 @@ public class CausasController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        // Pausar o reanudar solo aplica a causas ya aprobadas
+        if (c.EnRevision)
+        {
+            TempData["Error"] = $"\"{c.Titulo}\" todavía no está aprobada.";
+            return RedirectToAction(nameof(Index));
+        }
+
         var nuevo = pausar ? EstadoCausa.Pausada : EstadoCausa.Activa;
         if (c.Estado == nuevo)
         {
@@ -218,73 +253,36 @@ public class CausasController : Controller
 
     // ---------- Apoyo ----------
 
-    /// <summary>Valida título, meta y fecha límite. Devuelve la meta ya convertida a pesos.</summary>
-    private decimal? ValidarCampos(CausaFormViewModel model, decimal recaudado)
+    /// <summary>Sin cuenta oficial, los donantes no tendrían a dónde transferir para la causa.</summary>
+    private IActionResult SinDatosParaDonar()
     {
-        var meta = Formatos.LeerPesos(model.Meta);
-        if (!string.IsNullOrWhiteSpace(model.Meta))
-        {
-            if (meta is null)
-                ModelState.AddModelError(nameof(model.Meta), "Escribe la meta solo con números, por ejemplo 2.500.000.");
-            else if (meta <= 0)
-                ModelState.AddModelError(nameof(model.Meta), "La meta debe ser mayor a cero.");
-            else if (meta > MetaMaxima)
-                ModelState.AddModelError(nameof(model.Meta), $"La meta no puede superar {Formatos.Pesos(MetaMaxima)}.");
-            else if (meta <= recaudado)
-                ModelState.AddModelError(nameof(model.Meta), $"La meta debe ser mayor a lo ya recaudado ({Formatos.Pesos(recaudado)}).");
-        }
-
-        if (model.FechaLimite is DateTime fecha)
-        {
-            if (fecha.Date <= DateTime.Today)
-                ModelState.AddModelError(nameof(model.FechaLimite), "La fecha límite debe ser posterior a hoy.");
-            else if (fecha.Date > DateTime.Today.AddYears(2))
-                ModelState.AddModelError(nameof(model.FechaLimite), "La fecha límite no puede superar los 2 años.");
-        }
-        return meta;
+        TempData["Error"] = "Antes de publicar una causa, configura los datos para donar: es la cuenta donde los donantes harán sus aportes.";
+        return RedirectToAction("Index", "DatosDonacion");
     }
 
-    private async Task<List<(IFormFile Archivo, ArchivoValidado Info)>> ValidarFotosAsync(
-        CausaFormViewModel model, List<IFormFile> fotos, int fotosExistentes, bool exigirUna)
+    /// <summary>Avisa a los superadministradores que hay una causa por revisar.</summary>
+    private async Task AvisarSuperadminsAsync(Causa causa, bool corregida)
     {
-        var validadas = new List<(IFormFile, ArchivoValidado)>();
-        if (exigirUna && fotos.Count == 0)
-        {
-            ModelState.AddModelError(nameof(model.Fotos), "Agrega al menos una foto de la causa.");
-            return validadas;
-        }
-        if (fotosExistentes + fotos.Count > MaxFotos)
-        {
-            ModelState.AddModelError(nameof(model.Fotos), $"Una causa puede tener máximo {MaxFotos} fotos" +
-                (fotosExistentes > 0 ? $" (ya tiene {fotosExistentes})." : "."));
-            return validadas;
-        }
-        foreach (var foto in fotos)
-        {
-            var info = await ValidadorArchivos.ValidarAsync(foto, TipoArchivo.Imagen);
-            if (!info.Valido)
-                ModelState.AddModelError(nameof(model.Fotos), $"\"{Path.GetFileName(foto.FileName)}\": {info.Error}");
-            else
-                validadas.Add((foto, info));
-        }
-        return validadas;
-    }
+        var nombreEsal = await _db.Esales.Where(e => e.Id == causa.EsalId).Select(e => e.Nombre).FirstOrDefaultAsync() ?? "Una fundación";
+        var titulo = corregida ? "Causa corregida para revisar" : "Nueva causa por aprobar";
+        var mensaje = $"{nombreEsal} {(corregida ? "corrigió" : "propuso")} la causa \"{causa.Titulo}\" por {Formatos.Pesos(causa.Meta)}.";
+        var url = $"/Plataforma/Causas/Revisar/{causa.Id}";
 
-    private async Task AgregarFotosAsync(Causa causa, List<(IFormFile Archivo, ArchivoValidado Info)> fotos, int ordenInicial)
-    {
-        var orden = ordenInicial;
-        foreach (var (archivo, info) in fotos)
-        {
-            await using var stream = archivo.OpenReadStream();
-            var clave = await _archivos.GuardarAsync(stream, $"esal/{causa.EsalId}/causas", info.Extension, publico: true);
-            causa.Fotos.Add(new FotoCausa { EsalId = causa.EsalId, Ruta = clave, Orden = orden++ });
-        }
+        var superadmins = await _usuarios.GetUsersInRoleAsync(Roles.SuperAdministrador);
+        foreach (var admin in superadmins)
+            _notificaciones.Agregar(admin.Id, titulo, mensaje, url, "bi-bullseye");
+        await _db.SaveChangesAsync();
+
+        foreach (var admin in superadmins.Where(a => !string.IsNullOrEmpty(a.Email)))
+            await _avisos.EnviarAsync(admin.Email!, $"{titulo}: {causa.Titulo}", titulo, mensaje, "Revisar la causa", url);
     }
 
     private CausaFormViewModel Formulario(Causa c, decimal recaudado, CausaFormViewModel model)
     {
         model.Id = c.Id;
         model.Recaudado = recaudado;
+        model.PideJustificacion = c.EnRevision;
+        model.MotivoRechazo = c.MotivoRechazo;
         model.FotosActuales = c.Fotos.OrderBy(f => f.Orden).ThenBy(f => f.Id).Select(f => new FotoCausaItem(f.Id, _archivos.UrlPublica(f.Ruta))).ToList();
         return model;
     }
@@ -300,7 +298,8 @@ public class CausasController : Controller
         Cerrada = c.EstaCerrada(recaudado, hoy),
         Porcentaje = Formatos.Porcentaje(recaudado, c.Meta),
         DiasRestantes = c.DiasRestantes(hoy),
-        FotoUrl = c.Fotos.OrderBy(f => f.Orden).ThenBy(f => f.Id).Select(f => _archivos.UrlPublica(f.Ruta)).FirstOrDefault()
+        FotoUrl = c.Fotos.OrderBy(f => f.Orden).ThenBy(f => f.Id).Select(f => _archivos.UrlPublica(f.Ruta)).FirstOrDefault(),
+        MotivoRechazo = c.MotivoRechazo
     };
 
     private async Task<decimal> RecaudadoAsync(int causaId)

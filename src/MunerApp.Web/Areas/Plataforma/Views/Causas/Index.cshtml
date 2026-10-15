@@ -1,0 +1,95 @@
+@model CausasPlataformaViewModel
+@{
+    ViewData["Title"] = "Causas";
+    string Nombre(FiltroCausas f) => f switch
+    {
+        FiltroCausas.PorAprobar => "Por aprobar", FiltroCausas.Publicadas => "Publicadas",
+        FiltroCausas.Rechazadas => "Devueltas", _ => "Todas"
+    };
+}
+<div class="container-fluid panel-contenido py-4">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Causas</h1>
+            <p class="text-suave mb-0">Las fundaciones proponen causas con una justificación. Al aprobarlas se publican; si algo no cuadra, devuélvelas con tus observaciones.</p>
+        </div>
+        <a class="btn btn-primary" asp-action="Crear"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Crear causa</a>
+    </div>
+
+    <ul class="nav nav-tabs pestanas mb-3">
+        @foreach (var f in Enum.GetValues<FiltroCausas>())
+        {
+            <li class="nav-item">
+                <a class="nav-link @(Model.Filtro == f ? "active" : "")" asp-action="Index" asp-route-filtro="@f" aria-current="@(Model.Filtro == f ? "page" : null)">
+                    @Nombre(f) <span class="badge rounded-pill @(f == FiltroCausas.PorAprobar && Model.Conteos[f] > 0 ? "text-bg-danger" : "text-bg-light") ms-1">@Model.Conteos[f]</span>
+                </a>
+            </li>
+        }
+    </ul>
+
+    @if (Model.Causas.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-bullseye" aria-hidden="true"></i></div>
+            <h2 class="h5">@(Model.Filtro == FiltroCausas.PorAprobar ? "No hay causas esperando revisión" : "No hay causas en esta lista")</h2>
+        </div>
+    }
+    else
+    {
+        <div class="mu-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="table tabla-mu align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Causa</th>
+                            <th scope="col">Fundación</th>
+                            <th scope="col" class="text-end">Meta</th>
+                            <th scope="col" class="text-end">Recaudado</th>
+                            <th scope="col">Fecha límite</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col" class="text-end"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.Causas)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="fw-semibold">@c.Titulo</span>
+                                    <div class="small text-suave">@(c.CreadaPorPlataforma ? "Creada por MunerApp" : "Propuesta por la fundación") · @Formatos.FechaCorta(c.FechaCreacion)</div>
+                                </td>
+                                <td>@c.Fundacion</td>
+                                <td class="text-end">@Formatos.Pesos(c.Meta)</td>
+                                <td class="text-end">@Formatos.Pesos(c.Recaudado)</td>
+                                <td>@Formatos.Fecha(c.FechaLimite)</td>
+                                <td>
+                                    @if (c.Estado == EstadoCausa.PorAprobar)
+                                    {
+                                        <span class="mu-badge alerta">Por aprobar</span>
+                                    }
+                                    else if (c.Estado == EstadoCausa.Rechazada)
+                                    {
+                                        <span class="mu-badge acento">Devuelta</span>
+                                    }
+                                    else if (c.Cerrada)
+                                    {
+                                        <span class="mu-badge">Cerrada</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="mu-badge @(c.Estado == EstadoCausa.Pausada ? "alerta" : "exito")">@Textos.De(c.Estado)</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm @(c.Estado == EstadoCausa.PorAprobar ? "btn-primary" : "btn-suave")" asp-action="Revisar" asp-route-id="@c.Id">
+                                        @(c.Estado == EstadoCausa.PorAprobar ? "Revisar" : "Ver")
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

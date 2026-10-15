@@ -4,7 +4,14 @@
     ViewData["Seccion"] = "Beneficiarios";
     int Conteo(EstadoBeneficiario e) => Model.Conteos.TryGetValue(e, out var c) ? c : 0;
     var buscando = !string.IsNullOrEmpty(Model.Busqueda);
-    string Enlace(int pagina) => Url.Action("Index", new { estado = Model.Estado, q = Model.Busqueda, pagina }) ?? "#";
+    string Enlace(int pagina) => Url.Action("Index", new { estado = Model.Estado, q = Model.Busqueda, pendiente = Model.Pendiente, pagina }) ?? "#";
+    var textoPendiente = Model.Pendiente switch
+    {
+        PendienteBeneficiario.Vacuna => "Por vacunar: sin vacuna registrada en el último año",
+        PendienteBeneficiario.Desparasitacion => $"Por desparasitar: sin desparasitación en los últimos {ReglasBeneficiario.DiasDesparasitacion} días",
+        PendienteBeneficiario.Examen => "Sin examen de ingreso",
+        _ => null
+    };
 }
 <div class="container py-4 py-md-5">
     <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
@@ -18,7 +25,14 @@
         }
     </div>
 
-    <partial name="_NavFundacion" />
+    @if (textoPendiente is not null)
+    {
+        <div class="filtro-pendiente mb-3">
+            <i class="bi bi-funnel" aria-hidden="true"></i>
+            <span class="flex-grow-1">Mostrando gatos en la fundación · <strong>@textoPendiente</strong></span>
+            <a class="btn btn-sm btn-suave" asp-action="Index">Quitar filtro</a>
+        </div>
+    }
 
     @if (Model.TotalGeneral == 0)
     {
@@ -27,7 +41,7 @@
             <h2 class="h5">Aún no hay beneficiarios registrados</h2>
             @if (Model.PuedeGestionar)
             {
-                <p class="text-suave">Empiecen por crear la hoja de vida del primero: nombre, edad, sexo, color, fecha de rescate y una foto.</p>
+                <p class="text-suave">Empiecen por crear la hoja de vida del primero: fecha de ingreso, edad, sexo, color, raza, peso, procedencia y una foto.</p>
                 <a class="btn btn-primary" asp-action="Crear">Registrar el primero</a>
             }
             else
@@ -56,6 +70,10 @@
             @if (Model.Estado is not null)
             {
                 <input type="hidden" name="estado" value="@Model.Estado" />
+            }
+            @if (Model.Pendiente is not null)
+            {
+                <input type="hidden" name="pendiente" value="@Model.Pendiente" />
             }
             <label for="q" class="visually-hidden">Buscar beneficiario por nombre</label>
             <i class="bi bi-search" aria-hidden="true"></i>

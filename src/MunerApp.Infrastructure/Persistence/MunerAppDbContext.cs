@@ -43,6 +43,7 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<Apadrinamiento> Apadrinamientos => Set<Apadrinamiento>();
     public DbSet<Causa> Causas => Set<Causa>();
     public DbSet<FotoCausa> FotosCausa => Set<FotoCausa>();
+    public DbSet<EvaluacionComportamiento> EvaluacionesComportamiento => Set<EvaluacionComportamiento>();
 
     // Sprint 5
     public DbSet<ConfigAdopcion> ConfigAdopciones => Set<ConfigAdopcion>();
@@ -252,6 +253,25 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.Property(x => x.HistoriaPublica).HasMaxLength(600);
             e.Property(x => x.AporteSugerido).HasPrecision(14, 2);
             e.Property(x => x.FotoPublicaRuta).HasMaxLength(300);
+
+            // Reseña y examen de ingreso (formato de la fundación)
+            e.Property(x => x.Especie).HasMaxLength(40).IsRequired().HasDefaultValue("Felino");
+            e.Property(x => x.Raza).HasMaxLength(60);
+            e.Property(x => x.PesoIngresoKg).HasPrecision(5, 2);
+            e.Property(x => x.Procedencia).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.DetallesProcedencia).HasMaxLength(500);
+            e.Property(x => x.EstadoReproductivo).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.SenalesParticulares).HasMaxLength(300);
+            e.Property(x => x.Tllc).HasPrecision(4, 1);
+            e.Property(x => x.Rpc).HasPrecision(4, 1);
+            e.Property(x => x.Temperatura).HasPrecision(4, 1);
+            e.Property(x => x.MucosaConjuntival).HasMaxLength(100);
+            e.Property(x => x.MucosaOral).HasMaxLength(100);
+            e.Property(x => x.MucosaRectal).HasMaxLength(100);
+            e.Property(x => x.MucosaVulvarPrepucial).HasMaxLength(100);
+            e.Property(x => x.EstadoConciencia).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.ObservacionesIngreso).HasMaxLength(1000);
+            e.Property(x => x.ExamenIngresoPorId).HasMaxLength(450);
             e.HasIndex(x => new { x.EsalId, x.Estado });
             e.HasIndex(x => new { x.EsalId, x.Apadrinable });
             e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
@@ -272,11 +292,13 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.ToTable("AdoptanteBeneficiario");
             e.HasKey(x => x.BeneficiarioId);
             e.Property(x => x.Nombre).HasMaxLength(150).IsRequired();
-            e.Property(x => x.Documento).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Documento).HasMaxLength(20);
             e.Property(x => x.Telefono).HasMaxLength(20).IsRequired();
             e.Property(x => x.Correo).HasMaxLength(150);
             e.Property(x => x.Ciudad).HasMaxLength(100).IsRequired();
-            e.Property(x => x.Direccion).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Direccion).HasMaxLength(200);
+            e.Property(x => x.NumeroFormulario).HasMaxLength(30);
+            e.Property(x => x.Elaboro).HasMaxLength(150);
             e.Property(x => x.FechaAdopcion).HasColumnType("date");
             e.Property(x => x.Observaciones).HasMaxLength(500);
             e.Property(x => x.RegistradoPorId).HasMaxLength(450);
@@ -290,6 +312,10 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.Property(x => x.Fecha).HasColumnType("date");
             e.Property(x => x.Descripcion).HasMaxLength(1000).IsRequired();
             e.Property(x => x.Responsable).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Producto).HasMaxLength(100);
+            e.Property(x => x.Laboratorio).HasMaxLength(100);
+            e.Property(x => x.PesoKg).HasPrecision(5, 2);
+            e.Property(x => x.Resultado).HasMaxLength(100);
             e.Property(x => x.RegistradoPorId).HasMaxLength(450);
             e.HasIndex(x => new { x.BeneficiarioId, x.Fecha });
             e.HasOne(x => x.Beneficiario).WithMany().HasForeignKey(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Cascade);
@@ -326,9 +352,25 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.Property(x => x.FechaLimite).HasColumnType("date");
             e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.CreadaPorId).HasMaxLength(450);
+            e.Property(x => x.Justificacion).HasMaxLength(1000);
+            e.Property(x => x.MotivoRechazo).HasMaxLength(500);
+            e.Property(x => x.RevisadaPorId).HasMaxLength(450);
             e.HasIndex(x => new { x.EsalId, x.Estado });
             e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<DocumentoTransparencia>().WithMany().HasForeignKey(x => x.RendicionDocumentoId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<EvaluacionComportamiento>(e =>
+        {
+            e.ToTable("EvaluacionComportamiento");
+            e.Property(x => x.Momento).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Fecha).HasColumnType("date");
+            e.Property(x => x.Conductas).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Metodo).HasMaxLength(100).IsRequired();
+            e.Property(x => x.Observaciones).HasMaxLength(1000);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.BeneficiarioId, x.Fecha });
+            e.HasOne(x => x.Beneficiario).WithMany().HasForeignKey(x => x.BeneficiarioId).OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<FotoCausa>(e =>
@@ -516,6 +558,7 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<Apadrinamiento>(builder);
         AplicarFiltroEsal<Causa>(builder);
         AplicarFiltroEsal<FotoCausa>(builder);
+        AplicarFiltroEsal<EvaluacionComportamiento>(builder);
         AplicarFiltroEsal<ConfigAdopcion>(builder);
         AplicarFiltroEsal<SolicitudAdopcion>(builder);
         AplicarFiltroEsal<Producto>(builder);

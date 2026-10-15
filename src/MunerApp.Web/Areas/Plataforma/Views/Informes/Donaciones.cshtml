@@ -1,0 +1,128 @@
+@model InformeDonacionesViewModel
+@{
+    ViewData["Title"] = "Informe de donaciones";
+    var totalDestino = Model.PorDestino.Sum(d => d.Valor);
+}
+<div class="container-fluid panel-contenido py-4">
+    <h1 class="h2 mb-1">Informe de donaciones</h1>
+    <p class="text-suave mb-3">Para hacer seguimiento a la plataforma. Por privacidad no se muestra quién dona: esos datos solo los ve la fundación que recibe el aporte.</p>
+
+    <partial name="_FiltroFundacion" model="(Model.Fundaciones, nameof(InformesController.Donaciones))" />
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3">
+            <div class="kpi exito">
+                <span class="kpi-icono"><i class="bi bi-check2-circle" aria-hidden="true"></i></span>
+                <span class="kpi-valor">@Formatos.Pesos(Model.Confirmado)</span>
+                <span class="kpi-titulo">Confirmado</span>
+                <span class="kpi-detalle">@Model.CantidadConfirmadas donaciones</span>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="kpi alerta">
+                <span class="kpi-icono"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span>
+                <span class="kpi-valor">@Formatos.Pesos(Model.Pendiente)</span>
+                <span class="kpi-titulo">Por confirmar</span>
+                <span class="kpi-detalle">@Model.CantidadPendientes donaciones · @Model.CantidadRechazadas rechazadas</span>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="kpi">
+                <span class="kpi-icono"><i class="bi bi-people" aria-hidden="true"></i></span>
+                <span class="kpi-valor">@Model.DonantesDistintos</span>
+                <span class="kpi-titulo">Donantes distintos</span>
+                <span class="kpi-detalle">Promedio por donación: @Formatos.Pesos(Model.Promedio)</span>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="kpi acento">
+                <span class="kpi-icono"><i class="bi bi-stopwatch" aria-hidden="true"></i></span>
+                <span class="kpi-valor">@(Model.DiasPromedioRevision is double dias ? $"{dias:0.#} días" : "—")</span>
+                <span class="kpi-titulo">Tiempo de revisión</span>
+                <span class="kpi-detalle">Promedio entre el reporte y la respuesta</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-xl-7">
+            <section class="mu-card p-4 h-100">
+                <h2 class="h5 mb-1">Confirmado por mes</h2>
+                <p class="small text-suave mb-3">Últimos 6 meses, según la fecha en que la fundación confirmó.</p>
+                <partial name="_BarrasMes" model='(Model.PorMes, "donaciones")' />
+            </section>
+        </div>
+        <div class="col-12 col-xl-5">
+            <section class="mu-card p-4 h-100">
+                <h2 class="h5 mb-3">¿A qué se destina?</h2>
+                @if (Model.PorDestino.Count == 0)
+                {
+                    <p class="small text-suave mb-0">Aún no hay donaciones confirmadas.</p>
+                }
+                else
+                {
+                    <div class="d-grid gap-3">
+                        @foreach (var d in Model.PorDestino)
+                        {
+                            var pct = totalDestino == 0 ? 0 : (int)Math.Round(100 * d.Valor / totalDestino);
+                            <div>
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span class="fw-semibold">@d.Nombre</span>
+                                    <span class="text-suave">@Formatos.Pesos(d.Valor) · @pct %</span>
+                                </div>
+                                <div class="mu-progreso" role="progressbar" aria-label="@d.Nombre" aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"><span style="width:@pct%"></span></div>
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
+    </div>
+
+    @if (Model.EsalId is null && Model.PorFundacion.Count > 0)
+    {
+        <section class="mu-card overflow-hidden mb-4">
+            <h2 class="h5 p-4 pb-2 mb-0">Por fundación</h2>
+            <div class="table-responsive">
+                <table class="table tabla-mu align-middle mb-0">
+                    <thead><tr><th scope="col">Fundación</th><th scope="col" class="text-end">Confirmado</th><th scope="col" class="text-end">Donaciones</th></tr></thead>
+                    <tbody>
+                        @foreach (var f in Model.PorFundacion)
+                        {
+                            <tr><td>@f.Nombre</td><td class="text-end fw-semibold">@Formatos.Pesos(f.Valor)</td><td class="text-end">@f.Cantidad</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+
+    <section class="mu-card overflow-hidden">
+        <h2 class="h5 p-4 pb-2 mb-0">Últimos movimientos</h2>
+        @if (Model.Recientes.Count == 0)
+        {
+            <p class="small text-suave px-4 pb-4 mb-0">Sin donaciones todavía.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table tabla-mu align-middle mb-0">
+                    <thead><tr><th scope="col">Código</th><th scope="col">Fundación</th><th scope="col">Destino</th><th scope="col" class="text-end">Valor</th><th scope="col">Estado</th><th scope="col">Reportada</th></tr></thead>
+                    <tbody>
+                        @foreach (var d in Model.Recientes)
+                        {
+                            <tr>
+                                <td class="small font-monospace">@d.Codigo</td>
+                                <td>@d.Fundacion</td>
+                                <td class="small">@d.Destino</td>
+                                <td class="text-end">@Formatos.Pesos(d.Valor)</td>
+                                <td><partial name="_EstadoDonacion" model="d.Estado" /></td>
+                                <td class="small text-suave">@Formatos.Hace(d.FechaReporte)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>

@@ -39,7 +39,7 @@ public class FundacionesController : Controller
     [HttpGet("")]
     public async Task<IActionResult> Index(string? q, int pagina = 1)
     {
-        var consulta = _db.Esales.AsNoTracking().Where(e => e.Activa && e.Slug != null);
+        var consulta = _db.Esales.AsNoTracking().Where(ReglasPublicacion.EnDirectorio);
 
         q = q?.Trim();
         if (!string.IsNullOrEmpty(q))
@@ -143,10 +143,14 @@ public class FundacionesController : Controller
     // ---------- HU-013: opción "Donar" ----------
 
     [HttpGet("{slug}/donar")]
-    public async Task<IActionResult> Donar(string slug)
+    public async Task<IActionResult> Donar(string slug, int? causa)
     {
         var esal = await BuscarActivaAsync(slug);
         if (esal is null) return NoDisponible();
+
+        // Donación para una causa: solo si la causa sigue recibiendo donaciones
+        var causaAbierta = causa is int causaId ? await _causas.ObtenerAsync(esal.Id, causaId) : null;
+        if (causaAbierta is { RecibeDonaciones: false }) causaAbierta = null;
 
         var datos = await _db.DatosDonacion.IgnoreQueryFilters().AsNoTracking()
             .FirstOrDefaultAsync(d => d.EsalId == esal.Id);
@@ -164,7 +168,9 @@ public class FundacionesController : Controller
             EsLlave = datos?.TipoCuenta == TipoCuentaDonacion.Llave,
             Numero = datos?.Numero,
             Instrucciones = datos?.Instrucciones,
-            PagosEnLineaActivos = await _db.ConfigPasarelas.IgnoreQueryFilters().AnyAsync(c => c.EsalId == esal.Id && c.Activa)
+            PagosEnLineaActivos = await _db.ConfigPasarelas.IgnoreQueryFilters().AnyAsync(c => c.EsalId == esal.Id && c.Activa),
+            CausaId = causaAbierta?.Id,
+            NombreCausa = causaAbierta?.Titulo
         });
     }
 

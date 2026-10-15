@@ -9,6 +9,7 @@ using MunerApp.Domain.Entities;
 using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Models.Publico;
+using MunerApp.Web.Seguridad;
 using MunerApp.Web.Validacion;
 
 namespace MunerApp.Web.Controllers;
@@ -153,9 +154,9 @@ public class PostulacionesController : Controller
             model.Aviso = $"{esal.Nombre} no está recibiendo voluntarios por ahora. Puedes apoyarla de otras formas.";
         else if (_esalActual.EsalId == esal.Id)
             model.Aviso = $"Ya haces parte del equipo de {esal.Nombre}.";
-        else if (_esalActual.EsalId is not null || _esalActual.EsSuperAdmin)
-            // Observación de pruebas Sprint 2: una cuenta de fundación no se postula como voluntaria de otra
-            model.Aviso = "Las cuentas de una fundación no pueden postularse como voluntarias de otra. Si quieres ayudar a título personal, crea una cuenta con tu correo personal.";
+        else if (!Politicas.PuedeApoyar(User))
+            // Las cuentas de fundación y el superadministrador no se postulan (ver Politicas.PuedeApoyar)
+            model.Aviso = Politicas.MensajeCuentaInstitucional;
         else if (await _db.PostulacionesVoluntario.IgnoreQueryFilters()
                      .AnyAsync(p => p.EsalId == esal.Id && p.UsuarioId == UsuarioId && p.Estado == EstadoPostulacion.Pendiente))
             model.Aviso = $"Ya tienes una postulación en proceso con {esal.Nombre}. Te avisaremos cuando la revisen.";

@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = Model.Nombre;
     ViewData["Seccion"] = "Beneficiarios";
-    var otrosEstados = Enum.GetValues<EstadoBeneficiario>().Where(e => e != Model.Estado).ToList();
+    var otrosEstados = ReglasBeneficiario.Siguientes(Model.Estado).ToList();
 }
 <div class="container py-4 py-md-5" style="max-width: 1040px">
     <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Beneficiarios</a>
@@ -18,7 +18,6 @@
         }
     </div>
 
-    <partial name="_NavFundacion" />
 
     @if (Model.FaltaAdoptante)
     {
@@ -44,17 +43,98 @@
                 }
                 <div class="p-4">
                     <dl class="row datos-detalle mb-0">
-                        <dt class="col-5">Edad</dt><dd class="col-7">@Formatos.Edad(Model.FechaNacimiento)</dd>
+                        <dt class="col-5">Ingreso</dt><dd class="col-7">@Formatos.Fecha(Model.FechaRescate)</dd>
+                        <dt class="col-5">Edad</dt><dd class="col-7">@Formatos.Edad(Model.FechaNacimiento)@(Model.FechaNacimientoExacta ? $" (nació el {Formatos.Fecha(Model.FechaNacimiento)})" : " (aprox.)")</dd>
                         <dt class="col-5">Sexo</dt><dd class="col-7">@Textos.De(Model.Sexo)</dd>
                         <dt class="col-5">Color</dt><dd class="col-7">@Model.Color</dd>
-                        <dt class="col-5">Rescatado el</dt><dd class="col-7">@Formatos.Fecha(Model.FechaRescate)</dd>
+                        @if (!string.IsNullOrEmpty(Model.Raza))
+                        {
+                            <dt class="col-5">Raza</dt><dd class="col-7">@Model.Raza</dd>
+                        }
+                        @if (Model.PesoIngresoKg is decimal peso)
+                        {
+                            <dt class="col-5">Peso al ingreso</dt><dd class="col-7">@Formatos.Numero(peso) kg</dd>
+                        }
+                        @if (Model.EstadoReproductivo is EstadoReproductivo er)
+                        {
+                            <dt class="col-5">Estado reproductivo</dt><dd class="col-7">@Textos.De(er)</dd>
+                        }
+                        @if (Model.Procedencia is Procedencia pr)
+                        {
+                            <dt class="col-5">Procedencia</dt><dd class="col-7">@Textos.De(pr)</dd>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.SenalesParticulares))
+                        {
+                            <dt class="col-5">Señales particulares</dt><dd class="col-7">@Model.SenalesParticulares</dd>
+                        }
                         <dt class="col-5">Registrado</dt><dd class="col-7">@Formatos.FechaCorta(Model.FechaRegistro)@(Model.RegistradoPor is null ? "" : " por " + Model.RegistradoPor)</dd>
                     </dl>
+                    @if (!string.IsNullOrEmpty(Model.DetallesProcedencia))
+                    {
+                        <div class="mt-3">
+                            <div class="small fw-semibold mb-1">Detalles de la procedencia</div>
+                            <p class="small text-suave texto-largo mb-0">@Model.DetallesProcedencia</p>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
 
         <div class="col-12 col-lg-7">
+            @if (Model.ExamenIngreso is { } ex)
+            {
+                <div class="mu-card p-4 mb-4">
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                        <h2 class="h6 fw-bold mb-0"><i class="bi bi-clipboard2-pulse me-1 text-principal" aria-hidden="true"></i>Examen de ingreso</h2>
+                        @if (Model.PuedeRegistrarClinica)
+                        {
+                            <a class="btn btn-suave btn-sm" asp-action="ExamenIngreso" asp-route-id="@Model.Id"><i class="bi bi-pencil me-1" aria-hidden="true"></i>@(ex.TieneDatos ? "Editar" : "Registrar")</a>
+                        }
+                    </div>
+                    @if (!ex.TieneDatos)
+                    {
+                        <p class="small text-suave mb-0">Todavía no se ha registrado el examen semiológico de ingreso.</p>
+                    }
+                    else
+                    {
+                        <div class="constantes mb-3">
+                            <div><span>FR</span><strong>@(ex.FrecuenciaRespiratoria?.ToString() ?? "—")</strong><small>rpm</small></div>
+                            <div><span>FC</span><strong>@(ex.FrecuenciaCardiaca?.ToString() ?? "—")</strong><small>lpm</small></div>
+                            <div><span>TLLC</span><strong>@(ex.Tllc ?? "—")</strong><small>seg</small></div>
+                            <div><span>RPC</span><strong>@(ex.Rpc ?? "—")</strong><small>seg</small></div>
+                            <div><span>T°</span><strong>@(ex.Temperatura ?? "—")</strong><small>°C</small></div>
+                            <div><span>C. corporal</span><strong>@(ex.CondicionCorporal?.ToString() ?? "—")</strong><small>de 5</small></div>
+                        </div>
+                        <dl class="row datos-detalle small mb-0">
+                            @if (ex.EstadoConciencia is EstadoConciencia ec)
+                            {
+                                <dt class="col-sm-5">Estado de conciencia</dt><dd class="col-sm-7">@Textos.De(ec)</dd>
+                            }
+                            @if (!string.IsNullOrEmpty(ex.MucosaConjuntival) || !string.IsNullOrEmpty(ex.MucosaOral))
+                            {
+                                <dt class="col-sm-5">Mucosas</dt><dd class="col-sm-7">Conjuntival: @(ex.MucosaConjuntival ?? "—") · Oral: @(ex.MucosaOral ?? "—")</dd>
+                            }
+                            @if (!string.IsNullOrEmpty(ex.MucosaRectal))
+                            {
+                                <dt class="col-sm-5">Rectal</dt><dd class="col-sm-7">@ex.MucosaRectal</dd>
+                            }
+                            @if (!string.IsNullOrEmpty(ex.MucosaVulvarPrepucial))
+                            {
+                                <dt class="col-sm-5">Vulvar / prepucial</dt><dd class="col-sm-7">@ex.MucosaVulvarPrepucial</dd>
+                            }
+                            @if (!string.IsNullOrEmpty(ex.Observaciones))
+                            {
+                                <dt class="col-sm-5">Observaciones</dt><dd class="col-sm-7 texto-largo">@ex.Observaciones</dd>
+                            }
+                        </dl>
+                        @if (ex.FechaExamen is DateTime fe)
+                        {
+                            <p class="small text-suave mt-2 mb-0">Registrado el @Formatos.FechaCorta(fe)@(ex.RealizadoPor is null ? "" : " por " + ex.RealizadoPor)</p>
+                        }
+                    }
+                </div>
+            }
+
             @if (Model.PuedeVerClinica)
             {
                 <a class="mu-card mu-card-hover p-4 mb-4 d-flex align-items-center gap-3 text-decoration-none text-body" asp-controller="HistoriaClinica" asp-action="Index" asp-route-id="@Model.Id">
@@ -67,9 +147,53 @@
                 </a>
             }
 
+            <div class="mu-card p-4 mb-4" id="etograma">
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                    <h2 class="h6 fw-bold mb-0"><i class="bi bi-emoji-smile me-1 text-acento" aria-hidden="true"></i>Comportamiento (etograma)</h2>
+                    @if (Model.PuedeRegistrarClinica)
+                    {
+                        <a class="btn btn-suave btn-sm" asp-action="Etograma" asp-route-id="@Model.Id"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Registrar</a>
+                    }
+                </div>
+                @if (Model.Etogramas.Count == 0)
+                {
+                    <p class="small text-suave mb-0">Todavía no se ha evaluado su comportamiento.</p>
+                }
+                else
+                {
+                    <div class="d-grid gap-3">
+                        @foreach (var et in Model.Etogramas)
+                        {
+                            <div class="etograma-item">
+                                <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+                                    <span class="fw-semibold">@Textos.De(et.Momento)</span>
+                                    <span class="small text-suave">@Formatos.Fecha(et.Fecha)@(et.RegistradoPor is null ? "" : " · " + et.RegistradoPor)</span>
+                                </div>
+                                @foreach (var grupo in Etograma.Grupos)
+                                {
+                                    var conductas = Etograma.Todas.Where(c => c.Grupo == grupo && et.Codigos.Contains(c.Codigo)).ToList();
+                                    if (conductas.Count == 0) { continue; }
+                                    <div class="small text-suave mt-1">@grupo</div>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach (var c in conductas)
+                                        {
+                                            <span class="mu-badge @(c.Deseable ? "exito" : "alerta")">@c.Texto</span>
+                                        }
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(et.Observaciones))
+                                {
+                                    <p class="small texto-largo mt-2 mb-0">@et.Observaciones</p>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
             @if (Model.PuedeGestionar)
             {
-                var puedeApadrinarse = Model.Estado is not (EstadoBeneficiario.Adoptado or EstadoBeneficiario.Fallecido);
+                var puedeApadrinarse = !ReglasBeneficiario.EsSalida(Model.Estado);
                 <div class="mu-card p-4 mb-4">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
                         <h2 class="h6 fw-bold mb-0"><i class="bi bi-balloon-heart me-1 text-acento" aria-hidden="true"></i>Apadrinamiento</h2>
@@ -117,6 +241,15 @@
                     }
                 </div>
 
+            @if (otrosEstados.Count == 0)
+            {
+            <div class="mu-card p-4 mb-4">
+                <h2 class="h6 fw-bold mb-2">Estado</h2>
+                <p class="small text-suave mb-0">@Model.Nombre está registrado como fallecido. Su hoja de vida se conserva, pero su estado ya no se puede cambiar.</p>
+            </div>
+            }
+            else
+            {
             <div class="mu-card p-4 mb-4">
                 <h2 class="h6 fw-bold mb-3">Cambiar estado</h2>
                 <form asp-action="CambiarEstado" asp-route-id="@Model.Id" method="post" id="form-estado"
@@ -144,28 +277,43 @@
                 </form>
             </div>
             }
+            }
 
-            @if (Model.PuedeGestionar && Model.Estado == EstadoBeneficiario.Adoptado)
+            @if (Model.EsAdministrador && Model.Estado == EstadoBeneficiario.Adoptado)
             {
                 <div class="mu-card p-4 mb-4">
                     <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
                         <h2 class="h6 fw-bold mb-0">Adoptante</h2>
-                        <a class="btn btn-suave btn-sm" asp-action="Adoptante" asp-route-id="@Model.Id">
-                            <i class="bi bi-pencil me-1" aria-hidden="true"></i>@(Model.Adoptante is null ? "Registrar" : "Editar")
-                        </a>
+                        @if (Model.PuedeGestionar)
+                        {
+                            <a class="btn btn-suave btn-sm" asp-action="Adoptante" asp-route-id="@Model.Id">
+                                <i class="bi bi-pencil me-1" aria-hidden="true"></i>@(Model.Adoptante is null ? "Registrar" : "Editar")
+                            </a>
+                        }
                     </div>
                     @if (Model.Adoptante is { } a)
                     {
                         <dl class="row datos-detalle mb-0">
                             <dt class="col-sm-4">Nombre</dt><dd class="col-sm-8">@a.Nombre</dd>
-                            <dt class="col-sm-4">Cédula</dt><dd class="col-sm-8">@a.Documento</dd>
+                            @if (!string.IsNullOrEmpty(a.NumeroFormulario))
+                            {
+                                <dt class="col-sm-4">Formulario</dt><dd class="col-sm-8">No. @a.NumeroFormulario</dd>
+                            }
+                            @if (!string.IsNullOrEmpty(a.Documento))
+                            {
+                                <dt class="col-sm-4">Cédula</dt><dd class="col-sm-8">@a.Documento</dd>
+                            }
                             <dt class="col-sm-4">Celular</dt><dd class="col-sm-8">@a.Telefono</dd>
                             @if (!string.IsNullOrEmpty(a.Correo))
                             {
                                 <dt class="col-sm-4">Correo</dt><dd class="col-sm-8 text-break">@a.Correo</dd>
                             }
-                            <dt class="col-sm-4">Dirección</dt><dd class="col-sm-8">@a.Direccion, @a.Ciudad</dd>
+                            <dt class="col-sm-4">Ciudad</dt><dd class="col-sm-8">@(string.IsNullOrEmpty(a.Direccion) ? a.Ciudad : a.Direccion + ", " + a.Ciudad)</dd>
                             <dt class="col-sm-4">Adoptado el</dt><dd class="col-sm-8">@Formatos.Fecha(a.FechaAdopcion)</dd>
+                            @if (!string.IsNullOrEmpty(a.Elaboro))
+                            {
+                                <dt class="col-sm-4">Elaboró</dt><dd class="col-sm-8">@a.Elaboro</dd>
+                            }
                             @if (!string.IsNullOrEmpty(a.Observaciones))
                             {
                                 <dt class="col-sm-4">Observaciones</dt><dd class="col-sm-8 texto-largo">@a.Observaciones</dd>
@@ -179,7 +327,7 @@
                 </div>
             }
 
-            @if (Model.PuedeGestionar)
+            @if (Model.EsAdministrador)
             {
                 var activos = Model.Padrinos.Where(p => p.Activo).ToList();
                 <div class="mu-card p-4 mb-4">

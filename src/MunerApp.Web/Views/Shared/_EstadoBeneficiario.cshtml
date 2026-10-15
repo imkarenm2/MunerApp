@@ -10,6 +10,12 @@
     case EstadoBeneficiario.Adoptado:
         <span class="mu-badge exito"><i class="bi bi-heart-fill" aria-hidden="true"></i>@Textos.De(Model)</span>
         break;
+    case EstadoBeneficiario.EncontroSuHogar:
+        <span class="mu-badge exito"><i class="bi bi-house-check" aria-hidden="true"></i>@Textos.De(Model)</span>
+        break;
+    case EstadoBeneficiario.Liberado:
+        <span class="mu-badge"><i class="bi bi-tree" aria-hidden="true"></i>@Textos.De(Model)</span>
+        break;
     case EstadoBeneficiario.Fallecido:
         <span class="mu-badge"><i class="bi bi-flower1" aria-hidden="true"></i>@Textos.De(Model)</span>
         break;

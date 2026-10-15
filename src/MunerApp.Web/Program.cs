@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
@@ -23,6 +24,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IEsalActual, EsalActual>();
 builder.Services.AddScoped<InvitacionService>();
 builder.Services.AddScoped<CausasPublicas>();
+builder.Services.AddScoped<AvisosCorreo>();
 builder.Services.AddScoped<EstadosBeneficiario>();
 builder.Services.AddScoped<ConfirmacionPagosWompi>();
 builder.Services.AddScoped<PeriodicoMunerApp>();
@@ -39,6 +41,8 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
         options.Lockout.MaxFailedAccessAttempts = 5;
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
         options.User.RequireUniqueEmail = true;
+        // Observación de pruebas: la cuenta se activa solo después de confirmar el correo
+        options.SignIn.RequireConfirmedEmail = true;
     })
     .AddEntityFrameworkStores<MunerAppDbContext>()
     .AddDefaultTokenProviders()
@@ -70,6 +74,7 @@ builder.Services.AddAuthorization(options =>
         .RequireClaim(MunerAppClaims.Perfil, Perfiles.Principal));
 
     options.AddPolicy(Politicas.AccesoClinico, p => p.RequireAuthenticatedUser().RequireAssertion(ctx => Politicas.TieneAccesoClinico(ctx.User)));
+    options.AddPolicy(Politicas.RegistroClinico, p => p.RequireAuthenticatedUser().RequireAssertion(ctx => Politicas.PuedeRegistrarClinica(ctx.User)));
 });
 
 // Login con Gmail (HU-003): se activa cuando se configuran las credenciales de Google
@@ -80,6 +85,8 @@ if (!string.IsNullOrWhiteSpace(googleClientId))
     {
         options.ClientId = googleClientId;
         options.ClientSecret = builder.Configuration["Autenticacion:Google:ClientSecret"] ?? string.Empty;
+        // Para saber si Google ya verificó el correo antes de vincularlo a una cuenta existente
+        options.ClaimActions.MapJsonKey("email_verified", "email_verified");
     });
 }
 

@@ -2,6 +2,8 @@
 @{
     ViewData["Title"] = "Apadrinamiento de " + Model.NombreBeneficiario;
     var activo = Model.Estado == EstadoApadrinamiento.Activo;
+    var adoptado = !activo && Model.EstadoBeneficiario is EstadoBeneficiario.Adoptado or EstadoBeneficiario.EncontroSuHogar or EstadoBeneficiario.Liberado;
+    var fallecido = !activo && Model.EstadoBeneficiario == EstadoBeneficiario.Fallecido;
     var urlReportar = $"/fundaciones/{Model.SlugEsal}/reportar-donacion?apadrinamiento={Model.Id}";
 }
 <div class="container py-4 py-md-5" style="max-width: 960px">
@@ -23,6 +25,14 @@
                 {
                     <span class="mu-badge exito"><i class="bi bi-heart-fill" aria-hidden="true"></i>Apadrinamiento activo</span>
                 }
+                else if (adoptado)
+                {
+                    <span class="mu-badge exito"><i class="bi bi-house-heart" aria-hidden="true"></i>Terminado: @Textos.De(Model.EstadoBeneficiario).ToLowerInvariant()</span>
+                }
+                else if (fallecido)
+                {
+                    <span class="mu-badge"><i class="bi bi-heart" aria-hidden="true"></i>Terminado</span>
+                }
                 else
                 {
                     <span class="mu-badge"><i class="bi bi-x-circle" aria-hidden="true"></i>Cancelado</span>
@@ -32,7 +42,7 @@
                 Con <a href="/fundaciones/@Model.SlugEsal">@Model.NombreEsal</a> · @Formatos.Pesos(Model.ValorMensual) al mes · desde el @Formatos.Fecha(Formatos.Local(Model.FechaInicio))
                 @if (Model.FechaCancelacion is DateTime cancelado)
                 {
-                    <span> · cancelado el @Formatos.Fecha(Formatos.Local(cancelado))</span>
+                    <span> · @(adoptado || fallecido ? "terminó" : "cancelado") el @Formatos.Fecha(Formatos.Local(cancelado))</span>
                 }
             </p>
             @if (Model.BeneficiarioVisible)

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MunerApp.Domain.Constantes;
 using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
 using MunerApp.Domain.Entities;
@@ -80,6 +81,8 @@ public class PerfilController : Controller
         }
 
         // Escenario 3: campos obligatorios (nombre, NIT y misión) los marca la validación del modelo
+        if (!string.IsNullOrWhiteSpace(model.Ciudad) && !Region.EsMunicipioValido(model.Ciudad))
+            ModelState.AddModelError(nameof(model.Ciudad), $"Por ahora MunerApp funciona solo en {Region.Nombre}. Selecciona un municipio de la lista.");
         if (!ModelState.IsValid) return View(await CompletarAsync(model, esal));
 
         esal.Nombre = model.Nombre;

@@ -18,7 +18,6 @@
         }
     </div>
 
-    <partial name="_NavFundacion" />
 
     <form asp-action="Index" method="post" enctype="multipart/form-data" novalidate
           data-confirmar="Los cambios se verán de inmediato en el perfil público de la fundación."
@@ -43,7 +42,7 @@
                         <div class="col-12">
                             <label asp-for="DescripcionCorta" class="form-label"></label>
                             <input asp-for="DescripcionCorta" class="form-control" maxlength="200" placeholder="Rescatamos, cuidamos y buscamos hogar para gatos en Facatativá." data-contador />
-                            <div class="form-text">Aparece en la tarjeta del directorio y debajo del nombre en el perfil.</div>
+                            <div class="form-text">Aparece en la tarjeta del directorio y debajo del nombre en el perfil. Con la descripción corta y la misión, la fundación empieza a salir en el directorio.</div>
                             <span asp-validation-for="DescripcionCorta"></span>
                         </div>
                     </div>
@@ -86,7 +85,14 @@
                         </div>
                         <div class="col-12 col-md-6">
                             <label asp-for="Ciudad" class="form-label"></label>
-                            <input asp-for="Ciudad" class="form-control" placeholder="Facatativá, Cundinamarca" />
+                            <select asp-for="Ciudad" class="form-select">
+                    <option value="">Selecciona el municipio</option>
+                    @foreach (var m in Region.Municipios)
+                    {
+                        <option value="@m">@m</option>
+                    }
+                </select>
+                <div class="form-text">Por ahora MunerApp funciona solo en Sabana de Occidente.</div>
                             <span asp-validation-for="Ciudad"></span>
                         </div>
                         <div class="col-12 col-md-6 d-flex align-items-end">

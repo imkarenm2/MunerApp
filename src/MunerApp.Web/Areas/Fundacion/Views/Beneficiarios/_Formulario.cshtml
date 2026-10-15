@@ -11,6 +11,15 @@
         <span asp-validation-for="Nombre"></span>
     </div>
 
+    <div class="col-12"><h2 class="h6 fw-bold text-principal mb-0 mt-2">Reseña del paciente</h2></div>
+
+    <div class="col-12 col-md-6">
+        <label asp-for="FechaRescate" class="form-label"></label>
+        <input asp-for="FechaRescate" type="date" class="form-control" max="@hoy" />
+        <span asp-validation-for="FechaRescate"></span>
+    </div>
+
+
     <div class="col-12 col-md-6">
         <span class="form-label d-block" id="etiqueta-edad">Edad aproximada</span>
         <div class="row g-2" role="group" aria-labelledby="etiqueta-edad">
@@ -32,9 +41,10 @@
     </div>
 
     <div class="col-12 col-md-6">
-        <label asp-for="FechaRescate" class="form-label"></label>
-        <input asp-for="FechaRescate" type="date" class="form-control" max="@hoy" />
-        <span asp-validation-for="FechaRescate"></span>
+        <label asp-for="FechaNacimiento" class="form-label"></label>
+        <input asp-for="FechaNacimiento" type="date" class="form-control" max="@hoy" />
+        <div class="form-text">Si la escribes, se usa en vez de la edad aproximada.</div>
+        <span asp-validation-for="FechaNacimiento"></span>
     </div>
 
     <div class="col-12 col-md-6">
@@ -53,8 +63,60 @@
 
     <div class="col-12 col-md-6">
         <label asp-for="Color" class="form-label"></label>
-        <input asp-for="Color" class="form-control" maxlength="60" placeholder="Ej.: Naranja con blanco" autocomplete="off" />
+        <input asp-for="Color" class="form-control" maxlength="60" placeholder="Ej.: Bicolor amarillo/blanco" autocomplete="off" />
         <span asp-validation-for="Color"></span>
+    </div>
+
+    <div class="col-12 col-md-6">
+        <label asp-for="Raza" class="form-label"></label>
+        <input asp-for="Raza" class="form-control" maxlength="60" list="razas" placeholder="Ej.: Mestizo" autocomplete="off" />
+        <datalist id="razas"><option value="Mestizo"></option><option value="Siamés"></option><option value="Carey"></option><option value="Angora"></option><option value="Persa"></option></datalist>
+        <span asp-validation-for="Raza"></span>
+    </div>
+
+    <div class="col-12 col-md-6">
+        <label asp-for="PesoIngreso" class="form-label"></label>
+        <div class="input-group">
+            <input asp-for="PesoIngreso" class="form-control" inputmode="decimal" placeholder="3,5" autocomplete="off" />
+            <span class="input-group-text">kg</span>
+        </div>
+        <span asp-validation-for="PesoIngreso"></span>
+    </div>
+
+    <div class="col-12 col-md-6">
+        <span class="form-label d-block" id="etiqueta-procedencia">Procedencia</span>
+        <div class="d-flex gap-2" role="radiogroup" aria-labelledby="etiqueta-procedencia">
+            @foreach (var p in Enum.GetValues<Procedencia>())
+            {
+                <div>
+                    <input type="radio" class="btn-check" name="Procedencia" id="procedencia-@p" value="@p" checked="@(Model.Procedencia == p)" />
+                    <label class="chip" for="procedencia-@p">@Textos.De(p)</label>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-12 col-md-6">
+        <label asp-for="EstadoReproductivo" class="form-label"></label>
+        <select asp-for="EstadoReproductivo" class="form-select">
+            <option value="">Selecciona…</option>
+            @foreach (var e in Enum.GetValues<EstadoReproductivo>())
+            {
+                <option value="@e" selected="@(Model.EstadoReproductivo == e)">@Textos.De(e)</option>
+            }
+        </select>
+    </div>
+
+    <div class="col-12">
+        <label asp-for="DetallesProcedencia" class="form-label"></label>
+        <textarea asp-for="DetallesProcedencia" class="form-control" rows="2" maxlength="500" placeholder="Ej.: encontrado en el parque del barrio San Benito, Facatativá"></textarea>
+        <span asp-validation-for="DetallesProcedencia"></span>
+    </div>
+
+    <div class="col-12">
+        <label asp-for="SenalesParticulares" class="form-label"></label>
+        <input asp-for="SenalesParticulares" class="form-control" maxlength="300" placeholder="Ej.: mancha blanca en la cola, oreja izquierda con corte" />
+        <span asp-validation-for="SenalesParticulares"></span>
     </div>
 
     <div class="col-12">

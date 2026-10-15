@@ -20,6 +20,17 @@ public static class PlantillasCorreo
         enlace,
         "Este enlace vence en 1 hora y solo se puede usar una vez. Si no pediste este cambio, ignora este correo.");
 
+    public static string Confirmacion(string nombre, string enlace) => Base(
+        $"¡Bienvenido a MunerApp, {Html(nombre)}!",
+        "Solo falta un paso: confirma que este correo es tuyo para activar tu cuenta.",
+        "Confirmar mi correo",
+        enlace,
+        "Este enlace vence en 1 hora. Si vence, intenta iniciar sesión y te ofreceremos enviarte uno nuevo. Si no creaste esta cuenta, ignora este correo.");
+
+    /// <summary>Aviso general (donación confirmada, solicitud de una fundación...). El texto se codifica.</summary>
+    public static string Aviso(string titulo, string mensaje, string textoBoton, string enlace, string nota = "Recibes este correo porque tienes una cuenta en MunerApp.")
+        => Base(Html(titulo), Html(mensaje), textoBoton, enlace, nota);
+
     private static string Html(string texto) => WebUtility.HtmlEncode(texto);
 
     private static string Base(string titulo, string cuerpo, string textoBoton, string enlace, string nota) => $"""

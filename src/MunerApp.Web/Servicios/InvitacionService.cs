@@ -45,6 +45,20 @@ public class InvitacionService
         return await EnviarAsync(usuario.Email!, "Restablece tu contraseña de MunerApp", html, enlace);
     }
 
+    /// <summary>Correo para confirmar la cuenta de un donante nuevo. Al confirmar vuelve a <paramref name="returnUrl"/>.</summary>
+    public async Task<ResultadoEnvio> EnviarConfirmacionAsync(Usuario usuario, string? returnUrl = null)
+    {
+        var token = await _userManager.GenerateEmailConfirmationTokenAsync(usuario);
+        var tokenCodificado = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+        var enlace = _links.GetUriByAction(
+            _http.HttpContext!,
+            action: "ConfirmarCorreo",
+            controller: "Cuenta",
+            values: new { area = "", id = usuario.Id, token = tokenCodificado, returnUrl }) ?? string.Empty;
+        var html = PlantillasCorreo.Confirmacion(usuario.NombreCompleto, enlace);
+        return await EnviarAsync(usuario.Email!, "Confirma tu correo en MunerApp", html, enlace);
+    }
+
     private async Task<string> GenerarEnlaceAsync(Usuario usuario, bool invitacion)
     {
         var token = await _userManager.GeneratePasswordResetTokenAsync(usuario);
