@@ -13,8 +13,24 @@ public record DatosComprobante(
     string MedioPago,
     string? ReferenciaPago);
 
+/// <summary>Datos del comprobante de una donación en especie recibida por la fundación.</summary>
+public record DatosComprobanteEspecie(
+    string Codigo,
+    string NombreDonante,
+    string CorreoDonante,
+    string NombreEsal,
+    string NitEsal,
+    string Articulo,
+    string Categoria,
+    int Cantidad,
+    string Unidad,
+    DateTime FechaRecepcion,
+    DateTime? FechaVencimiento,
+    string? Observaciones);
+
 /// <summary>Generación de documentos PDF (comprobantes; en sprints siguientes, certificados y reportes).</summary>
 public interface IComprobanteService
 {
     byte[] GenerarComprobanteDonacion(DatosComprobante datos);
+    byte[] GenerarComprobanteEspecie(DatosComprobanteEspecie datos);
 }

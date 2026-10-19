@@ -188,6 +188,19 @@ public class PanelController : Controller
                     "Revisen sus postulaciones y respóndanles.",
                     Url.Action("Index", "Postulaciones")!));
 
+            // Donaciones en especie por recibir: las que llegan hoy o ya debieron llegar van primero
+            var especie = await _db.DonacionesEspecie.Where(d => d.Estado == EstadoDonacionEspecie.Ofrecida)
+                .Select(d => d.FechaEntregaEstimada).ToListAsync();
+            if (especie.Count > 0)
+            {
+                var paraHoy = especie.Count(f => f.Date <= hoy);
+                tareas.Add(new TareaPanel("bi-box-seam", paraHoy > 0 ? "alerta" : "vacio",
+                    especie.Count == 1 ? "1 donación en especie por recibir" : $"{especie.Count} donaciones en especie por recibir",
+                    paraHoy > 0 ? $"{paraHoy} {(paraHoy == 1 ? "debería llegar" : "deberían llegar")} hoy o ya debieron llegar. Regístralas cuando lleguen."
+                                : "Regístralas cuando lleguen para que el donante reciba su comprobante.",
+                    Url.Action("Index", "Especie")!));
+            }
+
             // Adopción (Sprint 5) y tienda (Sprint 4), si la fundación tiene esos módulos
             if (await _modulos.EstaActivoAsync(esalId, CodigosModulo.Adopcion))
             {
@@ -224,6 +237,13 @@ public class PanelController : Controller
                 .Take(3)
                 .Select(c => new CausaPanel(c.Id, c.Titulo, c.Meta, c.Recaudado, Math.Max(0, (c.FechaLimite.Date - hoy).Days)))
                 .ToList();
+
+            var recibidasEspecie = await _db.DonacionesEspecie.AsNoTracking()
+                .Where(d => d.Estado == EstadoDonacionEspecie.Recibida)
+                .OrderByDescending(d => d.FechaRecepcion).Take(3)
+                .Select(d => new { d.Id, d.Articulo, d.CantidadRecibida, d.Unidad, d.FechaRecepcion }).ToListAsync();
+            actividad.AddRange(recibidasEspecie.Select(d => new ActividadPanel(d.FechaRecepcion!.Value, "bi-box-seam",
+                $"Llegaron {d.CantidadRecibida} {d.Unidad} de {d.Articulo}", Url.Action("Detalle", "Especie", new { id = d.Id }))));
 
             var donaciones = await _db.Donaciones.AsNoTracking()
                 .OrderByDescending(d => d.FechaReporte).Take(5)

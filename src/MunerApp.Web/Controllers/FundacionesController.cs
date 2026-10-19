@@ -258,6 +258,10 @@ public class FundacionesController : Controller
                 "bi-cash-coin", "acento", $"/fundaciones/{slug}/donar", false, true)
         };
 
+        formas.Add(new("Especie", "Donar en especie",
+            "Concentrado, arena, medicamentos o cobijas: mira lo que necesitan y dinos qué vas a llevar.",
+            "bi-box-seam", "exito", $"/fundaciones/{slug}/donar-en-especie", false, true));
+
         if (!esal.VoluntariadoPausado)
             formas.Add(new(CodigosModulo.Voluntariado, "Ser voluntario",
                 "Apoya con tu tiempo o tus conocimientos en las labores que la fundación necesita.",

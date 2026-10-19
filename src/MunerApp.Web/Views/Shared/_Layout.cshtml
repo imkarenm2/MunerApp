@@ -32,6 +32,10 @@
                         {
                             <li class="nav-item"><a class="nav-link active" asp-area="Plataforma" asp-controller="Resumen" asp-action="Index">Administración de MunerApp</a></li>
                         }
+                        else if (User.IsInRole(Roles.Veedor))
+                        {
+                            <li class="nav-item"><a class="nav-link active" asp-area="Veeduria" asp-controller="Consulta" asp-action="Index">Veeduría ciudadana</a></li>
+                        }
                         else if (User.IsInRole(Roles.AdministradorESAL) || User.IsInRole(Roles.Voluntario))
                         {
                             <li class="nav-item"><a class="nav-link active" asp-area="Fundacion" asp-controller="Panel" asp-action="Index">Mi fundación</a></li>

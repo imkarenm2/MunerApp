@@ -9,7 +9,8 @@
     var esEquipo = User.IsInRole(Roles.AdministradorESAL) || User.IsInRole(Roles.Voluntario);
     var rol = esSuperAdmin ? "Superadministrador de MunerApp"
         : User.IsInRole(Roles.AdministradorESAL) ? "Administrador de fundación"
-        : User.IsInRole(Roles.Voluntario) ? "Voluntario de fundación" : "Donante";
+        : User.IsInRole(Roles.Voluntario) ? "Voluntario de fundación"
+        : User.IsInRole(Roles.Veedor) ? "Veeduría ciudadana" : "Donante";
     var iniciales = string.Concat(nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
 }
 
@@ -36,6 +37,10 @@
                 <li><a class="dropdown-item rounded-2" asp-area="Plataforma" asp-controller="Resumen" asp-action="Index"><i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Resumen de la plataforma</a></li>
                 <li><a class="dropdown-item rounded-2" asp-area="Plataforma" asp-controller="Causas" asp-action="Index"><i class="bi bi-bullseye me-2" aria-hidden="true"></i>Causas por aprobar</a></li>
                 <li><a class="dropdown-item rounded-2" asp-area="Plataforma" asp-controller="Informes" asp-action="Donaciones"><i class="bi bi-graph-up-arrow me-2" aria-hidden="true"></i>Informes</a></li>
+            }
+            else if (User.IsInRole(Roles.Veedor))
+            {
+                <li><a class="dropdown-item rounded-2" asp-area="Veeduria" asp-controller="Consulta" asp-action="Index"><i class="bi bi-binoculars me-2" aria-hidden="true"></i>Veeduría</a></li>
             }
             else if (esEquipo)
             {

@@ -13,6 +13,7 @@
     var admin = User.IsInRole(Roles.AdministradorESAL);
     var donacionesPendientes = admin ? Db.Donaciones.Count(d => d.Estado == EstadoDonacion.Pendiente) : 0;
     var postulacionesPendientes = admin ? Db.PostulacionesVoluntario.Count(p => p.Estado == EstadoPostulacion.Pendiente) : 0;
+    var especiePendientes = admin ? Db.DonacionesEspecie.Count(d => d.Estado == EstadoDonacionEspecie.Ofrecida) : 0;
     var rolTexto = admin
         ? (principal ? "Administrador principal" : "Administrador de consulta")
         : (Politicas.EsVoluntarioSalud(User) ? "Voluntario de salud" : "Voluntario");
@@ -31,7 +32,7 @@
     {
         "Panel" => "Inicio", "Beneficiarios" => "Gatos", "Donaciones" => "Donaciones", "Causas" => "Causas",
         "DatosDonacion" => "Datos para donar", "Pasarela" => "Pagos en línea", "Postulaciones" => "Voluntarios",
-        "Usuarios" => "Equipo", "Adopciones" => "Adopción", "Tienda" => "Tienda", "Boletin" => "Boletín", "Perfil" => "Perfil", "Documentos" => "Transparencia", "Redes" => "Redes sociales", _ => ""
+        "Usuarios" => "Equipo", "Especie" => "Donaciones en especie", "Adopciones" => "Adopción", "Tienda" => "Tienda", "Boletin" => "Boletín", "Perfil" => "Perfil", "Documentos" => "Transparencia", "Redes" => "Redes sociales", _ => ""
     };
     var iniciales = string.Concat((esal?.Nombre ?? "M").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
 }
@@ -82,6 +83,13 @@
                 @if (donacionesPendientes > 0)
                 {
                     <span class="panel-contador" title="Por confirmar">@donacionesPendientes<span class="visually-hidden"> por confirmar</span></span>
+                }
+            </a>
+            <a class="panel-enlace @Activa("Especie")" aria-current="@Actual("Especie")" asp-area="Fundacion" asp-controller="Especie" asp-action="Index">
+                <i class="bi bi-box-seam" aria-hidden="true"></i>En especie
+                @if (especiePendientes > 0)
+                {
+                    <span class="panel-contador" title="Por recibir">@especiePendientes<span class="visually-hidden"> por recibir</span></span>
                 }
             </a>
             <a class="panel-enlace @Activa("Causas")" aria-current="@Actual("Causas")" asp-area="Fundacion" asp-controller="Causas" asp-action="Index"><i class="bi bi-bullseye" aria-hidden="true"></i>Causas</a>

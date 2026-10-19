@@ -1,0 +1,32 @@
+@model VeedorFormViewModel
+@{
+    ViewData["Title"] = "Dar acceso a un veedor";
+}
+<div class="container py-4 py-md-5" style="max-width: 640px">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Veedores</a>
+    <h1 class="h2 mt-2 mb-1">Dar acceso a un veedor</h1>
+    <p class="text-suave mb-4">Le llegará un correo para crear su contraseña. Solo podrá consultar.</p>
+    <form asp-action="Crear" method="post" novalidate class="mu-card p-4 p-md-5">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <div class="mb-3">
+            <label asp-for="Nombre" class="form-label"></label>
+            <input asp-for="Nombre" class="form-control" maxlength="150" />
+            <span asp-validation-for="Nombre"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Correo" class="form-label"></label>
+            <input asp-for="Correo" class="form-control" type="email" />
+            <span asp-validation-for="Correo"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Organizacion" class="form-label"></label>
+            <input asp-for="Organizacion" class="form-control" maxlength="150" placeholder="Ej.: Veeduría Ciudadana de Facatativá" />
+            <span asp-validation-for="Organizacion"></span>
+        </div>
+        <button type="submit" class="btn btn-primary">Crear acceso</button>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

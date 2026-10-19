@@ -13,6 +13,14 @@ public static class PlantillasCorreo
         enlace,
         "Este enlace vence en 1 hora. Si vence, usa la opción \"¿Olvidaste tu contraseña?\" en la página de inicio de sesión.");
 
+    public static string InvitacionVeedor(string nombre, string organizacion, string enlace) => Base(
+        $"¡Hola, {Html(nombre)}!",
+        $"Te dimos acceso a la <strong>veeduría de MunerApp</strong> en nombre de {Html(organizacion)}. " +
+        "Desde ahí podrás consultar lo que reciben las fundaciones, en dinero y en especie, sus causas y su rendición de cuentas. Crea tu contraseña para empezar.",
+        "Crear mi contraseña",
+        enlace,
+        "Este enlace vence en 1 hora. Si vence, usa la opción \"¿Olvidaste tu contraseña?\" en la página de inicio de sesión.");
+
     public static string Recuperacion(string nombre, string enlace) => Base(
         $"Hola, {Html(nombre)}",
         "Recibimos una solicitud para restablecer tu contraseña de MunerApp.",

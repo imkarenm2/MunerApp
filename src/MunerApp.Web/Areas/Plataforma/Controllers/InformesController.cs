@@ -163,6 +163,36 @@ public class InformesController : Controller
         return View(modelo);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Especie(int? esal)
+    {
+        var todas = _db.DonacionesEspecie.AsNoTracking().AsQueryable();
+        if (esal is int id) todas = todas.Where(d => d.EsalId == id);
+        var recibidas = todas.Where(d => d.Estado == EstadoDonacionEspecie.Recibida);
+
+        var porCategoria = await recibidas.GroupBy(d => d.Categoria)
+            .Select(g => new { g.Key, N = g.Count() }).ToListAsync();
+        var porFundacion = await recibidas.GroupBy(d => d.Esal!.Nombre)
+            .Select(g => new { g.Key, N = g.Count() }).ToListAsync();
+
+        var modelo = new InformeEspecieViewModel
+        {
+            EsalId = esal,
+            Fundaciones = await FundacionesAsync(esal),
+            Recibidas = await recibidas.CountAsync(),
+            PorRecibir = await todas.CountAsync(d => d.Estado == EstadoDonacionEspecie.Ofrecida),
+            NoRecibidas = await todas.CountAsync(d => d.Estado == EstadoDonacionEspecie.NoRecibida),
+            DonantesDistintos = await recibidas.Select(d => d.DonanteId).Distinct().CountAsync(),
+            PorCategoria = porCategoria.OrderByDescending(c => c.N).Select(c => new FilaTotal(Textos.De(c.Key), 0, c.N)).ToList(),
+            PorFundacion = porFundacion.OrderByDescending(c => c.N).Select(c => new FilaTotal(c.Key, 0, c.N)).ToList(),
+            Recientes = (await todas.OrderByDescending(d => d.FechaOferta).Take(20)
+                .Select(d => new { d.Codigo, Fundacion = d.Esal!.Nombre, d.Articulo, d.Categoria, Cantidad = d.CantidadRecibida ?? d.CantidadOfrecida, d.Unidad, d.Estado, d.FechaOferta })
+                .ToListAsync())
+                .Select(d => new EspecieInformeItem(d.Codigo, d.Fundacion, d.Articulo, Textos.De(d.Categoria), d.Cantidad, d.Unidad, d.Estado, d.FechaOferta)).ToList()
+        };
+        return View(modelo);
+    }
+
     /// <summary>Inicio (en UTC) del mes de hace <paramref name="mesesAtras"/> meses, en hora de Colombia.</summary>
     private static DateTime InicioMes(int mesesAtras)
     {

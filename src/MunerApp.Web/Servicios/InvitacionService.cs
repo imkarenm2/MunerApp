@@ -38,6 +38,13 @@ public class InvitacionService
         return await EnviarAsync(usuario.Email!, "Te invitaron a MunerApp", html, enlace);
     }
 
+    public async Task<ResultadoEnvio> EnviarInvitacionVeedorAsync(Usuario usuario)
+    {
+        var enlace = await GenerarEnlaceAsync(usuario, invitacion: true);
+        var html = PlantillasCorreo.InvitacionVeedor(usuario.NombreCompleto, usuario.Organizacion ?? "una veeduría ciudadana", enlace);
+        return await EnviarAsync(usuario.Email!, "Tu acceso a la veeduría de MunerApp", html, enlace);
+    }
+
     public async Task<ResultadoEnvio> EnviarRecuperacionAsync(Usuario usuario)
     {
         var enlace = await GenerarEnlaceAsync(usuario, invitacion: false);

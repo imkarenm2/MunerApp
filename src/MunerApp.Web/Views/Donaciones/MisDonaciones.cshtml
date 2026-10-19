@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Mis donaciones";
     var confirmado = Model.Where(d => d.Estado == EstadoDonacion.Confirmada).Sum(d => d.Valor);
+    var especie = ViewData["Especie"] as List<MiDonacionEspecieItem> ?? new();
 }
 <div class="container py-4 py-md-5" style="max-width: 960px">
     <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
@@ -18,7 +19,7 @@
         }
     </div>
 
-    @if (Model.Count == 0)
+    @if (Model.Count == 0 && especie.Count == 0)
     {
         <div class="estado-vacio">
             <div class="icono-circulo acento mb-3"><i class="bi bi-heart" aria-hidden="true"></i></div>
@@ -27,8 +28,9 @@
             <a class="btn btn-apoyar" href="/fundaciones">Explorar fundaciones</a>
         </div>
     }
-    else
+    else if (Model.Count > 0)
     {
+        <h2 class="h5 mb-2">En dinero</h2>
         <div class="d-grid gap-2">
             @foreach (var d in Model)
             {
@@ -41,6 +43,27 @@
                     <span class="text-end">
                         <span class="d-block fw-bold text-body">@Formatos.Pesos(d.Valor)</span>
                         <partial name="_EstadoDonacion" model="d.Estado" />
+                    </span>
+                </a>
+            }
+        </div>
+    }
+
+    @if (especie.Count > 0)
+    {
+        <h2 class="h5 mt-4 mb-2">En especie</h2>
+        <div class="d-grid gap-2">
+            @foreach (var e in especie)
+            {
+                <a class="fila-lista mu-card mu-card-hover" href="/mis-donaciones/especie/@e.Codigo">
+                    <partial name="_LogoEsal" model="new LogoEsalModel(e.NombreEsal, e.LogoUrl, 44)" />
+                    <span class="flex-grow-1 min-w-0">
+                        <span class="d-block fw-semibold text-body text-truncate">@e.Articulo</span>
+                        <span class="d-block small text-suave">@e.NombreEsal · @e.Codigo · @Formatos.FechaCorta(e.FechaOferta)</span>
+                    </span>
+                    <span class="text-end">
+                        <span class="d-block fw-bold text-body">@(e.CantidadRecibida ?? e.CantidadOfrecida) @e.Unidad</span>
+                        <span class="mu-badge @(e.Estado switch { EstadoDonacionEspecie.Recibida => "exito", EstadoDonacionEspecie.Ofrecida => "alerta", _ => "" })">@Textos.De(e.Estado)</span>
                     </span>
                 </a>
             }

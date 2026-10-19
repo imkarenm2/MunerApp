@@ -1,0 +1,121 @@
+@model DonacionEspecieDetalleViewModel
+@{
+    ViewData["Title"] = "Donación en especie " + Model.Codigo;
+    var hoy = Formatos.Hoy().ToString("yyyy-MM-dd");
+}
+<div class="container py-4 py-md-5" style="max-width: 1040px">
+    <a asp-action="Index" asp-route-estado="@Model.Estado" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Donaciones en especie</a>
+    <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mb-1">
+        <h1 class="h2 mb-0">@Model.Articulo</h1>
+        <span class="mu-badge @(Model.Estado switch { EstadoDonacionEspecie.Recibida => "exito", EstadoDonacionEspecie.Ofrecida => "alerta", _ => "" })">@Textos.De(Model.Estado)</span>
+    </div>
+    <p class="text-suave mb-4">@Model.Codigo · ofrecida el @Formatos.FechaHora(Model.FechaOferta)</p>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            <section class="mu-card p-4 mb-4">
+                <dl class="row datos-detalle mb-0">
+                    <dt class="col-sm-5">Donante</dt><dd class="col-sm-7">@Model.Donante<div class="small text-suave text-break">@Model.CorreoDonante</div></dd>
+                    @if (Model.Necesidad is not null)
+                    {
+                        <dt class="col-sm-5">Responde a</dt><dd class="col-sm-7">@Model.Necesidad</dd>
+                    }
+                    <dt class="col-sm-5">Tipo</dt><dd class="col-sm-7">@Textos.De(Model.Categoria)</dd>
+                    <dt class="col-sm-5">Ofreció</dt><dd class="col-sm-7">@Model.CantidadOfrecida @Model.Unidad</dd>
+                    <dt class="col-sm-5">Entrega</dt>
+                    <dd class="col-sm-7">
+                        @(Model.FormaEntrega == FormaEntregaEspecie.Domicilio ? "Hay que recogerla" : "La trae a la sede") · @Formatos.Fecha(Model.FechaEntregaEstimada)
+                        @if (!string.IsNullOrEmpty(Model.DireccionRecogida))
+                        {
+                            <div class="small">@Model.DireccionRecogida</div>
+                        }
+                    </dd>
+                    @if (!string.IsNullOrEmpty(Model.Mensaje))
+                    {
+                        <dt class="col-sm-5">Mensaje</dt><dd class="col-sm-7 fw-normal">@Model.Mensaje</dd>
+                    }
+                </dl>
+            </section>
+
+            @if (Model.Estado == EstadoDonacionEspecie.Recibida)
+            {
+                <section class="mu-card p-4">
+                    <h2 class="h5 mb-3">Recepción</h2>
+                    <dl class="row datos-detalle mb-0">
+                        <dt class="col-sm-5">Llegaron</dt><dd class="col-sm-7">@Model.CantidadRecibida @Model.Unidad</dd>
+                        <dt class="col-sm-5">Recibida</dt><dd class="col-sm-7">@(Model.FechaRecepcion is DateTime fr ? Formatos.FechaHora(fr) : "—")@(Model.RecibidaPor is null ? "" : " por " + Model.RecibidaPor)</dd>
+                        @if (Model.FechaVencimiento is DateTime v)
+                        {
+                            <dt class="col-sm-5">Vence</dt><dd class="col-sm-7">@Formatos.Fecha(v)</dd>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.ObservacionesRecepcion))
+                        {
+                            <dt class="col-sm-5">Observaciones</dt><dd class="col-sm-7 fw-normal">@Model.ObservacionesRecepcion</dd>
+                        }
+                    </dl>
+                    @if (Model.FotoUrl is not null)
+                    {
+                        <img src="@Model.FotoUrl" alt="Foto de lo recibido" class="img-fluid rounded mt-3" loading="lazy" />
+                    }
+                </section>
+            }
+            else if (Model.Estado is EstadoDonacionEspecie.NoRecibida or EstadoDonacionEspecie.Cancelada)
+            {
+                <div class="alert alert-secondary"><i class="bi bi-info-circle" aria-hidden="true"></i><div><strong>@Textos.De(Model.Estado):</strong> @Model.MotivoNoRecibida</div></div>
+            }
+        </div>
+
+        @if (Model.Estado == EstadoDonacionEspecie.Ofrecida)
+        {
+            <div class="col-12 col-lg-5">
+                <section class="mu-card p-4 mb-3">
+                    <h2 class="h5 mb-1">¿Ya llegó?</h2>
+                    <p class="small text-suave">Cuenta lo que llegó de verdad. El donante recibirá su comprobante con esa cantidad.</p>
+                    <form asp-action="Recibir" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small" role="alert"></div>
+                        <div class="mb-3">
+                            <label asp-for="Recibir.CantidadRecibida" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="Recibir.CantidadRecibida" class="form-control" type="number" min="1" />
+                                <span class="input-group-text">@Model.Unidad</span>
+                            </div>
+                            <span asp-validation-for="Recibir.CantidadRecibida"></span>
+                        </div>
+                        @if (Model.Categoria is CategoriaEspecie.Alimento or CategoriaEspecie.Medicamento)
+                        {
+                            <div class="mb-3">
+                                <label asp-for="Recibir.FechaVencimiento" class="form-label"></label>
+                                <input asp-for="Recibir.FechaVencimiento" class="form-control" type="date" min="@hoy" />
+                                <span asp-validation-for="Recibir.FechaVencimiento"></span>
+                            </div>
+                        }
+                        <div class="mb-3">
+                            <label asp-for="Recibir.Observaciones" class="form-label"></label>
+                            <textarea asp-for="Recibir.Observaciones" class="form-control" rows="2" maxlength="500" placeholder="Ej.: llegaron 2 bultos menos de lo ofrecido"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Recibir.Foto" class="form-label"></label>
+                            <input asp-for="Recibir.Foto" class="form-control" type="file" accept="@ValidadorArchivos.Accept(TipoArchivo.Imagen)" />
+                            <div class="form-text">Sirve como evidencia en la transparencia y para la veeduría. No debe mostrar al donante.</div>
+                            <span asp-validation-for="Recibir.Foto"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>Registrar que llegó</button>
+                    </form>
+                </section>
+                <details class="mu-card p-4 rechazo">
+                    <summary class="btn btn-link text-danger p-0">No llegó o no se pudo recibir</summary>
+                    <form asp-action="NoRecibida" asp-route-id="@Model.Id" method="post" class="mt-3"
+                          data-confirmar="El donante verá el motivo." data-confirmar-titulo="¿Marcar como no recibida?" data-confirmar-boton="Sí, marcar" data-confirmar-tipo="peligro">
+                        <label for="motivo" class="form-label">Motivo</label>
+                        <textarea id="motivo" name="motivo" class="form-control" rows="2" maxlength="300" required placeholder="Ej.: no llegó en la fecha acordada y no respondió."></textarea>
+                        <button type="submit" class="btn btn-outline-danger mt-2">Marcar como no recibida</button>
+                    </form>
+                </details>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
