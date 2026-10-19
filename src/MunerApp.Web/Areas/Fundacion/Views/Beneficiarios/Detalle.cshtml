@@ -146,6 +146,18 @@
                     <i class="bi bi-chevron-right text-suave" aria-hidden="true"></i>
                 </a>
             }
+            @if (Model.PuedeVerAgenda)
+            {
+                @* HU-038: agenda de salud *@
+                <a class="mu-card mu-card-hover p-4 mb-4 d-flex align-items-center gap-3 text-decoration-none text-body" asp-controller="Agenda" asp-action="Beneficiario" asp-route-id="@Model.Id">
+                    <span class="icono-circulo flex-shrink-0"><i class="bi bi-calendar-heart" aria-hidden="true"></i></span>
+                    <span class="flex-grow-1">
+                        <span class="fw-bold d-block">Agenda de salud</span>
+                        <span class="small text-suave">@(Model.EventosPendientes == 0 ? "Sin eventos pendientes" : Model.EventosPendientes + (Model.EventosPendientes == 1 ? " evento pendiente" : " eventos pendientes"))@(Model.ProximoEvento is DateTime proximo ? " · el próximo: " + Formatos.FechaHora(proximo) : " · medicación, vacunas y controles")</span>
+                    </span>
+                    <i class="bi bi-chevron-right text-suave" aria-hidden="true"></i>
+                </a>
+            }
 
             <div class="mu-card p-4 mb-4" id="etograma">
                 <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
@@ -338,6 +350,18 @@
                             <span class="small text-suave">@activos.Count @(activos.Count == 1 ? "activo" : "activos") · @Formatos.Pesos(activos.Sum(p => p.ValorMensual)) al mes</span>
                         }
                     </div>
+                    @if (activos.Count > 0 || Model.Apadrinable || Model.Novedades > 0)
+                    {
+                        @* HU-022: novedades para los padrinos *@
+                        <a class="fila-lista mu-card mu-card-hover mb-3" asp-controller="Novedades" asp-action="Index" asp-route-id="@Model.Id">
+                            <span class="icono-circulo acento flex-shrink-0" style="width:38px;height:38px"><i class="bi bi-chat-heart" aria-hidden="true"></i></span>
+                            <span class="flex-grow-1 min-w-0">
+                                <span class="d-block fw-semibold text-body">Novedades para los padrinos</span>
+                                <span class="d-block small text-suave">@(Model.Novedades == 0 ? "Aún no hay novedades publicadas" : Model.Novedades == 1 ? "1 novedad publicada" : $"{Model.Novedades} novedades publicadas")</span>
+                            </span>
+                            <i class="bi bi-chevron-right text-suave" aria-hidden="true"></i>
+                        </a>
+                    }
                     @if (Model.Padrinos.Count == 0)
                     {
                         <p class="small text-suave mb-0">Todavía no tiene padrinos.</p>

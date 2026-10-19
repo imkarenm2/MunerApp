@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
 using MunerApp.Domain.Constantes;
 using MunerApp.Domain.Entities;
@@ -10,12 +10,10 @@ namespace MunerApp.Web.Servicios;
 /// <summary>
 /// Cambios de estado de un beneficiario con sus efectos (HU-017, HU-020): historial con fecha,
 /// fin de los apadrinamientos cuando el gato sale de la fundación y aviso a los padrinos. Lo usan la hoja de vida (Sprint 3) y la
-/// adopción concretada en la cita (HU-034), para que las reglas estén en un solo lugar.
+/// adopción concretada en la cita (HU-034), para que las reglas estén en un solo lugar. Al salir de la fundación también
+/// se cancela su agenda de salud pendiente (HU-038).
 /// Los cambios se guardan con el siguiente SaveChanges.
 /// </summary>
-/// <summary>Qué pasó al cambiar el estado: si dejó de ofrecerse para apadrinar y cuántos apadrinamientos terminaron.</summary>
-public record ResultadoCambioEstado(bool RetiradoDeApadrinamiento, int ApadrinamientosFinalizados);
-
 public class EstadosBeneficiario
 {
     private readonly MunerAppDbContext _db;
@@ -33,15 +31,11 @@ public class EstadosBeneficiario
     public static bool PuedeApadrinarse(EstadoBeneficiario estado)
         => !ReglasBeneficiario.EsSalida(estado);
 
-    /// <summary>Cambia el estado y lo registra en el historial. Devuelve true si dejó de ofrecerse para apadrinar.</summary>
-    public async Task<bool> CambiarAsync(Beneficiario b, EstadoBeneficiario nuevo, string? usuarioId, string? nota)
-        => (await CambiarConResultadoAsync(b, nuevo, usuarioId, nota)).RetiradoDeApadrinamiento;
-
     /// <summary>
-    /// Cambia el estado y aplica sus efectos. Si el gato sale de la fundación, sus apadrinamientos activos terminan
-    /// y se avisa a cada padrino (ver README, "Reglas de los flujos").
+    /// Cambia el estado y aplica sus efectos. Si el gato sale de la fundación, sus apadrinamientos activos terminan,
+    /// se avisa a cada padrino y se cancela su agenda de salud pendiente (ver README, "Reglas de los flujos").
     /// </summary>
-    public async Task<ResultadoCambioEstado> CambiarConResultadoAsync(Beneficiario b, EstadoBeneficiario nuevo, string? usuarioId, string? nota)
+    public async Task<ResultadoCambioEstado> CambiarAsync(Beneficiario b, EstadoBeneficiario nuevo, string? usuarioId, string? nota)
     {
         b.Estado = nuevo;
 
@@ -73,7 +67,7 @@ public class EstadosBeneficiario
         var retiradoDeApadrinamiento = b.Apadrinable && !PuedeApadrinarse(nuevo);
         if (retiradoDeApadrinamiento)
             await RetirarDeApadrinamientoAsync(b);
-
+        var agendaCancelada = PuedeApadrinarse(nuevo) ? 0 : await CancelarAgendaAsync(b, nuevo, usuarioId);
         _db.HistorialEstadosBeneficiario.Add(new HistorialEstadoBeneficiario
         {
             EsalId = b.EsalId,
@@ -82,7 +76,24 @@ public class EstadosBeneficiario
             CambiadoPorId = usuarioId,
             Nota = string.IsNullOrWhiteSpace(nota) ? null : nota.Trim()
         });
-        return new ResultadoCambioEstado(retiradoDeApadrinamiento, finalizados);
+        return new ResultadoCambioEstado(retiradoDeApadrinamiento, finalizados, agendaCancelada);
+    }
+
+    /// <summary>HU-038: un beneficiario que sale de la fundación ya no tiene agenda de salud; sus eventos pendientes se cancelan.</summary>
+    private async Task<int> CancelarAgendaAsync(Beneficiario b, EstadoBeneficiario nuevo, string? usuarioId)
+    {
+        var pendientes = await _db.EventosAgenda
+            .Where(e => e.BeneficiarioId == b.Id && e.Estado == EstadoEventoAgenda.Pendiente)
+            .ToListAsync();
+        var ahora = DateTime.UtcNow;
+        foreach (var e in pendientes)
+        {
+            e.Estado = EstadoEventoAgenda.Cancelado;
+            e.FechaCancelado = ahora;
+            e.CanceladoPorId = usuarioId;
+            e.MotivoCancelacion = $"{b.Nombre} ahora está \"{Textos.De(nuevo)}\".";
+        }
+        return pendientes.Count;
     }
 
     /// <summary>Avisa a los padrinos activos del beneficiario. Devuelve cuántos son.</summary>
@@ -109,3 +120,6 @@ public class EstadosBeneficiario
         }
     }
 }
+
+/// <summary>Qué pasó al cambiar el estado: si dejó de ofrecerse para apadrinar, cuántos apadrinamientos terminaron y cuántos eventos de su agenda se cancelaron.</summary>
+public record ResultadoCambioEstado(bool RetiradoDeApadrinamiento, int ApadrinamientosFinalizados, int EventosAgendaCancelados);

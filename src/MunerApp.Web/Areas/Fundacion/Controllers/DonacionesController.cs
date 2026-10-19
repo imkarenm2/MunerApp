@@ -61,7 +61,8 @@ public class DonacionesController : Controller
                                     FechaReporte = d.FechaReporte,
                                     Estado = d.Estado,
                                     Apadrinado = d.Apadrinamiento != null ? d.Apadrinamiento.Beneficiario!.Nombre : null,
-                                    Causa = d.Causa != null ? d.Causa.Titulo : null
+                                    Causa = d.Causa != null ? d.Causa.Titulo : null,
+                                    EnLinea = d.Origen == OrigenDonacion.Wompi
                                 }).Take(200).ToListAsync();
 
         return View(new DonacionesEsalViewModel

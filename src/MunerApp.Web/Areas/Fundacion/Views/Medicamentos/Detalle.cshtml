@@ -1,0 +1,121 @@
+@model MedicamentoDetalleViewModel
+@{
+    var m = Model.Medicamento;
+    ViewData["Title"] = m.NombreComercial;
+    ViewData["Seccion"] = "Medicamentos";
+    var hoy = Formatos.Local(DateTime.UtcNow).Date;
+    var unidad = Textos.UnidadDe(m.Presentacion);
+}
+<div class="container py-4 py-md-5" style="max-width: 1040px">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Medicamentos e insumos</a>
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-2 mb-4">
+        <div>
+            <h1 class="h2 mb-0">@m.NombreComercial</h1>
+            <div class="text-suave">@m.PrincipioActivo</div>
+        </div>
+        <a class="btn btn-outline-primary" asp-action="Editar" asp-route-id="@m.Id"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar datos</a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-5">
+            <div class="mu-card p-4 mb-4">
+                <div class="small text-suave">Disponible</div>
+                <div class="display-6 fw-bold text-principal">@Formatos.Cantidad(m.Cantidad) <span class="fs-5 fw-semibold text-suave">@unidad</span></div>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    @if (m.EstaVencido(hoy))
+                    {
+                        <span class="mu-badge error"><i class="bi bi-exclamation-octagon" aria-hidden="true"></i>Vencido</span>
+                    }
+                    @if (m.TieneStockBajo)
+                    {
+                        <span class="mu-badge alerta"><i class="bi bi-arrow-down-circle" aria-hidden="true"></i>Stock bajo</span>
+                    }
+                </div>
+                <dl class="row datos-detalle mt-3 mb-0">
+                    <dt class="col-sm-5">Vence</dt><dd class="col-sm-7">@Formatos.Fecha(m.FechaVencimiento)</dd>
+                    <dt class="col-sm-5">Uso</dt><dd class="col-sm-7 fw-normal">@m.Uso</dd>
+                    <dt class="col-sm-5">Vía</dt><dd class="col-sm-7">@Textos.De(m.Via)</dd>
+                    <dt class="col-sm-5">Dosis</dt><dd class="col-sm-7 fw-normal">@m.Dosis</dd>
+                    <dt class="col-sm-5">Se cuenta en</dt><dd class="col-sm-7">@Textos.De(m.Presentacion)</dd>
+                    <dt class="col-sm-5">Cantidad mínima</dt><dd class="col-sm-7">@(m.CantidadMinima is decimal min ? $"{Formatos.Cantidad(min)} {unidad}" : "Sin definir")</dd>
+                </dl>
+            </div>
+
+            @* HU-037 escenario 2: entrada o uso *@
+            <div class="mu-card p-4">
+                <h2 class="h6 fw-bold mb-3">Registrar entrada o uso</h2>
+                <form asp-action="Movimiento" asp-route-id="@m.Id" method="post" novalidate>
+                    <fieldset class="mb-3">
+                        <legend class="visually-hidden">Tipo de movimiento</legend>
+                        <div class="d-flex flex-wrap gap-2">
+                            <input type="radio" class="btn-check" name="Tipo" id="tipoUso" value="@TipoMovimientoMedicamento.Uso" checked />
+                            <label class="chip" for="tipoUso"><i class="bi bi-dash-circle me-1" aria-hidden="true"></i>Uso</label>
+                            <input type="radio" class="btn-check" name="Tipo" id="tipoEntrada" value="@TipoMovimientoMedicamento.Entrada" />
+                            <label class="chip" for="tipoEntrada"><i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Entrada</label>
+                        </div>
+                    </fieldset>
+                    <div class="mb-3">
+                        <label for="Cantidad" class="form-label">Cantidad (@unidad)</label>
+                        <input id="Cantidad" name="Cantidad" class="form-control" inputmode="decimal" placeholder="Ej.: 1" autocomplete="off" required />
+                    </div>
+                    <div class="mb-3" data-mostrar-si="Tipo=Uso">
+                        <label for="BeneficiarioId" class="form-label">¿En qué beneficiario? (opcional)</label>
+                        <select id="BeneficiarioId" name="BeneficiarioId" class="form-select">
+                            <option value="">Ninguno en particular</option>
+                            @foreach (var b in Model.Beneficiarios)
+                            {
+                                <option value="@b.Id">@b.Nombre</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="Nota" class="form-label">Nota (opcional)</label>
+                        <input id="Nota" name="Nota" class="form-control" maxlength="300" placeholder="Ej.: compra en droguería, dosis de control…" />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" data-cargando="Guardando...">Registrar</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-7">
+            <div class="mu-card overflow-hidden">
+                <h2 class="h6 fw-bold p-4 pb-2 mb-0">Historial de movimientos</h2>
+                @if (Model.Movimientos.Count == 0)
+                {
+                    <p class="small text-suave px-4 pb-4 mb-0">Sin movimientos.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table tabla-mu align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Fecha</th>
+                                    <th scope="col">Movimiento</th>
+                                    <th scope="col" class="text-end">Cantidad</th>
+                                    <th scope="col" class="text-end">Quedó</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var mv in Model.Movimientos)
+                                {
+                                    var signo = mv.Tipo == TipoMovimientoMedicamento.Uso ? "−" : "+";
+                                    <tr>
+                                        <td class="small">@Formatos.FechaHora(mv.Fecha)<div class="text-suave">@mv.RegistradoPor</div></td>
+                                        <td class="small">
+                                            <span class="fw-semibold">@Textos.De(mv.Tipo)</span>
+                                            @if (mv.Beneficiario is not null) { <span> · @mv.Beneficiario</span> }
+                                            @if (mv.Nota is not null) { <div class="text-suave">@mv.Nota</div> }
+                                        </td>
+                                        <td class="text-end fw-semibold @(mv.Tipo == TipoMovimientoMedicamento.Uso ? "text-danger" : "text-success")">@signo@Formatos.Cantidad(mv.Cantidad)</td>
+                                        <td class="text-end">@Formatos.Cantidad(mv.CantidadResultante)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

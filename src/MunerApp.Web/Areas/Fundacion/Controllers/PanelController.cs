@@ -24,13 +24,15 @@ public class PanelController : Controller
     private readonly IEsalActual _esalActual;
     private readonly IModuloService _modulos;
     private readonly IAlmacenamientoArchivos _archivos;
+    private readonly AlertasSalud _alertas;
 
-    public PanelController(MunerAppDbContext db, IEsalActual esalActual, IModuloService modulos, IAlmacenamientoArchivos archivos)
+    public PanelController(MunerAppDbContext db, IEsalActual esalActual, IModuloService modulos, IAlmacenamientoArchivos archivos, AlertasSalud alertas)
     {
         _db = db;
         _esalActual = esalActual;
         _modulos = modulos;
         _archivos = archivos;
+        _alertas = alertas;
     }
 
     [HttpGet]
@@ -65,7 +67,12 @@ public class PanelController : Controller
             AccesoClinico = clinico,
             ModuloBeneficiarios = moduloBeneficiarios,
             Slug = esal.Slug,
-            FotoPortada = portada is null ? null : _archivos.UrlPublica(portada)
+            FotoPortada = portada is null ? null : _archivos.UrlPublica(portada),
+
+            // HU-039: alertas de salud, solo para los responsables y con el módulo de salud activo
+            AlertasSalud = clinico && await _modulos.EstaActivoAsync(esalId, CodigosModulo.Salud)
+                ? await _alertas.ResumenAsync(esalId) : null,
+            TieneAgenda = moduloBeneficiarios
         };
 
         var tareas = new List<TareaPanel>();
@@ -174,7 +181,7 @@ public class PanelController : Controller
             modelo.PadrinosActivos = await apadrinamientos.Select(a => a.PadrinoId).Distinct().CountAsync();
             modelo.AporteMensualPadrinos = await apadrinamientos.SumAsync(a => (decimal?)a.ValorMensual) ?? 0;
 
-            var donacionesPendientes = await _db.Donaciones.CountAsync(d => d.Estado == EstadoDonacion.Pendiente);
+            var donacionesPendientes = await _db.Donaciones.CountAsync(d => d.Estado == EstadoDonacion.Pendiente && d.Origen == OrigenDonacion.Manual);
             var postulacionesPendientes = await _db.PostulacionesVoluntario.CountAsync(p => p.Estado == EstadoPostulacion.Pendiente);
 
             if (donacionesPendientes > 0)

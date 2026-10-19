@@ -69,7 +69,11 @@
                                 {
                                     <span class="mu-badge exito"><i class="bi bi-broadcast" aria-hidden="true"></i>Activa</span>
                                 }
-                                <span class="small text-suave">@(c.Cerrada ? "Terminó el " + Formatos.Fecha(c.FechaLimite) : Formatos.DiasRestantes(c.DiasRestantes))</span>
+                                <span class="small text-suave">@(c.Cerrada ? c.MotivoCierre : Formatos.DiasRestantes(c.DiasRestantes))</span>
+                                @if (c.Cerrada && c.TieneRendicion)
+                                {
+                                    <span class="mu-badge exito"><i class="bi bi-clipboard-check" aria-hidden="true"></i>Rendición publicada</span>
+                                }
                             </div>
                             <h2 class="h5 mb-2">@c.Titulo</h2>
                             @if (c.Estado == EstadoCausa.Rechazada && !string.IsNullOrEmpty(c.MotivoRechazo))
@@ -111,6 +115,17 @@
                                             <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-play-circle me-1" aria-hidden="true"></i>Reanudar</button>
                                         </form>
                                     }
+                                    @* HU-046: cerrar antes de tiempo *@
+                                    <form asp-action="Cerrar" asp-route-id="@c.Id" method="post"
+                                          data-confirmar="Dejará de recibir donaciones de forma definitiva y podrás publicar la rendición de cuentas. No se puede reabrir."
+                                          data-confirmar-titulo="¿Cerrar &quot;@c.Titulo&quot;?" data-confirmar-boton="Sí, cerrar" data-confirmar-tipo="peligro">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-flag me-1" aria-hidden="true"></i>Cerrar</button>
+                                    </form>
+                                }
+                                @if (Model.PuedeGestionar && c.Cerrada && !c.TieneRendicion)
+                                {
+                                    @* HU-046: rendición de cuentas *@
+                                    <a class="btn btn-sm btn-primary" asp-action="Rendicion" asp-route-id="@c.Id"><i class="bi bi-clipboard-data me-1" aria-hidden="true"></i>Publicar rendición de cuentas</a>
                                 }
                             </div>
                         </div>

@@ -63,6 +63,10 @@ public class CausaItem
     public string? FotoUrl { get; set; }
     public string? MotivoRechazo { get; set; }
     public bool EnRevision => Estado is EstadoCausa.PorAprobar or EstadoCausa.Rechazada;
+
+    /// <summary>HU-046: por qué se cerró y si ya se publicó la rendición de cuentas.</summary>
+    public string? MotivoCierre { get; set; }
+    public bool TieneRendicion { get; set; }
 }
 
 public class CausasIndexViewModel
@@ -72,4 +76,31 @@ public class CausasIndexViewModel
 
     /// <summary>Solo el administrador principal publica y edita (es contenido público de la fundación).</summary>
     public bool PuedeGestionar { get; set; }
+}
+
+/// <summary>HU-046 escenario 2: rendición de cuentas de una causa cerrada.</summary>
+public class RendicionFormViewModel
+{
+    public int Id { get; set; }
+    public string Titulo { get; set; } = string.Empty;
+    public decimal Meta { get; set; }
+    public decimal Recaudado { get; set; }
+    public int Donaciones { get; set; }
+    public int Donantes { get; set; }
+    public string Motivo { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Cuéntales a los donantes en qué se usó el dinero.")]
+    [StringLength(4000, MinimumLength = 30, ErrorMessage = "La rendición debe tener entre {2} y {1} caracteres.")]
+    [Display(Name = "¿En qué se usó el dinero?")]
+    public string Texto { get; set; } = string.Empty;
+
+    /// <summary>Texto y no número, para leerlo con Formatos.LeerPesos (acepta puntos de miles).</summary>
+    [Display(Name = "Valor usado (opcional)")]
+    public string? ValorEjecutado { get; set; }
+
+    [Display(Name = "Fotos")]
+    public List<IFormFile>? Fotos { get; set; }
+
+    [Display(Name = "Soportes")]
+    public List<IFormFile>? Soportes { get; set; }
 }

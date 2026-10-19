@@ -169,6 +169,9 @@ public class DonacionEsalItem
     public DateTime FechaTransferencia { get; set; }
     public DateTime FechaReporte { get; set; }
     public EstadoDonacion Estado { get; set; }
+
+    /// <summary>Pago en línea con Wompi (HU-043): lo confirma o rechaza el aviso de Wompi (HU-044), no el administrador.</summary>
+    public bool EnLinea { get; set; }
 }
 
 public class DonacionEsalDetalleViewModel : DonacionEsalItem
@@ -202,4 +205,27 @@ public class PostulacionEsalItem
     public bool TieneSoporte { get; set; }
     public EstadoPostulacion Estado { get; set; }
     public DateTime Fecha { get; set; }
+
+    // HU-036: revisión
+    public string? MotivoRechazo { get; set; }
+    public DateTime? FechaRespuesta { get; set; }
+    public DateTime? FechaRetiro { get; set; }
+}
+
+/// <summary>HU-036: postulaciones por estado; "Cerradas" agrupa las rechazadas y los voluntarios desvinculados.</summary>
+public class PostulacionesEsalViewModel
+{
+    public EstadoPostulacion Estado { get; set; }
+    public Dictionary<EstadoPostulacion, int> Conteos { get; set; } = new();
+    public List<PostulacionEsalItem> Postulaciones { get; set; } = new();
+
+    /// <summary>Solo el administrador principal aprueba, rechaza o desvincula (da o quita acceso al panel).</summary>
+    public bool PuedeGestionar { get; set; }
+
+    public static readonly (string Texto, string Icono, EstadoPostulacion[] Estados)[] Pestanas =
+    {
+        ("Por revisar", "bi-hourglass-split", new[] { EstadoPostulacion.Pendiente }),
+        ("Voluntarios activos", "bi-person-check", new[] { EstadoPostulacion.Aprobada }),
+        ("Cerradas", "bi-archive", new[] { EstadoPostulacion.Rechazada, EstadoPostulacion.Retirada })
+    };
 }

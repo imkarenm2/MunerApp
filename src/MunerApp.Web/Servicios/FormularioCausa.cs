@@ -14,7 +14,7 @@ public static class FormularioCausa
 {
     public const int MaxFotos = 5;
     public const long LimitePeticion = 32L * 1024 * 1024; // 5 fotos de hasta 5 MB y los demás campos
-    private const decimal MetaMaxima = 1_000_000_000;
+    public const decimal MetaMaxima = 1_000_000_000;
 
     /// <summary>Valida meta, fecha límite y justificación. Devuelve la meta ya convertida a pesos.</summary>
     public static decimal? ValidarCampos(ModelStateDictionary estado, CausaFormViewModel model, decimal recaudado)
