@@ -38,6 +38,8 @@ public class HomeController : Controller
             return RedirectToAction("Index", "Resumen", new { area = "Plataforma" });
         if (User.IsInRole(Roles.AdministradorESAL) || User.IsInRole(Roles.Voluntario))
             return RedirectToAction("Index", "Panel", new { area = "Fundacion" });
+        if (User.IsInRole(Roles.Veedor))
+            return RedirectToAction("Index", "Consulta", new { area = "Veeduria" });
 
         // Todo lo público se consulta sin el filtro por fundación y solo de fundaciones activas y publicadas
         var esalesPublicas = _db.Esales.AsNoTracking().Where(ReglasPublicacion.EnDirectorio);

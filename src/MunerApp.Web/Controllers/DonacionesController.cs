@@ -203,6 +203,19 @@ public class DonacionesController : Controller
                 Causa = d.Causa != null ? d.Causa.Titulo : null })
             .ToListAsync();
 
+        // Donaciones en especie del mismo donante
+        ViewData["Especie"] = (await _db.DonacionesEspecie.IgnoreQueryFilters().AsNoTracking()
+                .Where(d => d.DonanteId == UsuarioId)
+                .OrderByDescending(d => d.FechaOferta)
+                .Select(d => new { d.Codigo, d.Esal!.Nombre, d.Esal.LogoRuta, d.Articulo, d.CantidadOfrecida, d.CantidadRecibida, d.Unidad, d.Estado, d.FechaOferta })
+                .ToListAsync())
+            .Select(d => new MiDonacionEspecieItem
+            {
+                Codigo = d.Codigo, NombreEsal = d.Nombre, LogoUrl = d.LogoRuta is null ? null : _archivos.UrlPublica(d.LogoRuta),
+                Articulo = d.Articulo, CantidadOfrecida = d.CantidadOfrecida, CantidadRecibida = d.CantidadRecibida,
+                Unidad = d.Unidad, Estado = d.Estado, FechaOferta = d.FechaOferta
+            }).ToList();
+
         return View(donaciones.Select(d => new DonacionItem
         {
             Codigo = d.Codigo,

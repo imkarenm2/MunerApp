@@ -1,0 +1,81 @@
+@model DonarEspecieViewModel
+@{
+    ViewData["Title"] = "Donar en especie a " + Model.NombreEsal;
+    var urlOtra = $"/fundaciones/{Model.Slug}/donar-en-especie/ofrecer";
+    var autenticado = User.Identity?.IsAuthenticated ?? false;
+    string Destino(string url) => autenticado ? url : "/Cuenta/IniciarSesion?returnUrl=" + Uri.EscapeDataString(url);
+    string Icono(CategoriaEspecie c) => c switch
+    {
+        CategoriaEspecie.Alimento => "bi-basket", CategoriaEspecie.Arena => "bi-bucket", CategoriaEspecie.Medicamento => "bi-capsule",
+        CategoriaEspecie.Aseo => "bi-droplet", CategoriaEspecie.Accesorios => "bi-gift", _ => "bi-box-seam"
+    };
+}
+<div class="container py-4 py-md-5" style="max-width: 960px">
+    <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Donar en especie a")' />
+
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Dona lo que necesitan</h1>
+            <p class="text-suave mb-0">Concentrado, arena, medicamentos, cobijas… Dinos qué vas a llevar y cuándo. La fundación confirma cuando lo recibe y te llega tu comprobante.</p>
+        </div>
+        <a class="btn btn-outline-primary" href="@Destino(urlOtra)"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Donar otra cosa</a>
+    </div>
+
+    @if (Model.Necesidades.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-box-seam" aria-hidden="true"></i></div>
+            <h2 class="h5">Por ahora no han publicado necesidades</h2>
+            <p class="text-suave">Igual puedes ofrecer lo que quieras donar y la fundación lo coordinará contigo.</p>
+            <a class="btn btn-apoyar" href="@Destino(urlOtra)">Ofrecer una donación en especie</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3 mb-5">
+            @foreach (var n in Model.Necesidades)
+            {
+                var url = $"/fundaciones/{Model.Slug}/donar-en-especie/ofrecer?necesidad={n.Id}";
+                <div class="col-12 col-md-6">
+                    <div class="mu-card p-4 h-100 d-flex flex-column">
+                        <div class="d-flex align-items-start gap-3 mb-2">
+                            <span class="icono-circulo @(n.Urgente ? "acento" : "") flex-shrink-0"><i class="bi @Icono(n.Categoria)" aria-hidden="true"></i></span>
+                            <div class="flex-grow-1 min-w-0">
+                                <h2 class="h5 mb-1">@n.Nombre</h2>
+                                <span class="small text-suave">@Textos.De(n.Categoria)</span>
+                                @if (n.Urgente)
+                                {
+                                    <span class="mu-badge acento ms-1">Urgente</span>
+                                }
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(n.Descripcion))
+                        {
+                            <p class="small text-suave">@n.Descripcion</p>
+                        }
+                        <div class="mu-progreso mb-1 mt-auto" role="progressbar" aria-label="Avance de @n.Nombre" aria-valuenow="@n.Porcentaje" aria-valuemin="0" aria-valuemax="100"><span style="width:@n.Porcentaje%"></span></div>
+                        <div class="d-flex justify-content-between small mb-3">
+                            <span><strong>@n.Recibido</strong> de @n.Meta @n.Unidad</span>
+                            <span class="text-suave">@(n.Faltan == 0 ? "¡Cubierto!" : $"Faltan {n.Faltan}")</span>
+                        </div>
+                        <a class="btn btn-apoyar" href="@Destino(url)">Donar esto</a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (Model.Recibido.Count > 0)
+    {
+        <section class="mu-card p-4">
+            <h2 class="h5 mb-1"><i class="bi bi-shield-check me-2 text-principal" aria-hidden="true"></i>Lo que han recibido en especie</h2>
+            <p class="small text-suave mb-3">Último año, según lo que la fundación confirmó al recibirlo.</p>
+            <ul class="list-unstyled d-grid gap-2 mb-0">
+                @foreach (var r in Model.Recibido)
+                {
+                    <li class="d-flex gap-2"><i class="bi @Icono(r.Categoria) text-principal" aria-hidden="true"></i><span><strong>@Textos.De(r.Categoria):</strong> @r.Detalle <span class="text-suave">(@r.Donaciones @(r.Donaciones == 1 ? "donación" : "donaciones"))</span></span></li>
+                }
+            </ul>
+        </section>
+    }
+</div>

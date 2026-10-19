@@ -1,0 +1,72 @@
+@model InformeEspecieViewModel
+@{
+    ViewData["Title"] = "Informe de donaciones en especie";
+}
+<div class="container-fluid panel-contenido py-4">
+    <h1 class="h2 mb-1">Informe de donaciones en especie</h1>
+    <p class="text-suave mb-3">Concentrado, arena, medicamentos y demás artículos que reciben las fundaciones. Sin datos de los donantes.</p>
+
+    <partial name="_FiltroFundacion" model="(Model.Fundaciones, nameof(InformesController.Especie))" />
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3"><div class="kpi exito"><span class="kpi-icono"><i class="bi bi-box-seam" aria-hidden="true"></i></span><span class="kpi-valor">@Model.Recibidas</span><span class="kpi-titulo">Recibidas</span><span class="kpi-detalle">de @Model.DonantesDistintos donantes</span></div></div>
+        <div class="col-6 col-xl-3"><div class="kpi alerta"><span class="kpi-icono"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span><span class="kpi-valor">@Model.PorRecibir</span><span class="kpi-titulo">Por recibir</span><span class="kpi-detalle">ofrecidas, aún no llegan</span></div></div>
+        <div class="col-6 col-xl-3"><div class="kpi"><span class="kpi-icono"><i class="bi bi-x-circle" aria-hidden="true"></i></span><span class="kpi-valor">@Model.NoRecibidas</span><span class="kpi-titulo">No recibidas</span><span class="kpi-detalle">no llegaron o no se pudieron recibir</span></div></div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-lg-6">
+            <section class="mu-card overflow-hidden h-100">
+                <h2 class="h5 p-4 pb-2 mb-0">Por tipo</h2>
+                <table class="table tabla-mu mb-0"><tbody>
+                    @foreach (var c in Model.PorCategoria)
+                    {
+                        <tr><td>@c.Nombre</td><td class="text-end fw-semibold">@c.Cantidad</td></tr>
+                    }
+                </tbody></table>
+            </section>
+        </div>
+        @if (Model.EsalId is null)
+        {
+            <div class="col-12 col-lg-6">
+                <section class="mu-card overflow-hidden h-100">
+                    <h2 class="h5 p-4 pb-2 mb-0">Por fundación</h2>
+                    <table class="table tabla-mu mb-0"><tbody>
+                        @foreach (var f in Model.PorFundacion)
+                        {
+                            <tr><td>@f.Nombre</td><td class="text-end fw-semibold">@f.Cantidad</td></tr>
+                        }
+                    </tbody></table>
+                </section>
+            </div>
+        }
+    </div>
+
+    <section class="mu-card overflow-hidden">
+        <h2 class="h5 p-4 pb-2 mb-0">Últimas</h2>
+        @if (Model.Recientes.Count == 0)
+        {
+            <p class="small text-suave px-4 pb-4 mb-0">Aún no hay donaciones en especie.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table tabla-mu align-middle mb-0">
+                    <thead><tr><th scope="col">Código</th><th scope="col">Fundación</th><th scope="col">Qué</th><th scope="col" class="text-end">Cantidad</th><th scope="col">Estado</th><th scope="col">Ofrecida</th></tr></thead>
+                    <tbody>
+                        @foreach (var d in Model.Recientes)
+                        {
+                            <tr>
+                                <td class="small font-monospace">@d.Codigo</td><td>@d.Fundacion</td>
+                                <td>@d.Articulo<div class="small text-suave">@d.Categoria</div></td>
+                                <td class="text-end">@d.Cantidad @d.Unidad</td>
+                                <td><span class="mu-badge @(d.Estado == EstadoDonacionEspecie.Recibida ? "exito" : d.Estado == EstadoDonacionEspecie.Ofrecida ? "alerta" : "")">@Textos.De(d.Estado)</span></td>
+                                <td class="small text-suave">@Formatos.Hace(d.Fecha)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>

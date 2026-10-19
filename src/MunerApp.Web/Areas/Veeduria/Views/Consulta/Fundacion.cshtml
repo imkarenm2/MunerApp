@@ -1,0 +1,174 @@
+@model FundacionVeeduriaViewModel
+@{
+    ViewData["Title"] = "Veeduría · " + Model.Nombre;
+    var sinRendicion = Model.Causas.Count(c => c.Cerrada && c.RendicionUrl is null);
+}
+<div class="container py-4 py-md-5">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Veeduría</a>
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mt-2 mb-4">
+        <div>
+            <h1 class="h2 mb-1">@Model.Nombre</h1>
+            <p class="text-suave mb-0">NIT @Model.Nit@(string.IsNullOrEmpty(Model.Ciudad) ? "" : " · " + Model.Ciudad)
+                @if (Model.Slug is not null)
+                {
+                    <span> · <a href="/fundaciones/@Model.Slug" target="_blank" rel="noopener">Página pública</a></span>
+                }
+            </p>
+        </div>
+        <form method="get" asp-action="Fundacion" asp-route-id="@Model.Id" class="d-flex align-items-center gap-2">
+            <label for="anio" class="small fw-semibold">Año</label>
+            <select id="anio" name="anio" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                @foreach (var a in Model.Anios)
+                {
+                    <option value="@a" selected="@(a == Model.Anio)">@a</option>
+                }
+            </select>
+        </form>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3"><div class="kpi exito"><span class="kpi-icono"><i class="bi bi-cash-coin" aria-hidden="true"></i></span><span class="kpi-valor">@Formatos.Pesos(Model.DineroConfirmado)</span><span class="kpi-titulo">Dinero confirmado</span><span class="kpi-detalle">@Model.DonacionesDinero donaciones en @Model.Anio</span></div></div>
+        <div class="col-6 col-xl-3"><div class="kpi"><span class="kpi-icono"><i class="bi bi-box-seam" aria-hidden="true"></i></span><span class="kpi-valor">@Model.EspecieRecibidas</span><span class="kpi-titulo">Donaciones en especie</span><span class="kpi-detalle">recibidas · @Model.EspecieNoRecibidas no recibidas</span></div></div>
+        <div class="col-6 col-xl-3"><div class="kpi @(Model.PendientesMasDeUnaSemana > 0 ? "alerta" : "")"><span class="kpi-icono"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span><span class="kpi-valor">@Model.DonacionesPendientes</span><span class="kpi-titulo">Sin revisar hoy</span><span class="kpi-detalle">@Model.PendientesMasDeUnaSemana con más de una semana</span></div></div>
+        <div class="col-6 col-xl-3"><div class="kpi acento"><span class="kpi-icono"><i class="bi bi-stopwatch" aria-hidden="true"></i></span><span class="kpi-valor">@(Model.DiasPromedioRevision is double dias ? $"{dias:0.#} días" : "—")</span><span class="kpi-titulo">Tiempo de revisión</span><span class="kpi-detalle">promedio para confirmar una donación</span></div></div>
+    </div>
+
+    @* ---------- Causas y rendición de cuentas ---------- *@
+    <section class="mu-card overflow-hidden mb-4">
+        <div class="p-4 pb-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h2 class="h5 mb-0">Causas y rendición de cuentas</h2>
+            <a class="small" asp-action="Csv" asp-route-id="@Model.Id" asp-route-anio="@Model.Anio" asp-route-tipo="causas"><i class="bi bi-download me-1" aria-hidden="true"></i>Descargar CSV</a>
+        </div>
+        @if (sinRendicion > 0)
+        {
+            <div class="alert alert-warning mx-4 small"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i><div>@sinRendicion @(sinRendicion == 1 ? "causa terminó" : "causas terminaron") y aún no @(sinRendicion == 1 ? "tiene" : "tienen") rendición de cuentas publicada.</div></div>
+        }
+        @if (Model.Causas.Count == 0)
+        {
+            <p class="small text-suave px-4 pb-4 mb-0">No hubo causas en @Model.Anio.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table tabla-mu align-middle mb-0">
+                    <thead><tr><th scope="col">Causa</th><th scope="col" class="text-end">Meta</th><th scope="col" class="text-end">Recaudado</th><th scope="col">Fecha límite</th><th scope="col">Rendición</th></tr></thead>
+                    <tbody>
+                        @foreach (var c in Model.Causas)
+                        {
+                            <tr>
+                                <td><span class="fw-semibold">@c.Titulo</span><div class="small text-suave">@(c.Cerrada ? "Cerrada" : Textos.De(c.Estado))</div></td>
+                                <td class="text-end">@Formatos.Pesos(c.Meta)</td>
+                                <td class="text-end">@Formatos.Pesos(c.Recaudado)</td>
+                                <td>@Formatos.Fecha(c.FechaLimite)</td>
+                                <td>
+                                    @if (c.RendicionUrl is not null)
+                                    {
+                                        <a href="@c.RendicionUrl" target="_blank" rel="noopener"><i class="bi bi-file-earmark-check me-1" aria-hidden="true"></i>Ver</a>
+                                    }
+                                    else if (c.Cerrada)
+                                    {
+                                        <span class="mu-badge alerta">Pendiente</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="small text-suave">En curso</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <div class="row g-4 mb-4">
+        @* ---------- Dinero ---------- *@
+        <div class="col-12 col-xl-6">
+            <section class="mu-card overflow-hidden h-100">
+                <div class="p-4 pb-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h2 class="h5 mb-0">Donaciones en dinero confirmadas</h2>
+                    <a class="small" asp-action="Csv" asp-route-id="@Model.Id" asp-route-anio="@Model.Anio" asp-route-tipo="dinero"><i class="bi bi-download me-1" aria-hidden="true"></i>Descargar CSV</a>
+                </div>
+                @if (Model.PorDestino.Count > 0)
+                {
+                    <p class="small px-4 mb-2">
+                        @foreach (var d in Model.PorDestino)
+                        {
+                            <span class="me-3"><strong>@d.Destino:</strong> @Formatos.Pesos(d.Valor)</span>
+                        }
+                    </p>
+                }
+                @if (Model.Dinero.Count == 0)
+                {
+                    <p class="small text-suave px-4 pb-4 mb-0">Sin donaciones confirmadas en @Model.Anio.</p>
+                }
+                else
+                {
+                    <div class="table-responsive" style="max-height: 420px">
+                        <table class="table tabla-mu align-middle mb-0">
+                            <thead><tr><th scope="col">Código</th><th scope="col">Fecha</th><th scope="col">Destino</th><th scope="col" class="text-end">Valor</th></tr></thead>
+                            <tbody>
+                                @foreach (var d in Model.Dinero)
+                                {
+                                    <tr><td class="small font-monospace">@d.Codigo</td><td class="small">@Formatos.Fecha(d.Fecha)</td><td class="small">@d.Destino<div class="text-suave">@d.Medio</div></td><td class="text-end">@Formatos.Pesos(d.Valor)</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </section>
+        </div>
+
+        @* ---------- Especie ---------- *@
+        <div class="col-12 col-xl-6">
+            <section class="mu-card overflow-hidden h-100">
+                <div class="p-4 pb-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h2 class="h5 mb-0">Donaciones en especie recibidas</h2>
+                    <a class="small" asp-action="Csv" asp-route-id="@Model.Id" asp-route-anio="@Model.Anio" asp-route-tipo="especie"><i class="bi bi-download me-1" aria-hidden="true"></i>Descargar CSV</a>
+                </div>
+                @if (Model.Especie.Count == 0)
+                {
+                    <p class="small text-suave px-4 pb-4 mb-0">Sin donaciones en especie recibidas en @Model.Anio.</p>
+                }
+                else
+                {
+                    <div class="table-responsive" style="max-height: 420px">
+                        <table class="table tabla-mu align-middle mb-0">
+                            <thead><tr><th scope="col">Fecha</th><th scope="col">Qué</th><th scope="col" class="text-end">Cantidad</th><th scope="col">Evidencia</th></tr></thead>
+                            <tbody>
+                                @foreach (var e in Model.Especie)
+                                {
+                                    <tr>
+                                        <td class="small">@Formatos.Fecha(e.Fecha)<div class="font-monospace text-suave">@e.Codigo</div></td>
+                                        <td class="small">@e.Articulo<div class="text-suave">@e.Categoria@(e.Vence is DateTime v ? " · vence " + Formatos.Fecha(v) : "")</div></td>
+                                        <td class="text-end small">@e.Cantidad @e.Unidad</td>
+                                        <td>@if (e.FotoUrl is not null) { <a class="small" href="@e.FotoUrl" target="_blank" rel="noopener"><i class="bi bi-image me-1" aria-hidden="true"></i>Foto</a> } else { <span class="small text-suave">Sin foto</span> }</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </section>
+        </div>
+    </div>
+
+    @* ---------- Documentos ---------- *@
+    <section class="mu-card p-4">
+        <h2 class="h5 mb-3">Documentos de transparencia</h2>
+        @if (Model.Documentos.Count == 0)
+        {
+            <p class="small text-suave mb-0">La fundación no ha publicado documentos.</p>
+        }
+        else
+        {
+            <ul class="list-unstyled d-grid gap-2 mb-0">
+                @foreach (var d in Model.Documentos)
+                {
+                    <li><a href="@d.Url" target="_blank" rel="noopener"><i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>@d.Titulo</a> <span class="small text-suave">· @d.Categoria · @Formatos.FechaCorta(d.Fecha)</span></li>
+                }
+            </ul>
+        }
+    </section>
+</div>

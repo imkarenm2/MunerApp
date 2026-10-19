@@ -304,6 +304,21 @@ Migraciones, en orden: `HU023_Productos`, `HU025_ChatTienda`, `HU026_Pedidos`, `
 - **Contrato con HU-043:** al iniciar el pago se crea la `Donacion` en Pendiente con `Origen = Wompi`, `ReferenciaPasarela` única, `CausaId`, `MedioPago = "Wompi"` y `SoporteRuta` vacío.
 - Para probar en local se necesita una URL pública (por ejemplo, un túnel de Visual Studio o ngrok) registrada como URL de eventos en el sandbox de Wompi.
 
+## Donaciones en especie
+
+- La fundación publica lo que necesita en **Mi fundación > En especie** (comida, arena, medicamentos, aseo, accesorios). Solo el administrador principal crea o pausa necesidades.
+- El donante entra a la fundación, elige **Donar en especie**, dice qué lleva, cuánto y si lo deja en la sede o lo recogen. Recibe un código `ESP-año-número`.
+- Cuando llega, el equipo marca **Recibida** con la cantidad real, vencimiento si aplica y una foto. El donante ve el estado en **Mis donaciones** y puede bajar su comprobante en PDF.
+- Si no llega, se marca **No recibida** con el motivo. El donante puede cancelar mientras siga en Ofrecida.
+- El superadmin tiene el informe **En especie** con lo recibido por fundación.
+
+## Veeduría ciudadana
+
+- Rol nuevo **Veedor**. El superadmin crea la cuenta en **Veeduría** y le llega un correo para poner su clave. También la puede desactivar.
+- El veedor solo consulta, no puede donar ni cambiar nada. Ve por fundación: causas y su rendición de cuentas, dinero recibido sin datos del donante, lo recibido en especie con foto y los documentos publicados.
+- Alertas: causas cerradas sin rendición, donaciones sin revisar por más de 7 días y fundaciones sin documentos.
+- Puede descargar CSV de dinero, especie y causas.
+
 ## Pruebas automatizadas
 
 ```bash

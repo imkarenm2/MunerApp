@@ -1,0 +1,49 @@
+@model MiDonacionEspecieItem
+@{
+    ViewData["Title"] = "Donación " + Model.Codigo;
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <a href="/mis-donaciones" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Mis donaciones</a>
+    <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mb-1">
+        <h1 class="h2 mb-0">@Model.Articulo</h1>
+        <span class="mu-badge @(Model.Estado switch { EstadoDonacionEspecie.Recibida => "exito", EstadoDonacionEspecie.Ofrecida => "alerta", _ => "" })">@Textos.De(Model.Estado)</span>
+    </div>
+    <p class="text-suave mb-4">Donación en especie @Model.Codigo · @Model.NombreEsal</p>
+
+    <section class="mu-card p-4 mb-3">
+        <dl class="row datos-detalle mb-0">
+            <dt class="col-sm-5">Ofreciste</dt><dd class="col-sm-7">@Model.CantidadOfrecida @Model.Unidad · @Textos.De(Model.Categoria)</dd>
+            <dt class="col-sm-5">Entrega</dt><dd class="col-sm-7">@Textos.De(Model.FormaEntrega) · @Formatos.Fecha(Model.FechaEntregaEstimada)</dd>
+            @if (!string.IsNullOrEmpty(Model.DireccionEsal) && Model.Estado == EstadoDonacionEspecie.Ofrecida)
+            {
+                <dt class="col-sm-5">Fundación</dt><dd class="col-sm-7">@Model.DireccionEsal</dd>
+            }
+            @if (Model.Estado == EstadoDonacionEspecie.Recibida)
+            {
+                <dt class="col-sm-5">Recibieron</dt><dd class="col-sm-7">@Model.CantidadRecibida @Model.Unidad@(Model.FechaRecepcion is DateTime fr ? " · " + Formatos.FechaCorta(fr) : "")</dd>
+            }
+            @if (!string.IsNullOrEmpty(Model.MotivoNoRecibida))
+            {
+                <dt class="col-sm-5">Motivo</dt><dd class="col-sm-7 fw-normal">@Model.MotivoNoRecibida</dd>
+            }
+        </dl>
+        @if (Model.FotoUrl is not null)
+        {
+            <img src="@Model.FotoUrl" alt="Foto de lo que recibió la fundación" class="img-fluid rounded mt-3" loading="lazy" />
+        }
+    </section>
+
+    @if (Model.Estado == EstadoDonacionEspecie.Recibida)
+    {
+        <a class="btn btn-primary" href="/mis-donaciones/especie/@Model.Codigo/comprobante"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i>Descargar comprobante</a>
+    }
+    else if (Model.Estado == EstadoDonacionEspecie.Ofrecida)
+    {
+        <p class="small text-suave">La fundación confirmará cuando la reciba. Si ya no puedes donarla, avísale cancelándola.</p>
+        <form method="post" action="/mis-donaciones/especie/@Model.Codigo/cancelar"
+              data-confirmar="La fundación sabrá que ya no la vas a llevar." data-confirmar-titulo="¿Cancelar la donación?" data-confirmar-boton="Sí, cancelar" data-confirmar-tipo="peligro">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-secondary">Cancelar esta donación</button>
+        </form>
+    }
+</div>

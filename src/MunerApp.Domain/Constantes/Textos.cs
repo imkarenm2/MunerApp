@@ -229,4 +229,26 @@ public static class Textos
         EstadoPedido.Cancelado => "Cancelado",
         _ => e.ToString()
     };
+
+    public static string De(CategoriaEspecie c) => c switch
+    {
+        CategoriaEspecie.Alimento => "Alimento",
+        CategoriaEspecie.Arena => "Arena",
+        CategoriaEspecie.Medicamento => "Medicamento",
+        CategoriaEspecie.Aseo => "Aseo y limpieza",
+        CategoriaEspecie.Accesorios => "Cobijas y accesorios",
+        CategoriaEspecie.Otro => "Otro",
+        _ => c.ToString()
+    };
+
+    public static string De(EstadoDonacionEspecie e) => e switch
+    {
+        EstadoDonacionEspecie.Ofrecida => "Por recibir",
+        EstadoDonacionEspecie.Recibida => "Recibida",
+        EstadoDonacionEspecie.NoRecibida => "No recibida",
+        EstadoDonacionEspecie.Cancelada => "Cancelada",
+        _ => e.ToString()
+    };
+
+    public static string De(FormaEntregaEspecie f) => f == FormaEntregaEspecie.Domicilio ? "La fundación la recoge" : "La llevo a la fundación";
 }

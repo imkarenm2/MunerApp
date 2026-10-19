@@ -15,6 +15,9 @@ public class Usuario : IdentityUser
     /// <summary>Principal, Consulta, Salud o General (ver Domain.Constantes.Perfiles).</summary>
     public string? Perfil { get; set; }
 
+    /// <summary>Para veedores: la veeduría u organización que representan.</summary>
+    public string? Organizacion { get; set; }
+
     public bool Activo { get; set; } = true;
     public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
 }

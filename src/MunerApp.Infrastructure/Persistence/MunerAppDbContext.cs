@@ -31,6 +31,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<DocumentoTransparencia> DocumentosTransparencia => Set<DocumentoTransparencia>();
     public DbSet<DatosDonacion> DatosDonacion => Set<DatosDonacion>();
     public DbSet<Donacion> Donaciones => Set<Donacion>();
+    public DbSet<NecesidadEspecie> NecesidadesEspecie => Set<NecesidadEspecie>();
+    public DbSet<DonacionEspecie> DonacionesEspecie => Set<DonacionEspecie>();
     public DbSet<Notificacion> Notificaciones => Set<Notificacion>();
     public DbSet<PostulacionVoluntario> PostulacionesVoluntario => Set<PostulacionVoluntario>();
 
@@ -73,6 +75,7 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         {
             e.Property(x => x.NombreCompleto).HasMaxLength(150).IsRequired();
             e.Property(x => x.Perfil).HasMaxLength(20);
+            e.Property(x => x.Organizacion).HasMaxLength(150);
             e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -176,6 +179,45 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.Property(x => x.Numero).HasMaxLength(60).IsRequired();
             e.Property(x => x.Instrucciones).HasMaxLength(500);
             e.HasOne(x => x.Esal).WithOne(x => x.DatosDonacion).HasForeignKey<DatosDonacion>(x => x.EsalId);
+        });
+
+        // Donaciones en especie
+        builder.Entity<NecesidadEspecie>(e =>
+        {
+            e.ToTable("NecesidadEspecie");
+            e.Property(x => x.Nombre).HasMaxLength(120).IsRequired();
+            e.Property(x => x.Categoria).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Unidad).HasMaxLength(40).IsRequired();
+            e.Property(x => x.Descripcion).HasMaxLength(500);
+            e.Property(x => x.CreadaPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.EsalId, x.Activa });
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<DonacionEspecie>(e =>
+        {
+            e.ToTable("DonacionEspecie");
+            e.Property(x => x.Codigo).HasMaxLength(20).IsRequired();
+            e.HasIndex(x => x.Codigo).IsUnique();
+            e.Property(x => x.DonanteId).HasMaxLength(450).IsRequired();
+            e.Property(x => x.Articulo).HasMaxLength(120).IsRequired();
+            e.Property(x => x.Categoria).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Unidad).HasMaxLength(40).IsRequired();
+            e.Property(x => x.FormaEntrega).HasConversion<string>().HasMaxLength(15);
+            e.Property(x => x.FechaEntregaEstimada).HasColumnType("date");
+            e.Property(x => x.DireccionRecogida).HasMaxLength(200);
+            e.Property(x => x.Mensaje).HasMaxLength(300);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(15);
+            e.Property(x => x.FechaVencimiento).HasColumnType("date");
+            e.Property(x => x.ObservacionesRecepcion).HasMaxLength(500);
+            e.Property(x => x.FotoRecepcionRuta).HasMaxLength(300);
+            e.Property(x => x.RecibidaPorId).HasMaxLength(450);
+            e.Property(x => x.MotivoNoRecibida).HasMaxLength(300);
+            e.HasIndex(x => new { x.EsalId, x.Estado });
+            e.HasIndex(x => x.DonanteId);
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Necesidad).WithMany().HasForeignKey(x => x.NecesidadId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.DonanteId).OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<Donacion>(e =>
@@ -549,6 +591,8 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<DocumentoTransparencia>(builder);
         AplicarFiltroEsal<DatosDonacion>(builder);
         AplicarFiltroEsal<Donacion>(builder);
+        AplicarFiltroEsal<NecesidadEspecie>(builder);
+        AplicarFiltroEsal<DonacionEspecie>(builder);
         AplicarFiltroEsal<PostulacionVoluntario>(builder);
         AplicarFiltroEsal<Beneficiario>(builder);
         AplicarFiltroEsal<HistorialEstadoBeneficiario>(builder);

@@ -10,7 +10,8 @@
     var titulo = seccion switch
     {
         "Resumen" => "Resumen", "Esales" => "Fundaciones", "Causas" => "Causas",
-        "InformesDonaciones" => "Informe de donaciones", "InformesApadrinamientos" => "Informe de apadrinamientos", _ => ""
+        "InformesDonaciones" => "Informe de donaciones", "InformesApadrinamientos" => "Informe de apadrinamientos",
+        "InformesEspecie" => "Informe de donaciones en especie", "Veedores" => "Veeduría ciudadana", _ => ""
     };
 }
 <div class="panel-barra">
@@ -46,9 +47,12 @@
             }
         </a>
 
+        <a class="panel-enlace @Activa("Veedores")" aria-current="@Actual("Veedores")" asp-area="Plataforma" asp-controller="Veedores" asp-action="Index"><i class="bi bi-binoculars" aria-hidden="true"></i>Veeduría</a>
+
         <div class="panel-grupo">Informes</div>
         <a class="panel-enlace @Activa("InformesDonaciones")" aria-current="@Actual("InformesDonaciones")" asp-area="Plataforma" asp-controller="Informes" asp-action="Donaciones"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i>Donaciones</a>
         <a class="panel-enlace @Activa("InformesApadrinamientos")" aria-current="@Actual("InformesApadrinamientos")" asp-area="Plataforma" asp-controller="Informes" asp-action="Apadrinamientos"><i class="bi bi-heart" aria-hidden="true"></i>Apadrinamientos</a>
+        <a class="panel-enlace @Activa("InformesEspecie")" aria-current="@Actual("InformesEspecie")" asp-area="Plataforma" asp-controller="Informes" asp-action="Especie"><i class="bi bi-box-seam" aria-hidden="true"></i>En especie</a>
     </nav>
 
     <a class="panel-ver-publica" href="/fundaciones" target="_blank" rel="noopener">

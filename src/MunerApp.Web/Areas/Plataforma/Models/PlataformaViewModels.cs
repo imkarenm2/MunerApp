@@ -177,3 +177,48 @@ public class InformeApadrinamientosViewModel
 
 public record FilaApadrinamientoFundacion(string Fundacion, int Activos, int Apadrinables, decimal AporteMensual);
 public record ApadrinamientoInformeItem(string Fundacion, string Gato, decimal ValorMensual, EstadoApadrinamiento Estado, DateTime FechaInicio);
+
+// ---------------- Veedores ----------------
+
+public class VeedorItem
+{
+    public string Id { get; set; } = string.Empty;
+    public string Nombre { get; set; } = string.Empty;
+    public string Correo { get; set; } = string.Empty;
+    public string? Organizacion { get; set; }
+    public bool Activo { get; set; }
+    public DateTime FechaRegistro { get; set; }
+}
+
+public class VeedorFormViewModel
+{
+    [Required(ErrorMessage = "Escribe el nombre completo.")]
+    [StringLength(150, MinimumLength = 5, ErrorMessage = "Escribe nombre y apellido.")]
+    [Display(Name = "Nombre completo")]
+    public string Nombre { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Escribe el correo.")]
+    [MunerApp.Web.Validacion.Correo]
+    [Display(Name = "Correo")]
+    public string Correo { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Escribe la veeduría u organización que representa.")]
+    [StringLength(150, ErrorMessage = "Máximo {1} caracteres.")]
+    [Display(Name = "Veeduría u organización")]
+    public string Organizacion { get; set; } = string.Empty;
+}
+
+public record EspecieInformeItem(string Codigo, string Fundacion, string Articulo, string Categoria, int Cantidad, string Unidad, EstadoDonacionEspecie Estado, DateTime Fecha);
+
+public class InformeEspecieViewModel
+{
+    public int? EsalId { get; set; }
+    public IReadOnlyList<SelectListItem> Fundaciones { get; set; } = Array.Empty<SelectListItem>();
+    public int Recibidas { get; set; }
+    public int PorRecibir { get; set; }
+    public int NoRecibidas { get; set; }
+    public int DonantesDistintos { get; set; }
+    public IReadOnlyList<FilaTotal> PorCategoria { get; set; } = Array.Empty<FilaTotal>();
+    public IReadOnlyList<FilaTotal> PorFundacion { get; set; } = Array.Empty<FilaTotal>();
+    public IReadOnlyList<EspecieInformeItem> Recientes { get; set; } = Array.Empty<EspecieInformeItem>();
+}

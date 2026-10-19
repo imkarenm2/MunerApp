@@ -1,0 +1,131 @@
+@model EspecieIndexViewModel
+@{
+    ViewData["Title"] = "Donaciones en especie";
+    int Conteo(EstadoDonacionEspecie e) => Model.Conteos.TryGetValue(e, out var c) ? c : 0;
+    var pestanas = new[]
+    {
+        (Estado: EstadoDonacionEspecie.Ofrecida, Texto: "Por recibir", Icono: "bi-hourglass-split"),
+        (Estado: EstadoDonacionEspecie.Recibida, Texto: "Recibidas", Icono: "bi-check-circle"),
+        (Estado: EstadoDonacionEspecie.NoRecibida, Texto: "No recibidas", Icono: "bi-x-circle"),
+        (Estado: EstadoDonacionEspecie.Cancelada, Texto: "Canceladas", Icono: "bi-slash-circle")
+    };
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Donaciones en especie</h1>
+            <p class="text-suave mb-0">Concentrado, arena, medicamentos y demás artículos que los donantes ofrecen. Cuando lleguen, regístralos para que el donante reciba su comprobante.</p>
+        </div>
+        @if (Model.PuedeGestionarNecesidades)
+        {
+            <a class="btn btn-primary" asp-action="CrearNecesidad"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Publicar una necesidad</a>
+        }
+    </div>
+
+    @* ---------- Lo que la fundación necesita ---------- *@
+    <section class="mb-4">
+        <h2 class="h5 mb-2">Lo que necesitan</h2>
+        @if (Model.Necesidades.Count == 0)
+        {
+            <p class="small text-suave">Aún no han publicado necesidades. @(Model.PuedeGestionarNecesidades ? "Publiquen lo que les hace falta y aparecerá en el perfil de la fundación." : "")</p>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var n in Model.Necesidades)
+                {
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <div class="mu-card p-3 h-100 @(n.Activa ? "" : "documento-oculto")">
+                            <div class="d-flex justify-content-between gap-2 mb-1">
+                                <span class="fw-semibold">@n.Nombre</span>
+                                @if (n.Urgente && n.Activa)
+                                {
+                                    <span class="mu-badge acento flex-shrink-0">Urgente</span>
+                                }
+                                else if (!n.Activa)
+                                {
+                                    <span class="mu-badge flex-shrink-0">Cerrada</span>
+                                }
+                            </div>
+                            <div class="small text-suave mb-2">@Textos.De(n.Categoria)</div>
+                            <div class="mu-progreso mb-1" role="progressbar" aria-label="Avance de @n.Nombre" aria-valuenow="@n.Porcentaje" aria-valuemin="0" aria-valuemax="100"><span style="width:@n.Porcentaje%"></span></div>
+                            <div class="small mb-2"><strong>@n.Recibido</strong> de @n.CantidadMeta @n.Unidad@(n.PorRecibir > 0 ? $" · {n.PorRecibir} por recibir" : "")</div>
+                            @if (Model.PuedeGestionarNecesidades)
+                            {
+                                <div class="d-flex gap-2">
+                                    <a class="btn btn-sm btn-suave" asp-action="EditarNecesidad" asp-route-id="@n.Id">Editar</a>
+                                    <form asp-action="CambiarNecesidad" asp-route-id="@n.Id" method="post">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">@(n.Activa ? "Cerrar" : "Volver a publicar")</button>
+                                    </form>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    @* ---------- Lo que ofrecen los donantes ---------- *@
+    <ul class="nav nav-tabs pestanas mb-3">
+        @foreach (var p in pestanas)
+        {
+            <li class="nav-item">
+                <a class="nav-link @(Model.Estado == p.Estado ? "active" : "")" asp-action="Index" asp-route-estado="@p.Estado"
+                   aria-current="@(Model.Estado == p.Estado ? "page" : null)">
+                    <i class="bi @p.Icono me-1" aria-hidden="true"></i>@p.Texto
+                    <span class="badge rounded-pill @(p.Estado == EstadoDonacionEspecie.Ofrecida && Conteo(p.Estado) > 0 ? "text-bg-warning" : "text-bg-light") ms-1">@Conteo(p.Estado)</span>
+                </a>
+            </li>
+        }
+    </ul>
+
+    @if (Model.Donaciones.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-box-seam" aria-hidden="true"></i></div>
+            <h2 class="h5">@(Model.Estado == EstadoDonacionEspecie.Ofrecida ? "No hay donaciones en especie por recibir." : "No hay donaciones en esta lista.")</h2>
+        </div>
+    }
+    else
+    {
+        <div class="mu-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="table tabla-mu align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Donante</th>
+                            <th scope="col">Qué</th>
+                            <th scope="col" class="text-end">Cantidad</th>
+                            <th scope="col">@(Model.Estado == EstadoDonacionEspecie.Ofrecida ? "Entrega" : "Ofrecida")</th>
+                            <th scope="col" class="text-end"><span class="visually-hidden">Acciones</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model.Donaciones)
+                        {
+                            var tarde = d.Estado == EstadoDonacionEspecie.Ofrecida && d.FechaEntregaEstimada.Date < Formatos.Hoy();
+                            <tr>
+                                <td><span class="fw-semibold">@d.Donante</span><div class="small text-suave">@d.Codigo</div></td>
+                                <td>@d.Articulo<div class="small text-suave">@Textos.De(d.Categoria)</div></td>
+                                <td class="text-end">@d.Cantidad @d.Unidad</td>
+                                <td>
+                                    @if (d.Estado == EstadoDonacionEspecie.Ofrecida)
+                                    {
+                                        <span class="@(tarde ? "text-danger fw-semibold" : "")">@Formatos.Fecha(d.FechaEntregaEstimada)</span>
+                                        <div class="small text-suave">@(d.FormaEntrega == FormaEntregaEspecie.Domicilio ? "Hay que recogerla" : "La traen a la sede")</div>
+                                    }
+                                    else
+                                    {
+                                        @Formatos.FechaCorta(d.FechaOferta)
+                                    }
+                                </td>
+                                <td class="text-end"><a class="btn btn-sm @(d.Estado == EstadoDonacionEspecie.Ofrecida ? "btn-primary" : "btn-suave")" asp-action="Detalle" asp-route-id="@d.Id">@(d.Estado == EstadoDonacionEspecie.Ofrecida ? "Registrar llegada" : "Ver")</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

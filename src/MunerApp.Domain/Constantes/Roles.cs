@@ -7,5 +7,8 @@ public static class Roles
     public const string Voluntario = "Voluntario";
     public const string Donante = "Donante";
 
-    public static readonly string[] Todos = { SuperAdministrador, AdministradorESAL, Voluntario, Donante };
+    /// <summary>Veeduría ciudadana: consulta lo que reciben las fundaciones y en qué se usa, sin datos personales.</summary>
+    public const string Veedor = "Veedor";
+
+    public static readonly string[] Todos = { SuperAdministrador, AdministradorESAL, Voluntario, Donante, Veedor };
 }
