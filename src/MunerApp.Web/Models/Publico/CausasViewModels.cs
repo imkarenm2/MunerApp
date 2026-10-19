@@ -14,6 +14,9 @@ public class CausaTarjeta
     public int DiasRestantes { get; set; }
     public DateTime FechaLimite { get; set; }
 
+    /// <summary>HU-046: día en que terminó: el del cierre si fue por meta o a mano; si no, la fecha límite.</summary>
+    public DateTime FechaFin { get; set; }
+
     /// <summary>Llegó a la meta o a su fecha límite: no recibe donaciones.</summary>
     public bool Cerrada { get; set; }
 
@@ -48,4 +51,13 @@ public class CausaDetalleViewModel : CausaTarjeta
     public string? RendicionUrl { get; set; }
 
     public bool PagosEnLineaActivos { get; set; }
+
+    /// <summary>HU-046 escenario 2: la rendición de cuentas publicada, o null.</summary>
+    public RendicionPublica? Rendicion { get; set; }
 }
+
+/// <summary>HU-046: rendición de cuentas como la ve cualquier visitante.</summary>
+public record RendicionPublica(string Texto, decimal Recaudado, int Donaciones, decimal? ValorEjecutado, DateTime Fecha,
+    IReadOnlyList<string> Fotos, IReadOnlyList<SoporteRendicion> Soportes);
+
+public record SoporteRendicion(string Nombre, string Url);

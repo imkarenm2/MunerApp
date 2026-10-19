@@ -40,6 +40,10 @@ public class PanelViewModel
     public IReadOnlyList<TareaPanel> Tareas { get; set; } = Array.Empty<TareaPanel>();
     public IReadOnlyList<CausaPanel> Causas { get; set; } = Array.Empty<CausaPanel>();
     public IReadOnlyList<ActividadPanel> Actividad { get; set; } = Array.Empty<ActividadPanel>();
+
+    /// <summary>HU-039: null si el usuario no es responsable de la salud o el módulo no está activo.</summary>
+    public MunerApp.Web.Servicios.ResumenAlertasSalud? AlertasSalud { get; set; }
+    public bool TieneAgenda { get; set; }
 }
 
 public record GatoMini(int Id, string Nombre);

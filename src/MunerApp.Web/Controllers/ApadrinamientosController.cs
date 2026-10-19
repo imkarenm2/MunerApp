@@ -11,6 +11,7 @@ using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Models.Publico;
 using MunerApp.Web.Seguridad;
 using MunerApp.Web.Servicios;
+using MunerApp.Web.Validacion;
 
 namespace MunerApp.Web.Controllers;
 
@@ -134,7 +135,11 @@ public class ApadrinamientosController : Controller
             .Select(a => new
             {
                 a.Id, Beneficiario = a.Beneficiario!.Nombre, a.Beneficiario.Apadrinable, a.Beneficiario.FotoPublicaRuta,
-                Esal = a.Esal!.Nombre, a.Esal.Slug, a.Esal.LogoRuta, a.ValorMensual, a.Estado, a.FechaInicio, a.FechaCancelacion
+                Esal = a.Esal!.Nombre, a.Esal.Slug, a.Esal.LogoRuta, a.ValorMensual, a.Estado, a.FechaInicio, a.FechaCancelacion,
+                // HU-022: las que este padrino puede ver (si canceló, hasta la fecha de cancelación)
+                Novedades = _db.NovedadesBeneficiario.IgnoreQueryFilters()
+                    .Where(n => n.BeneficiarioId == a.BeneficiarioId && (a.FechaCancelacion == null || n.Fecha <= a.FechaCancelacion))
+                    .Select(n => n.Fecha).ToList()
             })
             .ToListAsync();
 
@@ -149,7 +154,9 @@ public class ApadrinamientosController : Controller
             ValorMensual = a.ValorMensual,
             Estado = a.Estado,
             FechaInicio = a.FechaInicio,
-            FechaCancelacion = a.FechaCancelacion
+            FechaCancelacion = a.FechaCancelacion,
+            Novedades = a.Novedades.Count,
+            UltimaNovedad = a.Novedades.Count == 0 ? null : a.Novedades.Max()
         }).ToList());
     }
 
@@ -164,6 +171,11 @@ public class ApadrinamientosController : Controller
             .Where(d => d.ApadrinamientoId == id && d.DonanteId == UsuarioId)
             .OrderByDescending(d => d.FechaTransferencia).ThenByDescending(d => d.Id)
             .Select(d => new AporteApadrinamiento(d.Codigo, d.Valor, d.FechaTransferencia, d.Estado))
+            .ToListAsync();
+
+        var novedades = await NovedadesVisibles(a)
+            .OrderByDescending(n => n.Fecha).ThenByDescending(n => n.Id)
+            .Select(n => new NovedadApadrinado(n.Id, n.Texto, n.Fecha, n.Fotos.OrderBy(f => f.Id).Select(f => f.Id).ToList()))
             .ToListAsync();
 
         var b = a.Beneficiario!;
@@ -189,8 +201,40 @@ public class ApadrinamientosController : Controller
             Titular = datos?.Titular,
             DocumentoTitular = datos?.DocumentoTitular,
             Instrucciones = datos?.Instrucciones,
-            Aportes = aportes
+            Aportes = aportes,
+            ListaNovedades = novedades,
+            Novedades = novedades.Count
         });
+    }
+
+    // ---------- HU-022: fotos de las novedades (privadas, solo para los padrinos) ----------
+
+    [HttpGet("mis-apadrinamientos/{id:int}/novedades/fotos/{fotoId:int}")]
+    public async Task<IActionResult> FotoNovedad(int id, int fotoId)
+    {
+        var a = await BuscarPropioAsync(id);
+        if (a is null) return NotFound();
+
+        var ruta = await _db.FotosNovedad.IgnoreQueryFilters().AsNoTracking()
+            .Where(f => f.Id == fotoId && NovedadesVisibles(a).Any(n => n.Id == f.NovedadId))
+            .Select(f => f.Ruta).FirstOrDefaultAsync();
+        if (ruta is null) return NotFound();
+
+        var stream = await _archivos.AbrirAsync(ruta);
+        if (stream is null) return NotFound();
+        Response.Headers.CacheControl = "private,max-age=300";
+        return File(stream, ValidadorArchivos.ContentTypeDe(ruta));
+    }
+
+    /// <summary>
+    /// Novedades del apadrinado que este padrino puede ver: todas mientras el apadrinamiento esté activo
+    /// (también las anteriores a su llegada); si lo canceló, las publicadas hasta ese día.
+    /// </summary>
+    private IQueryable<Domain.Entities.NovedadBeneficiario> NovedadesVisibles(Domain.Entities.Apadrinamiento a)
+    {
+        var hasta = a.FechaCancelacion;
+        return _db.NovedadesBeneficiario.IgnoreQueryFilters()
+            .Where(n => n.BeneficiarioId == a.BeneficiarioId && n.EsalId == a.EsalId && (hasta == null || n.Fecha <= hasta));
     }
 
     // ---------- Escenario 3: cancelar ----------

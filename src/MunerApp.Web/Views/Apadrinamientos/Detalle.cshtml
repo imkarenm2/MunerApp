@@ -52,6 +52,49 @@
         </div>
     </div>
 
+    @* HU-022 escenarios 2 y 3: novedades del apadrinado *@
+    <section class="mu-card p-4 mb-4" id="novedades" aria-labelledby="titulo-novedades">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <h2 class="h5 mb-0" id="titulo-novedades"><i class="bi bi-chat-heart me-2 text-acento" aria-hidden="true"></i>Novedades de @Model.NombreBeneficiario</h2>
+            @if (Model.ListaNovedades.Count > 1)
+            {
+                <span class="small text-suave">De la más reciente a la más antigua</span>
+            }
+        </div>
+        @if (Model.ListaNovedades.Count == 0)
+        {
+            <div class="text-center py-3">
+                <div class="icono-circulo acento mx-auto mb-3"><i class="bi bi-hourglass-split" aria-hidden="true"></i></div>
+                <p class="fw-semibold mb-1">Pronto habrá noticias de @Model.NombreBeneficiario</p>
+                <p class="small text-suave mb-0">@Model.NombreEsal publicará aquí fotos y novedades de cómo avanza. Te avisaremos cuando lo haga.</p>
+            </div>
+        }
+        else
+        {
+            <ol class="list-unstyled d-grid gap-3 mb-0">
+                @foreach (var n in Model.ListaNovedades)
+                {
+                    <li class="novedad-apadrinado">
+                        <div class="small text-suave mb-1"><i class="bi bi-calendar3 me-1" aria-hidden="true"></i>@Formatos.FechaHora(n.Fecha)</div>
+                        <p class="texto-largo mb-0">@n.Texto</p>
+                        @if (n.FotoIds.Count > 0)
+                        {
+                            <div class="evento-fotos mt-2">
+                                @foreach (var fotoId in n.FotoIds)
+                                {
+                                    var url = $"/mis-apadrinamientos/{Model.Id}/novedades/fotos/{fotoId}";
+                                    <a href="@url" target="_blank" rel="noopener" class="evento-foto" aria-label="Abrir la foto en otra pestaña">
+                                        <img src="@url" alt="Foto de @Model.NombreBeneficiario del @Formatos.Fecha(Formatos.Local(n.Fecha))" loading="lazy" />
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </li>
+                }
+            </ol>
+        }
+    </section>
+
     <div class="row g-4">
         <div class="col-12 col-lg-7">
             @if (activo)

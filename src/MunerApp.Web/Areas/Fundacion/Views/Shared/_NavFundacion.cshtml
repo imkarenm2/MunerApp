@@ -1,4 +1,4 @@
-@* Menú lateral del panel de la fundación. Muestra solo lo que el rol puede usar (ver README, "Roles y permisos"). *@
+﻿@* Menú lateral del panel de la fundación. Muestra solo lo que el rol puede usar (ver README, "Roles y permisos"). *@
 @inject MunerApp.Infrastructure.Persistence.MunerAppDbContext Db
 @inject MunerApp.Application.Interfaces.IEsalActual EsalActual
 @inject MunerApp.Application.Interfaces.IModuloService Modulos
@@ -10,8 +10,11 @@
     var moduloTienda = esalId is not null && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Tienda);
     var esal = esalId is null ? null : Db.Esales.Where(e => e.Id == esalId).Select(e => new { e.Nombre, e.Slug, e.LogoRuta }).FirstOrDefault();
     var principal = Politicas.EsAdminPrincipal(User);
+    // Inventario clínico y agenda (HU-037, HU-038): módulo de salud y acceso clínico (administradores y voluntarios de salud)
+    var verSalud = esalId is not null && Politicas.TieneAccesoClinico(User)
+                   && await Modulos.EstaActivoAsync(esalId.Value, CodigosModulo.Salud);
     var admin = User.IsInRole(Roles.AdministradorESAL);
-    var donacionesPendientes = admin ? Db.Donaciones.Count(d => d.Estado == EstadoDonacion.Pendiente) : 0;
+    var donacionesPendientes = admin ? Db.Donaciones.Count(d => d.Estado == EstadoDonacion.Pendiente && d.Origen == OrigenDonacion.Manual) : 0;
     var postulacionesPendientes = admin ? Db.PostulacionesVoluntario.Count(p => p.Estado == EstadoPostulacion.Pendiente) : 0;
     var especiePendientes = admin ? Db.DonacionesEspecie.Count(d => d.Estado == EstadoDonacionEspecie.Ofrecida) : 0;
     var rolTexto = admin
@@ -32,7 +35,7 @@
     {
         "Panel" => "Inicio", "Beneficiarios" => "Gatos", "Donaciones" => "Donaciones", "Causas" => "Causas",
         "DatosDonacion" => "Datos para donar", "Pasarela" => "Pagos en línea", "Postulaciones" => "Voluntarios",
-        "Usuarios" => "Equipo", "Especie" => "Donaciones en especie", "Adopciones" => "Adopción", "Tienda" => "Tienda", "Boletin" => "Boletín", "Perfil" => "Perfil", "Documentos" => "Transparencia", "Redes" => "Redes sociales", _ => ""
+        "Usuarios" => "Equipo", "Agenda" => "Agenda de salud", "Medicamentos" => "Medicamentos", "Especie" => "Donaciones en especie", "Adopciones" => "Adopción", "Tienda" => "Tienda", "Boletin" => "Boletín", "Perfil" => "Perfil", "Documentos" => "Transparencia", "Redes" => "Redes sociales", _ => ""
     };
     var iniciales = string.Concat((esal?.Nombre ?? "M").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
 }
@@ -69,6 +72,14 @@
         @if (moduloBeneficiarios)
         {
             <a class="panel-enlace @Activa("Beneficiarios")" aria-current="@Actual("Beneficiarios")" asp-area="Fundacion" asp-controller="Beneficiarios" asp-action="Index"><i class="bi bi-balloon-heart" aria-hidden="true"></i>Gatos</a>
+        }
+        @if (verSalud && moduloBeneficiarios)
+        {
+            <a class="panel-enlace @Activa("Agenda")" aria-current="@Actual("Agenda")" asp-area="Fundacion" asp-controller="Agenda" asp-action="Index"><i class="bi bi-calendar-heart" aria-hidden="true"></i>Agenda de salud</a>
+        }
+        @if (verSalud)
+        {
+            <a class="panel-enlace @Activa("Medicamentos")" aria-current="@Actual("Medicamentos")" asp-area="Fundacion" asp-controller="Medicamentos" asp-action="Index"><i class="bi bi-capsule" aria-hidden="true"></i>Medicamentos</a>
         }
         @if (admin && moduloAdopcion)
         {

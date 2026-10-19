@@ -26,6 +26,17 @@ builder.Services.AddScoped<InvitacionService>();
 builder.Services.AddScoped<CausasPublicas>();
 builder.Services.AddScoped<AvisosCorreo>();
 builder.Services.AddScoped<EstadosBeneficiario>();
+builder.Services.AddScoped<InventarioMedicamentos>();
+
+// HU-039: revisión diaria en segundo plano (alertas de salud; HU-046 agrega el cierre de causas)
+builder.Services.AddScoped<AlertasSalud>();
+builder.Services.AddScoped<ITareaDiaria>(sp => sp.GetRequiredService<AlertasSalud>());
+
+// HU-046: cierre automático de causas (otra tarea de la revisión diaria) y rendición de cuentas
+builder.Services.AddScoped<CierreCausas>();
+builder.Services.AddScoped<ITareaDiaria>(sp => sp.GetRequiredService<CierreCausas>());
+builder.Services.AddScoped<RendicionCuentas>();
+builder.Services.AddHostedService<RevisionDiariaService>();
 builder.Services.AddScoped<ConfirmacionPagosWompi>();
 builder.Services.AddScoped<PeriodicoMunerApp>();
 builder.Services.AddInfrastructure(builder.Configuration);

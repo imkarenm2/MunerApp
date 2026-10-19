@@ -162,6 +162,14 @@ public class BeneficiarioDetalleViewModel : BeneficiarioItem
     /// <summary>Administradores y voluntarios de salud (HU-019).</summary>
     public bool PuedeVerClinica { get; set; }
     public int EventosClinicos { get; set; }
+
+    /// <summary>HU-022: novedades publicadas para los padrinos.</summary>
+    public int Novedades { get; set; }
+
+    /// <summary>HU-038: agenda de salud (acceso clínico y módulo de salud).</summary>
+    public bool PuedeVerAgenda { get; set; }
+    public int EventosPendientes { get; set; }
+    public DateTime? ProximoEvento { get; set; }
     public DateTime FechaRescate { get; set; }
     public DateTime FechaRegistro { get; set; }
     public string? RegistradoPor { get; set; }
@@ -317,6 +325,9 @@ public class HistoriaClinicaViewModel
     public EstadoBeneficiario Estado { get; set; }
     public DateTime FechaNacimiento { get; set; }
     public bool TieneFoto { get; set; }
+
+    /// <summary>HU-038: muestra el acceso a la agenda de salud si el módulo está activo.</summary>
+    public bool TieneAgenda { get; set; }
     public IReadOnlyList<EventoClinicoItem> Eventos { get; set; } = Array.Empty<EventoClinicoItem>();
 
     /// <summary>Administrador principal o voluntario de salud. El de consulta solo ve.</summary>

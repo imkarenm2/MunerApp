@@ -30,8 +30,15 @@ public class Causa : IPerteneceAEsal
     public string? RevisadaPorId { get; set; }
     public DateTime? FechaRevision { get; set; }
 
-    /// <summary>PorAprobar, Activa, Pausada o Rechazada. "Cerrada" se calcula con <see cref="EstaCerrada"/> y la guardará el cierre automático (HU-046).</summary>
+    /// <summary>
+    /// PorAprobar, Activa, Pausada, Cerrada o Rechazada. Mientras no se guarde "Cerrada", <see cref="EstaCerrada"/> la calcula;
+    /// la revisión diaria la guarda (HU-046) y el administrador también puede cerrarla.
+    /// </summary>
     public EstadoCausa Estado { get; set; } = EstadoCausa.Activa;
+
+    /// <summary>HU-046: cuándo y por qué se cerró.</summary>
+    public DateTime? FechaCierre { get; set; }
+    public MotivoCierreCausa? MotivoCierre { get; set; }
 
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
     public string? CreadaPorId { get; set; }
@@ -57,6 +64,18 @@ public class Causa : IPerteneceAEsal
     /// <summary>Solo una causa activa (no pausada ni cerrada) recibe donaciones.</summary>
     public bool RecibeDonaciones(decimal recaudado, DateTime hoy)
         => Estado == EstadoCausa.Activa && !EstaCerrada(recaudado, hoy);
+
+    /// <summary>
+    /// HU-046 escenario 1: motivo por el que la revisión diaria debe cerrarla, o null si sigue abierta o ya está
+    /// cerrada. La meta tiene prioridad: si llegó a la meta el último día, se cerró por meta.
+    /// </summary>
+    public MotivoCierreCausa? MotivoDeCierre(decimal recaudado, DateTime hoy)
+    {
+        if (Estado == EstadoCausa.Cerrada) return null;
+        if (recaudado >= Meta) return MotivoCierreCausa.MetaAlcanzada;
+        if (FechaLimite.Date < hoy.Date) return MotivoCierreCausa.FechaLimite;
+        return null;
+    }
 
     /// <summary>Días que faltan para la fecha límite (0 el último día).</summary>
     public int DiasRestantes(DateTime hoy) => Math.Max(0, (FechaLimite.Date - hoy.Date).Days);

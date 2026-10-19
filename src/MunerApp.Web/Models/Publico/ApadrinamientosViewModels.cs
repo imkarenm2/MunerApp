@@ -37,7 +37,14 @@ public class ApadrinamientoItem
     public EstadoApadrinamiento Estado { get; set; }
     public DateTime FechaInicio { get; set; }
     public DateTime? FechaCancelacion { get; set; }
+
+    /// <summary>HU-022: novedades que este padrino puede ver y la fecha de la última.</summary>
+    public int Novedades { get; set; }
+    public DateTime? UltimaNovedad { get; set; }
 }
+
+/// <summary>HU-022: novedad del apadrinado como la ve su padrino.</summary>
+public record NovedadApadrinado(int Id, string Texto, DateTime Fecha, List<int> FotoIds);
 
 public record AporteApadrinamiento(string Codigo, decimal Valor, DateTime FechaTransferencia, EstadoDonacion Estado);
 
@@ -61,5 +68,8 @@ public class ApadrinamientoDetalleViewModel : ApadrinamientoItem
     public string? Instrucciones { get; set; }
 
     public IReadOnlyList<AporteApadrinamiento> Aportes { get; set; } = Array.Empty<AporteApadrinamiento>();
+
+    /// <summary>HU-022 escenario 2: novedades ordenadas por fecha, la más reciente primero.</summary>
+    public IReadOnlyList<NovedadApadrinado> ListaNovedades { get; set; } = Array.Empty<NovedadApadrinado>();
     public decimal TotalConfirmado => Aportes.Where(a => a.Estado == EstadoDonacion.Confirmada).Sum(a => a.Valor);
 }
