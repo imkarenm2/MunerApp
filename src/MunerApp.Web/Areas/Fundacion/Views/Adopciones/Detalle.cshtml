@@ -37,8 +37,12 @@
                             <a class="ms-2 small" href="@whatsapp" target="_blank" rel="noopener"><i class="bi bi-whatsapp me-1" aria-hidden="true"></i>WhatsApp</a>
                         }
                     </dd>
+                    @if (!string.IsNullOrEmpty(s.TelefonoAdicional))
+                    {
+                        <dt class="col-sm-5">Teléfono adicional</dt><dd class="col-sm-7">@s.TelefonoAdicional</dd>
+                    }
                     <dt class="col-sm-5">Correo</dt><dd class="col-sm-7 text-break">@Model.Correo</dd>
-                    <dt class="col-sm-5">Dirección</dt><dd class="col-sm-7">@s.Direccion, @s.Ciudad</dd>
+                    <dt class="col-sm-5">Dirección</dt><dd class="col-sm-7">@s.Direccion@(string.IsNullOrEmpty(s.Barrio) ? "" : ", " + s.Barrio), @s.Ciudad</dd>
                     <dt class="col-sm-5">Ocupación</dt>
                     <dd class="col-sm-7">@(s.Ocupacion is null ? "—" : Textos.De(s.Ocupacion.Value))@(s.DetalleOcupacion is null ? "" : ": " + s.DetalleOcupacion)</dd>
                     <dt class="col-sm-5">Referencia personal</dt>
@@ -55,13 +59,25 @@
                     {
                         <dt class="col-sm-5">Tiene</dt><dd class="col-sm-7">@string.Join(", ", tipos)</dd>
                     }
+                    @if (!string.IsNullOrEmpty(s.EdadMascotas))
+                    {
+                        <dt class="col-sm-5">Edad de sus mascotas</dt><dd class="col-sm-7 fw-normal">@s.EdadMascotas</dd>
+                    }
                     @if (s.TieneGato)
                     {
                         <dt class="col-sm-5">Su gato usa arenero</dt><dd class="col-sm-7">@SiNo(s.GatoUsaArenero)</dd>
-                        <dt class="col-sm-5">Esterilizados</dt><dd class="col-sm-7">@(s.GatoEsterilizacion is null ? "—" : Textos.De(s.GatoEsterilizacion.Value))</dd>
-                        <dt class="col-sm-5">Vacunas</dt>
+                        <dt class="col-sm-5">Castrado y vacunas</dt>
                         <dd class="col-sm-7">
-                            @(s.GatoVacunas is null ? "—" : Textos.De(s.GatoVacunas.Value))
+                            @if (s.GatoSalud is not null)
+                            {
+                                @Textos.De(s.GatoSalud.Value)
+                            }
+                            else
+                            {
+                                @* Solicitudes enviadas antes de ajustar el formulario al formato de la fundación *@
+                                @(s.GatoEsterilizacion is null ? "—" : "Esterilizados: " + Textos.De(s.GatoEsterilizacion.Value))
+                                @(s.GatoVacunas is null ? "" : " · Vacunas: " + Textos.De(s.GatoVacunas.Value))
+                            }
                             @if (s.CarneVacunasRuta is not null)
                             {
                                 <div><a class="small" href="@urlCarne" target="_blank" rel="noopener"><i class="bi bi-paperclip me-1" aria-hidden="true"></i>Ver carné de vacunas</a></div>
@@ -75,6 +91,10 @@
                     @if (!string.IsNullOrEmpty(s.QuePasoMascota))
                     {
                         <dt class="col-sm-5">Qué pasó con su mascota</dt><dd class="col-sm-7 fw-normal">@s.QuePasoMascota</dd>
+                    }
+                    @if (!string.IsNullOrEmpty(s.MotivoAdopcion))
+                    {
+                        <dt class="col-sm-5">Por qué quiere adoptar</dt><dd class="col-sm-7 fw-normal texto-largo">@s.MotivoAdopcion</dd>
                     }
                 </dl>
             </section>
@@ -91,11 +111,44 @@
                     }
                     <dt class="col-sm-5">Personas en el hogar</dt><dd class="col-sm-7">@s.Convivientes</dd>
                     <dt class="col-sm-5">Todas de acuerdo</dt><dd class="col-sm-7">@SiNo(s.ConvivientesDeAcuerdo)</dd>
+                    @if (!string.IsNullOrEmpty(s.LugarParaMascota))
+                    {
+                        <dt class="col-sm-5">Lugar para la mascota</dt><dd class="col-sm-7 fw-normal">@s.LugarParaMascota</dd>
+                    }
                     <dt class="col-sm-5">Niños en casa</dt>
-                    <dd class="col-sm-7">@SiNo(s.NinosEnCasa)@(s.NinosEnCasa == true ? " · han interactuado con mascotas: " + SiNo(s.NinosInteractuanMascotas).ToLowerInvariant() : "")</dd>
+                    <dd class="col-sm-7">
+                        @(s.NinosEdades is null ? SiNo(s.NinosEnCasa) : s.NinosEdades == NinosEnHogar.Otro ? "Otro: " + s.NinosOtro : Textos.De(s.NinosEdades.Value))@(s.NinosEnCasa == true ? " · han interactuado con mascotas: " + SiNo(s.NinosInteractuanMascotas).ToLowerInvariant() : "")
+                    </dd>
                     <dt class="col-sm-5">Embarazo en el hogar</dt><dd class="col-sm-7">@SiNo(s.EmbarazoEnHogar)</dd>
-                    <dt class="col-sm-5">Puede cubrir los costos</dt><dd class="col-sm-7">@SiNo(s.PuedeCubrirCostos)</dd>
-                    <dt class="col-sm-5">Acepta visita de seguimiento</dt><dd class="col-sm-7">@SiNo(s.AceptaVisita)</dd>
+                    @if (s.ConoceToxoplasmosis is not null)
+                    {
+                        <dt class="col-sm-5">Conoce la toxoplasmosis</dt><dd class="col-sm-7">@SiNo(s.ConoceToxoplasmosis)</dd>
+                    }
+                    @if (!string.IsNullOrEmpty(s.GatoBuscado))
+                    {
+                        <dt class="col-sm-5">¿Busca un gato en especial?</dt><dd class="col-sm-7 fw-normal texto-largo">@s.GatoBuscado</dd>
+                    }
+                    @if (!string.IsNullOrEmpty(s.MejorCualidadGato))
+                    {
+                        <dt class="col-sm-5">Mejor cualidad de un gato</dt><dd class="col-sm-7 fw-normal">@s.MejorCualidadGato</dd>
+                    }
+                    @if (s.CostoMensualEstimado is not null)
+                    {
+                        <dt class="col-sm-5">Costo mensual de un gato</dt><dd class="col-sm-7">@Textos.De(s.CostoMensualEstimado.Value)</dd>
+                    }
+                    else if (s.PuedeCubrirCostos is not null)
+                    {
+                        <dt class="col-sm-5">Puede cubrir los costos</dt><dd class="col-sm-7">@SiNo(s.PuedeCubrirCostos)</dd>
+                    }
+                    @if (s.CuidaraQuinceAnios is not null)
+                    {
+                        <dt class="col-sm-5">Lo cuidará unos 15 años</dt><dd class="col-sm-7 @(s.CuidaraQuinceAnios == false ? "text-danger fw-semibold" : "")">@SiNo(s.CuidaraQuinceAnios)</dd>
+                    }
+                    @if (s.LoLlevariaAlMudarse is not null)
+                    {
+                        <dt class="col-sm-5">Lo llevaría si se muda</dt><dd class="col-sm-7 @(s.LoLlevariaAlMudarse == false ? "text-danger fw-semibold" : "")">@SiNo(s.LoLlevariaAlMudarse)</dd>
+                    }
+                    <dt class="col-sm-5">Acepta visita de seguimiento</dt><dd class="col-sm-7 @(s.AceptaVisita == false ? "text-danger fw-semibold" : "")">@SiNo(s.AceptaVisita)</dd>
                     <dt class="col-sm-5">Aceptaciones</dt>
                     <dd class="col-sm-7">
                         <ul class="lista-check small mb-0">
@@ -104,6 +157,10 @@
                             <li>Tratamiento de datos@(s.FechaAutorizacionDatos is DateTime fa ? " · " + Formatos.FechaHora(fa) : "")</li>
                         </ul>
                     </dd>
+                    @if (!string.IsNullOrEmpty(s.Comentarios))
+                    {
+                        <dt class="col-sm-5">Comentarios</dt><dd class="col-sm-7 fw-normal texto-largo">@s.Comentarios</dd>
+                    }
                 </dl>
             </section>
         </div>

@@ -153,6 +153,34 @@ public static class Textos
         _ => v.ToString()
     };
 
+    public static string De(EstadoSaludGato e) => e switch
+    {
+        EstadoSaludGato.VacunadoYEsterilizado => "a) Está vacunado y esterilizado",
+        EstadoSaludGato.EsterilizadoSinVacunas => "b) Está esterilizado, pero no tiene vacunas",
+        EstadoSaludGato.VacunadoSinEsterilizar => "c) Está vacunado, pero no está esterilizado",
+        EstadoSaludGato.SinVacunasNiEsterilizacion => "d) No tiene vacunas ni está esterilizado",
+        _ => e.ToString()
+    };
+
+    public static string De(NinosEnHogar n) => n switch
+    {
+        NinosEnHogar.DeCeroACinco => "Sí, de 0 a 5 años",
+        NinosEnHogar.DeSeisADiez => "Sí, de 6 a 10 años",
+        NinosEnHogar.DeOnceAQuince => "Sí, de 11 a 15 años",
+        NinosEnHogar.DeDieciseisADieciocho => "Sí, de 16 a 18 años",
+        NinosEnHogar.NoHay => "No hay niños en casa",
+        NinosEnHogar.Otro => "Otro",
+        _ => n.ToString()
+    };
+
+    public static string De(CostoMensualGato c) => c switch
+    {
+        CostoMensualGato.De20000A50000 => "De $20.000 a $50.000",
+        CostoMensualGato.De50001A100000 => "De $50.001 a $100.000",
+        CostoMensualGato.De100001A150000 => "De $100.001 a $150.000",
+        _ => c.ToString()
+    };
+
     public static string De(SociabilidadPerro s) => s switch
     {
         SociabilidadPerro.Sociable => "Sí, es sociable con gatos",

@@ -1577,6 +1577,10 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.Property<bool>("AutorizaDatos")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Barrio")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int?>("BeneficiarioAdoptadoId")
                         .HasColumnType("int");
 
@@ -1600,10 +1604,24 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("Comentarios")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool?>("ConoceToxoplasmosis")
+                        .HasColumnType("bit");
+
                     b.Property<int?>("Convivientes")
                         .HasColumnType("int");
 
                     b.Property<bool?>("ConvivientesDeAcuerdo")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("CostoMensualEstimado")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool?>("CuidaraQuinceAnios")
                         .HasColumnType("bit");
 
                     b.Property<string>("DetalleOcupacion")
@@ -1616,6 +1634,10 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
 
                     b.Property<int?>("Edad")
                         .HasColumnType("int");
+
+                    b.Property<string>("EdadMascotas")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool?>("EmbarazoEnHogar")
                         .HasColumnType("bit");
@@ -1652,9 +1674,17 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("FechaRevision")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("GatoBuscado")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("GatoEsterilizacion")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("GatoSalud")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<bool?>("GatoUsaArenero")
                         .HasColumnType("bit");
@@ -1667,23 +1697,46 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<bool?>("LoLlevariaAlMudarse")
+                        .HasColumnType("bit");
+
                     b.Property<string>("LugarCita")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("LugarParaMascota")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<string>("Mascotas")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
+                    b.Property<string>("MejorCualidadGato")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("MotivoAdopcion")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("MotivoRechazo")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("NinosEdades")
+                        .HasMaxLength(25)
+                        .HasColumnType("nvarchar(25)");
 
                     b.Property<bool?>("NinosEnCasa")
                         .HasColumnType("bit");
 
                     b.Property<bool?>("NinosInteractuanMascotas")
                         .HasColumnType("bit");
+
+                    b.Property<string>("NinosOtro")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<string>("NombreCompleto")
                         .HasMaxLength(150)
@@ -1733,6 +1786,10 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("SeccionesCompletadas")
                         .HasColumnType("int");
+
+                    b.Property<string>("TelefonoAdicional")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("TenenciaVivienda")
                         .HasMaxLength(15)

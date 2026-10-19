@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Solicitud de adopción · Mascotas";
     var tiene = Model.Mascotas == TenenciaMascotas.Tengo;
-    var carneVisible = MascotasAdopcionViewModel.PermiteCarne(Model.GatoVacunas);
+    var carneVisible = MascotasAdopcionViewModel.PermiteCarne(Model.GatoSalud);
 
     string Oculto(bool visible) => visible ? "" : "d-none";
 
@@ -56,17 +56,22 @@
                 <span asp-validation-for="OtraMascota"></span>
             </div>
 
+            <div class="mb-3">
+                <label asp-for="EdadMascotas" class="form-label"></label>
+                <input asp-for="EdadMascotas" class="form-control" maxlength="100" placeholder="Ej.: mi gata tiene 3 años y mi perro 5" />
+                <span asp-validation-for="EdadMascotas"></span>
+            </div>
+
             <div class="bloque-condicional mb-3 @Oculto(Model.TieneGato)" data-mostrar-si="TieneGato=true">
                 <h3 class="h6 fw-bold mb-3"><i class="bi bi-heart me-2 text-principal" aria-hidden="true"></i>Sobre tu gato</h3>
                 @{
                     await Radios(nameof(Model.GatoUsaArenero), "¿Tu gato usa arenero?", new[] { ("true", "Sí"), ("false", "No") },
                         Model.GatoUsaArenero?.ToString().ToLowerInvariant());
-                    await Radios(nameof(Model.GatoEsterilizacion), "¿Están esterilizados?", De<EsterilizacionMascotas>(Textos.De), Model.GatoEsterilizacion?.ToString());
-                    await Radios(nameof(Model.GatoVacunas), "¿Están vacunados?", De<VacunasGato>(Textos.De), Model.GatoVacunas?.ToString());
+                    await Radios(nameof(Model.GatoSalud), "¿Tu gato se encuentra castrado (a) y cuenta con sus vacunas?", De<EstadoSaludGato>(Textos.De), Model.GatoSalud?.ToString());
                 }
 
                 @* HU-031 escenario 2: con las opciones a) o c) se puede adjuntar el carné *@
-                <div class="@Oculto(carneVisible)" data-mostrar-si="GatoVacunas=Completas,Parciales">
+                <div class="@Oculto(carneVisible)" data-mostrar-si="GatoSalud=VacunadoYEsterilizado,VacunadoSinEsterilizar">
                     <label asp-for="CarneVacunas" class="form-label"></label>
                     @if (Model.TieneCarne)
                     {
@@ -100,6 +105,13 @@
             <label asp-for="QuePasoMascota" class="form-label"></label>
             <textarea asp-for="QuePasoMascota" class="form-control" rows="3" maxlength="500" placeholder="Ej.: falleció de vejez, se quedó con un familiar…"></textarea>
             <span asp-validation-for="QuePasoMascota"></span>
+        </div>
+
+        <h2 class="h5 mt-4 mb-3">Sobre la adopción</h2>
+        <div class="mb-3">
+            <label asp-for="MotivoAdopcion" class="form-label"></label>
+            <textarea asp-for="MotivoAdopcion" class="form-control" rows="3" maxlength="1000"></textarea>
+            <span asp-validation-for="MotivoAdopcion"></span>
         </div>
 
         <div class="d-flex flex-column flex-sm-row gap-2 mt-4">

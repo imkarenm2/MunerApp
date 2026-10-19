@@ -54,15 +54,29 @@
         </div>
         @{
             await Radios(nameof(Model.ConvivientesDeAcuerdo), "¿Todas están de acuerdo con la adopción?", siNo, Valor(Model.ConvivientesDeAcuerdo));
-            await Radios(nameof(Model.NinosEnCasa), "¿Hay niños en tu hogar?", siNo, Valor(Model.NinosEnCasa));
+            await Radios(nameof(Model.NinosEdades), "¿Hay niños en tu casa? ¿Qué edad tienen?", De<NinosEnHogar>(Textos.De), Model.NinosEdades?.ToString());
         }
+        <div class="mb-3 @Oculto(Model.NinosEdades == NinosEnHogar.Otro)" data-mostrar-si="NinosEdades=Otro" style="max-width: 420px">
+            <label asp-for="NinosOtro" class="form-label"></label>
+            <input asp-for="NinosOtro" class="form-control" maxlength="150" placeholder="Ej.: un niño de 4 y otro de 12 años" />
+            <span asp-validation-for="NinosOtro"></span>
+        </div>
 
         @* HU-032 escenario 1: si hay niños, si han interactuado con mascotas *@
-        <div class="@Oculto(Model.NinosEnCasa == true)" data-mostrar-si="NinosEnCasa=true">
+        <div class="@Oculto(HogarAdopcionViewModel.HayNinos(Model.NinosEdades))" data-mostrar-si="NinosEdades=DeCeroACinco,DeSeisADiez,DeOnceAQuince,DeDieciseisADieciocho,Otro">
             @{ await Radios(nameof(Model.NinosInteractuanMascotas), "¿Los niños han interactuado con mascotas?", siNo, Valor(Model.NinosInteractuanMascotas)); }
         </div>
 
-        @{ await Radios(nameof(Model.EmbarazoEnHogar), "¿Alguien en tu hogar está embarazada o planea estarlo?", siNo, Valor(Model.EmbarazoEnHogar)); }
+        <div class="mb-3">
+            <label asp-for="LugarParaMascota" class="form-label"></label>
+            <input asp-for="LugarParaMascota" class="form-control" maxlength="300" placeholder="Ej.: toda la casa, con su arenero en el patio de ropas" />
+            <span asp-validation-for="LugarParaMascota"></span>
+        </div>
+
+        @{
+            await Radios(nameof(Model.EmbarazoEnHogar), "¿Hay mujeres en estado de embarazo en tu casa?", siNo, Valor(Model.EmbarazoEnHogar));
+            await Radios(nameof(Model.ConoceToxoplasmosis), "Si en tu casa hubiese una mujer embarazada, ¿conoces sobre la toxoplasmosis?", siNo, Valor(Model.ConoceToxoplasmosis));
+        }
 
         @* HU-032 escenario 2: al responder sobre embarazo se muestra la información de toxoplasmosis *@
         <div class="bloque-condicional mb-4 @Oculto(Model.EmbarazoEnHogar is not null)" data-mostrar-si="EmbarazoEnHogar=true,false">
@@ -74,10 +88,24 @@
             <p class="small mb-0 texto-largo">@Model.MensajeToxoplasmosis</p>
         </div>
 
+        <h2 class="h5 mt-4 mb-3">Tú y los gatos</h2>
+        <div class="mb-3">
+            <label asp-for="GatoBuscado" class="form-label"></label>
+            <textarea asp-for="GatoBuscado" class="form-control" rows="3" maxlength="1000"></textarea>
+            <span asp-validation-for="GatoBuscado"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="MejorCualidadGato" class="form-label"></label>
+            <input asp-for="MejorCualidadGato" class="form-control" maxlength="300" />
+            <span asp-validation-for="MejorCualidadGato"></span>
+        </div>
+        @{ await Radios(nameof(Model.CostoMensualEstimado), "Según tu criterio, ¿cuánto dinero cubre las necesidades de un gato al mes?", De<CostoMensualGato>(Textos.De), Model.CostoMensualEstimado?.ToString()); }
+
         <h2 class="h5 mt-4 mb-3">Tus compromisos</h2>
         @{
-            await Radios(nameof(Model.PuedeCubrirCostos), "¿Puedes cubrir su alimentación, arena, vacunas y controles veterinarios?", siNo, Valor(Model.PuedeCubrirCostos));
-            await Radios(nameof(Model.AceptaVisita), "¿Aceptas que la fundación haga una visita de seguimiento a tu hogar?", siNo, Valor(Model.AceptaVisita));
+            await Radios(nameof(Model.CuidaraQuinceAnios), "Buscamos hogares ideales para nuestros rescatados: ¿estás dispuesto a cuidar de su bienestar por los más o menos quince (15) años que viven?", siNo, Valor(Model.CuidaraQuinceAnios));
+            await Radios(nameof(Model.LoLlevariaAlMudarse), "Buscamos un único hogar para nuestros rescatados: ¿lo llevarías a cualquier vivienda, ciudad o país a donde te mudes?", siNo, Valor(Model.LoLlevariaAlMudarse));
+            await Radios(nameof(Model.AceptaVisita), "En caso de ser necesario, ¿aceptarías una visita para validar las condiciones del adoptado?", siNo, Valor(Model.AceptaVisita));
         }
 
         @* HU-032 escenario 3: aceptaciones obligatorias para enviar *@
@@ -90,6 +118,12 @@
                 Aceptacion(nameof(Model.AutorizaDatos), Model.AutorizaDatos,
                     $"Autorizo a {Model.NombreEsal} a tratar mis datos personales para evaluar esta solicitud y hacer el seguimiento de la adopción (Ley 1581 de 2012).");
             }
+        </div>
+
+        <div class="mt-4">
+            <label asp-for="Comentarios" class="form-label"></label>
+            <textarea asp-for="Comentarios" class="form-control" rows="3" maxlength="1000" placeholder="Algo más que quieras contarle a la fundación"></textarea>
+            <span asp-validation-for="Comentarios"></span>
         </div>
 
         <div class="d-flex flex-column flex-sm-row gap-2 mt-4">

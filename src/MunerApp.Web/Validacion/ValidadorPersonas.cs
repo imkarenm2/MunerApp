@@ -9,6 +9,8 @@ public static class ValidadorPersonas
     public const string ErrorCedula = "Escribe tu número de cédula sin puntos: entre 6 y 10 dígitos.";
     public const string ErrorCelular = "Escribe un celular de 10 dígitos que empiece por 3, por ejemplo 3001234567.";
 
+    public const string ErrorTelefono = "Escribe un celular de 10 dígitos o un teléfono fijo de 7 a 10 dígitos, solo con números.";
+
     /// <summary>Patrón del navegador: dígitos con puntos o espacios opcionales.</summary>
     public const string PatronCedula = @"^\s*[0-9][0-9.\s]*\s*$";
 
@@ -28,5 +30,14 @@ public static class ValidadorPersonas
         var digitos = ValidadorCuentas.Digitos(texto);
         if (digitos.Length == 12 && digitos.StartsWith("57")) digitos = digitos[2..];
         return digitos.Length == 10 && digitos[0] == '3' ? digitos : null;
+    }
+
+    /// <summary>Teléfono adicional: celular (10 dígitos que empiezan por 3, se acepta +57) o fijo de 7 a 10 dígitos. Null si no es válido.</summary>
+    public static string? Telefono(string? texto)
+    {
+        var celular = Celular(texto);
+        if (celular is not null) return celular;
+        var digitos = ValidadorCuentas.Digitos(texto);
+        return digitos.Length is >= 7 and <= 10 && digitos[0] != '0' ? digitos : null;
     }
 }

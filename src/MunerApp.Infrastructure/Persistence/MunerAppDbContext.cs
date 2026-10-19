@@ -393,6 +393,19 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.Property(x => x.CarneVacunasRuta).HasMaxLength(300);
             e.Property(x => x.PerroSociabilidad).HasConversion<string>().HasMaxLength(10);
             e.Property(x => x.QuePasoMascota).HasMaxLength(500);
+            // Preguntas del formato de El Reino de los Gatos que faltaban
+            e.Property(x => x.TelefonoAdicional).HasMaxLength(10);
+            e.Property(x => x.Barrio).HasMaxLength(100);
+            e.Property(x => x.EdadMascotas).HasMaxLength(100);
+            e.Property(x => x.GatoSalud).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.MotivoAdopcion).HasMaxLength(1000);
+            e.Property(x => x.GatoBuscado).HasMaxLength(1000);
+            e.Property(x => x.LugarParaMascota).HasMaxLength(300);
+            e.Property(x => x.NinosEdades).HasConversion<string>().HasMaxLength(25);
+            e.Property(x => x.NinosOtro).HasMaxLength(150);
+            e.Property(x => x.MejorCualidadGato).HasMaxLength(300);
+            e.Property(x => x.CostoMensualEstimado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Comentarios).HasMaxLength(1000);
             // Sección 3: hogar y compromisos (HU-032)
             e.Property(x => x.TipoVivienda).HasConversion<string>().HasMaxLength(15);
             e.Property(x => x.TenenciaVivienda).HasConversion<string>().HasMaxLength(15);

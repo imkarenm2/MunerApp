@@ -66,15 +66,25 @@ public class DatosPersonalesAdopcionViewModel : SeccionAdopcionViewModel
     [Display(Name = "Celular")]
     public string Celular { get; set; } = string.Empty;
 
+    /// <summary>Pregunta 6 del formato: opcional, celular o fijo.</summary>
+    [StringLength(16, ErrorMessage = "Máximo {1} caracteres.")]
+    [Display(Name = "Teléfono adicional (opcional)")]
+    public string? TelefonoAdicional { get; set; }
+
     [Required(ErrorMessage = "Ingresa la ciudad o municipio donde vives.")]
     [StringLength(100)]
     [Display(Name = "Ciudad o municipio")]
     public string Ciudad { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Ingresa tu dirección.")]
-    [StringLength(200, MinimumLength = 5, ErrorMessage = "Escribe la dirección completa, con barrio si aplica.")]
+    [StringLength(200, MinimumLength = 5, ErrorMessage = "Escribe la dirección completa.")]
     [Display(Name = "Dirección")]
     public string Direccion { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Ingresa el barrio o conjunto.")]
+    [StringLength(100, ErrorMessage = "Máximo {1} caracteres.")]
+    [Display(Name = "Barrio o conjunto")]
+    public string Barrio { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Selecciona tu ocupación.")]
     [Display(Name = "Ocupación")]
@@ -122,16 +132,19 @@ public class MascotasAdopcionViewModel : SeccionAdopcionViewModel
     [Display(Name = "¿Qué otra mascota?")]
     public string? OtraMascota { get; set; }
 
+    /// <summary>Pregunta 12.1.1: obligatoria si tiene mascotas.</summary>
+    [StringLength(100, ErrorMessage = "Máximo {1} caracteres.")]
+    [Display(Name = "¿Cuántos años tienen?")]
+    public string? EdadMascotas { get; set; }
+
     [Display(Name = "¿Tu gato usa arenero?")]
     public bool? GatoUsaArenero { get; set; }
 
-    [Display(Name = "¿Están esterilizados?")]
-    public EsterilizacionMascotas? GatoEsterilizacion { get; set; }
+    /// <summary>Pregunta 12.1.3 con las 4 opciones del formato de la fundación.</summary>
+    [Display(Name = "¿Tu gato está castrado y cuenta con sus vacunas?")]
+    public EstadoSaludGato? GatoSalud { get; set; }
 
-    [Display(Name = "¿Están vacunados?")]
-    public VacunasGato? GatoVacunas { get; set; }
-
-    /// <summary>Escenario 2: carné de vacunas opcional si las vacunas son completas o parciales.</summary>
+    /// <summary>Escenario 2: carné de vacunas opcional si el gato está vacunado (opciones a y c).</summary>
     [Display(Name = "Carné de vacunas (opcional)")]
     public IFormFile? CarneVacunas { get; set; }
 
@@ -148,8 +161,15 @@ public class MascotasAdopcionViewModel : SeccionAdopcionViewModel
     [Display(Name = "¿Qué ocurrió con tu mascota?")]
     public string? QuePasoMascota { get; set; }
 
-    /// <summary>Con las opciones a) o c) de vacunas se puede adjuntar el carné.</summary>
-    public static bool PermiteCarne(VacunasGato? vacunas) => vacunas is VacunasGato.Completas or VacunasGato.Parciales;
+    /// <summary>Pregunta 13 del formato.</summary>
+    [Required(ErrorMessage = "Cuéntanos por qué quieres adoptar.")]
+    [StringLength(1000, MinimumLength = 10, ErrorMessage = "Escribe entre {2} y {1} caracteres.")]
+    [Display(Name = "¿Por qué quieres adoptar un gatito de compañía?")]
+    public string? MotivoAdopcion { get; set; }
+
+    /// <summary>Con las opciones a) o c) (está vacunado) se puede adjuntar el carné, como dice el formato (12.1.4).</summary>
+    public static bool PermiteCarne(EstadoSaludGato? salud)
+        => salud is EstadoSaludGato.VacunadoYEsterilizado or EstadoSaludGato.VacunadoSinEsterilizar;
 }
 
 /// <summary>
@@ -183,9 +203,34 @@ public class HogarAdopcionViewModel : SeccionAdopcionViewModel
     [Display(Name = "¿Todas están de acuerdo con la adopción?")]
     public bool? ConvivientesDeAcuerdo { get; set; }
 
-    [Required(ErrorMessage = "Indica si hay niños en tu hogar.")]
-    [Display(Name = "¿Hay niños en tu hogar?")]
-    public bool? NinosEnCasa { get; set; }
+    [Required(ErrorMessage = "Cuéntanos qué gato buscas, o si quieres enamorarte de cualquiera.")]
+    [StringLength(1000, MinimumLength = 3, ErrorMessage = "Máximo {1} caracteres.")]
+    [Display(Name = "Nos interesa que interactúes con nuestros gatos en persona, pero queremos saber tus intereses: ¿buscas algún gato en especial? ¿Por qué? ¿O quieres enamorarte de cualquier gatito?")]
+    public string? GatoBuscado { get; set; }
+
+    [Required(ErrorMessage = "Responde esta pregunta.")]
+    [Display(Name = "Buscamos hogares ideales para nuestros rescatados: ¿estás dispuesto a cuidar de su bienestar por los más o menos quince (15) años que viven?")]
+    public bool? CuidaraQuinceAnios { get; set; }
+
+    [Required(ErrorMessage = "Responde esta pregunta.")]
+    [Display(Name = "Buscamos un único hogar para nuestros rescatados: ¿lo llevarías a cualquier vivienda, ciudad o país a donde te mudes?")]
+    public bool? LoLlevariaAlMudarse { get; set; }
+
+    [Required(ErrorMessage = "Cuéntanos qué lugar de tu hogar sería para la mascota.")]
+    [StringLength(300, MinimumLength = 3, ErrorMessage = "Máximo {1} caracteres.")]
+    [Display(Name = "¿Qué lugar de tu hogar estaría destinado para tu mascota?")]
+    public string? LugarParaMascota { get; set; }
+
+    [Required(ErrorMessage = "Indica si hay niños en tu casa.")]
+    [Display(Name = "¿Hay niños en tu casa? ¿Qué edad tienen?")]
+    public NinosEnHogar? NinosEdades { get; set; }
+
+    [StringLength(150, ErrorMessage = "Máximo {1} caracteres.")]
+    [Display(Name = "Especifica")]
+    public string? NinosOtro { get; set; }
+
+    /// <summary>Hay niños si eligió un rango de edad u "Otro".</summary>
+    public static bool HayNinos(NinosEnHogar? n) => n is not null and not NinosEnHogar.NoHay;
 
     /// <summary>Escenario 1: solo si hay niños en casa.</summary>
     [Display(Name = "¿Los niños han interactuado con mascotas?")]
@@ -193,12 +238,21 @@ public class HogarAdopcionViewModel : SeccionAdopcionViewModel
 
     /// <summary>Escenario 2: al responderla se muestra la información de toxoplasmosis.</summary>
     [Required(ErrorMessage = "Responde esta pregunta.")]
-    [Display(Name = "¿Alguien en tu hogar está embarazada o planea estarlo?")]
+    [Display(Name = "¿Hay mujeres en estado de embarazo en tu casa?")]
     public bool? EmbarazoEnHogar { get; set; }
 
     [Required(ErrorMessage = "Responde esta pregunta.")]
-    [Display(Name = "¿Puedes cubrir su alimentación, arena, vacunas y controles veterinarios?")]
-    public bool? PuedeCubrirCostos { get; set; }
+    [Display(Name = "Si en tu casa hubiese una mujer embarazada, ¿conoces sobre la toxoplasmosis?")]
+    public bool? ConoceToxoplasmosis { get; set; }
+
+    [Required(ErrorMessage = "Cuéntanos cuál es para ti la mejor cualidad de un gato.")]
+    [StringLength(300, MinimumLength = 3, ErrorMessage = "Máximo {1} caracteres.")]
+    [Display(Name = "Para ti, ¿cuál es la mejor cualidad de un gato?")]
+    public string? MejorCualidadGato { get; set; }
+
+    [Required(ErrorMessage = "Selecciona una opción.")]
+    [Display(Name = "Según tu criterio, ¿cuánto dinero cubre las necesidades de un gato al mes?")]
+    public CostoMensualGato? CostoMensualEstimado { get; set; }
 
     [Required(ErrorMessage = "Responde esta pregunta.")]
     [Display(Name = "¿Aceptas que la fundación haga una visita de seguimiento a tu hogar?")]
@@ -208,6 +262,10 @@ public class HogarAdopcionViewModel : SeccionAdopcionViewModel
     public bool AceptaRequisito { get; set; }
     public bool AceptaContrato { get; set; }
     public bool AutorizaDatos { get; set; }
+
+    [StringLength(1000, ErrorMessage = "Máximo {1} caracteres.")]
+    [Display(Name = "Comentarios y observaciones (opcional)")]
+    public string? Comentarios { get; set; }
 }
 
 /// <summary>Una solicitud de adopción en "Mis adopciones".</summary>

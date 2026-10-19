@@ -113,8 +113,10 @@ public class AdopcionesController : Controller
             Cedula = s.Cedula ?? "",
             Edad = s.Edad,
             Celular = s.Celular ?? "",
+            TelefonoAdicional = s.TelefonoAdicional,
             Ciudad = s.Ciudad ?? "",
             Direccion = s.Direccion ?? "",
+            Barrio = s.Barrio ?? "",
             Ocupacion = s.Ocupacion,
             DetalleOcupacion = s.DetalleOcupacion,
             ReferenciaNombre = s.ReferenciaNombre ?? "",
@@ -139,6 +141,17 @@ public class AdopcionesController : Controller
         if (!string.IsNullOrWhiteSpace(model.Celular) && celular is null)
             ModelState.AddModelError(nameof(model.Celular), ValidadorPersonas.ErrorCelular);
 
+        // Pregunta 6: teléfono adicional opcional, celular o fijo (7 a 10 dígitos)
+        string? telefonoAdicional = null;
+        if (!string.IsNullOrWhiteSpace(model.TelefonoAdicional))
+        {
+            telefonoAdicional = ValidadorPersonas.Telefono(model.TelefonoAdicional);
+            if (telefonoAdicional is null)
+                ModelState.AddModelError(nameof(model.TelefonoAdicional), ValidadorPersonas.ErrorTelefono);
+            else if (telefonoAdicional == celular)
+                ModelState.AddModelError(nameof(model.TelefonoAdicional), "Escribe un número diferente a tu celular, o deja este campo vacío.");
+        }
+
         var celularReferencia = ValidadorPersonas.Celular(model.ReferenciaCelular);
         if (!string.IsNullOrWhiteSpace(model.ReferenciaCelular) && celularReferencia is null)
             ModelState.AddModelError(nameof(model.ReferenciaCelular), ValidadorPersonas.ErrorCelular);
@@ -159,8 +172,10 @@ public class AdopcionesController : Controller
         s.Cedula = cedula;
         s.Edad = model.Edad;
         s.Celular = celular;
+        s.TelefonoAdicional = telefonoAdicional;
         s.Ciudad = model.Ciudad.Trim();
         s.Direccion = model.Direccion.Trim();
+        s.Barrio = model.Barrio.Trim();
         s.Ocupacion = model.Ocupacion;
         s.DetalleOcupacion = model.Ocupacion == OcupacionAdoptante.Independiente ? model.DetalleOcupacion!.Trim() : null;
         s.ReferenciaNombre = model.ReferenciaNombre.Trim();
@@ -189,11 +204,12 @@ public class AdopcionesController : Controller
             TienePerro = s.TienePerro,
             TieneOtraMascota = s.TieneOtraMascota,
             OtraMascota = s.OtraMascota,
+            EdadMascotas = s.EdadMascotas,
             GatoUsaArenero = s.GatoUsaArenero,
-            GatoEsterilizacion = s.GatoEsterilizacion,
-            GatoVacunas = s.GatoVacunas,
+            GatoSalud = s.GatoSalud,
             PerroSociabilidad = s.PerroSociabilidad,
-            QuePasoMascota = s.QuePasoMascota
+            QuePasoMascota = s.QuePasoMascota,
+            MotivoAdopcion = s.MotivoAdopcion
         };
         return View(PrepararSeccion(model, esal!, s, 2));
     }
@@ -215,14 +231,14 @@ public class AdopcionesController : Controller
             ModelState.AddModelError(nameof(model.TieneGato), "Selecciona qué mascotas tienes.");
         if (otra && string.IsNullOrWhiteSpace(model.OtraMascota))
             ModelState.AddModelError(nameof(model.OtraMascota), "Cuéntanos qué otra mascota tienes.");
+        if (tiene && string.IsNullOrWhiteSpace(model.EdadMascotas))
+            ModelState.AddModelError(nameof(model.EdadMascotas), "Cuéntanos cuántos años tienen tus mascotas.");
         if (gato)
         {
             if (model.GatoUsaArenero is null)
                 ModelState.AddModelError(nameof(model.GatoUsaArenero), "Indica si tu gato usa arenero.");
-            if (model.GatoEsterilizacion is null)
-                ModelState.AddModelError(nameof(model.GatoEsterilizacion), "Indica si tus gatos están esterilizados.");
-            if (model.GatoVacunas is null)
-                ModelState.AddModelError(nameof(model.GatoVacunas), "Indica si tus gatos están vacunados.");
+            if (model.GatoSalud is null)
+                ModelState.AddModelError(nameof(model.GatoSalud), "Indica si tu gato está castrado y vacunado.");
         }
         if (perro && model.PerroSociabilidad is null)
             ModelState.AddModelError(nameof(model.PerroSociabilidad), "Indica si tu perro es sociable con los gatos.");
@@ -231,8 +247,8 @@ public class AdopcionesController : Controller
         if (model.Mascotas == TenenciaMascotas.Tuve && string.IsNullOrWhiteSpace(model.QuePasoMascota))
             ModelState.AddModelError(nameof(model.QuePasoMascota), "Cuéntanos qué ocurrió con tu mascota.");
 
-        // Escenario 2: carné opcional, solo con vacunas completas o parciales (opciones a y c)
-        var permiteCarne = gato && MascotasAdopcionViewModel.PermiteCarne(model.GatoVacunas);
+        // Escenario 2: carné opcional, solo si el gato está vacunado (opciones a y c)
+        var permiteCarne = gato && MascotasAdopcionViewModel.PermiteCarne(model.GatoSalud);
         ArchivoValidado? carne = null;
         if (permiteCarne && model.CarneVacunas is { Length: > 0 })
         {
@@ -260,11 +276,15 @@ public class AdopcionesController : Controller
         s.TienePerro = perro;
         s.TieneOtraMascota = otra;
         s.OtraMascota = otra ? model.OtraMascota!.Trim() : null;
+        s.EdadMascotas = tiene ? model.EdadMascotas!.Trim() : null;
         s.GatoUsaArenero = gato ? model.GatoUsaArenero : null;
-        s.GatoEsterilizacion = gato ? model.GatoEsterilizacion : null;
-        s.GatoVacunas = gato ? model.GatoVacunas : null;
+        s.GatoSalud = gato ? model.GatoSalud : null;
+        // Las preguntas separadas de antes ya no se usan: el formato las tiene en una sola
+        s.GatoEsterilizacion = null;
+        s.GatoVacunas = null;
         s.PerroSociabilidad = perro ? model.PerroSociabilidad : null;
         s.QuePasoMascota = model.Mascotas == TenenciaMascotas.Tuve ? model.QuePasoMascota!.Trim() : null;
+        s.MotivoAdopcion = model.MotivoAdopcion!.Trim();
         s.SeccionesCompletadas = Math.Max(s.SeccionesCompletadas, 2);
         s.FechaActualizacion = DateTime.UtcNow;
         await _db.SaveChangesAsync();
@@ -300,11 +320,19 @@ public class AdopcionesController : Controller
             ArrendadorPermiteMascotas = s.ArrendadorPermiteMascotas,
             Convivientes = s.Convivientes,
             ConvivientesDeAcuerdo = s.ConvivientesDeAcuerdo,
-            NinosEnCasa = s.NinosEnCasa,
+            GatoBuscado = s.GatoBuscado,
+            CuidaraQuinceAnios = s.CuidaraQuinceAnios,
+            LoLlevariaAlMudarse = s.LoLlevariaAlMudarse,
+            LugarParaMascota = s.LugarParaMascota,
+            NinosEdades = s.NinosEdades,
+            NinosOtro = s.NinosOtro,
             NinosInteractuanMascotas = s.NinosInteractuanMascotas,
             EmbarazoEnHogar = s.EmbarazoEnHogar,
-            PuedeCubrirCostos = s.PuedeCubrirCostos,
-            AceptaVisita = s.AceptaVisita
+            ConoceToxoplasmosis = s.ConoceToxoplasmosis,
+            MejorCualidadGato = s.MejorCualidadGato,
+            CostoMensualEstimado = s.CostoMensualEstimado,
+            AceptaVisita = s.AceptaVisita,
+            Comentarios = s.Comentarios
         };
         return View(await PrepararHogarAsync(model, esal!, s));
     }
@@ -321,7 +349,10 @@ public class AdopcionesController : Controller
             ModelState.AddModelError(nameof(model.ArrendadorPermiteMascotas), "Indica si el arrendador permite mascotas.");
 
         // Escenario 1: si hay niños, si han interactuado con mascotas
-        if (model.NinosEnCasa == true && model.NinosInteractuanMascotas is null)
+        var hayNinos = HogarAdopcionViewModel.HayNinos(model.NinosEdades);
+        if (model.NinosEdades == NinosEnHogar.Otro && string.IsNullOrWhiteSpace(model.NinosOtro))
+            ModelState.AddModelError(nameof(model.NinosOtro), "Especifica la edad de los niños.");
+        if (hayNinos && model.NinosInteractuanMascotas is null)
             ModelState.AddModelError(nameof(model.NinosInteractuanMascotas), "Indica si los niños han interactuado con mascotas.");
 
         // Escenario 3: requisito, contrato y autorización de datos son obligatorios para enviar
@@ -339,11 +370,21 @@ public class AdopcionesController : Controller
         s.ArrendadorPermiteMascotas = arrendada ? model.ArrendadorPermiteMascotas : null;
         s.Convivientes = model.Convivientes;
         s.ConvivientesDeAcuerdo = model.ConvivientesDeAcuerdo;
-        s.NinosEnCasa = model.NinosEnCasa;
-        s.NinosInteractuanMascotas = model.NinosEnCasa == true ? model.NinosInteractuanMascotas : null;
+        s.GatoBuscado = model.GatoBuscado!.Trim();
+        s.CuidaraQuinceAnios = model.CuidaraQuinceAnios;
+        s.LoLlevariaAlMudarse = model.LoLlevariaAlMudarse;
+        s.LugarParaMascota = model.LugarParaMascota!.Trim();
+        s.NinosEdades = model.NinosEdades;
+        s.NinosOtro = model.NinosEdades == NinosEnHogar.Otro ? model.NinosOtro!.Trim() : null;
+        s.NinosEnCasa = hayNinos;
+        s.NinosInteractuanMascotas = hayNinos ? model.NinosInteractuanMascotas : null;
         s.EmbarazoEnHogar = model.EmbarazoEnHogar;
-        s.PuedeCubrirCostos = model.PuedeCubrirCostos;
+        s.ConoceToxoplasmosis = model.ConoceToxoplasmosis;
+        s.MejorCualidadGato = model.MejorCualidadGato!.Trim();
+        s.CostoMensualEstimado = model.CostoMensualEstimado;
+        s.PuedeCubrirCostos = null; // reemplazada por la pregunta 25 del formato
         s.AceptaVisita = model.AceptaVisita;
+        s.Comentarios = string.IsNullOrWhiteSpace(model.Comentarios) ? null : model.Comentarios.Trim();
         s.AceptaRequisito = true;
         s.AceptaContrato = true;
         s.AutorizaDatos = true;
