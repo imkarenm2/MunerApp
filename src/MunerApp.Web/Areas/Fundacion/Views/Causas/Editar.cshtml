@@ -6,7 +6,7 @@
 <div class="container py-4 py-md-5" style="max-width: 760px">
     <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Causas</a>
     <h1 class="h2 mt-2 mb-1">Editar causa</h1>
-    <p class="text-suave mb-4">Los cambios se ven de inmediato en el perfil de la fundación.</p>
+    <p class="text-suave mb-4">@(Model.PideJustificacion ? "La causa aún no está publicada: sigue en revisión del equipo de MunerApp." : "Los cambios se ven de inmediato en el perfil de la fundación.")</p>
 
     <form asp-action="Editar" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" novalidate class="mu-card p-4 p-md-5">
         <partial name="_Formulario" model="Model" />

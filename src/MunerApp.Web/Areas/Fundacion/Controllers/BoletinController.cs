@@ -249,7 +249,8 @@ public class BoletinController : Controller
         }
 
         // La causa debe ser de esta fundación (el filtro por ESAL lo garantiza)
-        if (model.CausaId is int causaId && !await _db.Causas.AnyAsync(c => c.Id == causaId))
+        var publicas = MunerApp.Domain.Entities.Causa.EstadosPublicos;
+        if (model.CausaId is int causaId && !await _db.Causas.AnyAsync(c => c.Id == causaId && publicas.Contains(c.Estado)))
             ModelState.AddModelError(nameof(model.CausaId), "Elige una causa de la fundación.");
     }
 
@@ -288,7 +289,10 @@ public class BoletinController : Controller
         model.Id = p?.Id;
         model.Estado = p?.Estado ?? EstadoPublicacion.Borrador;
         model.ImagenActualUrl = p?.ImagenRuta is null ? null : _archivos.UrlPublica(p.ImagenRuta);
+        // Solo causas ya aprobadas: las que están por aprobar no son públicas
+        var publicas = MunerApp.Domain.Entities.Causa.EstadosPublicos;
         model.Causas = await _db.Causas.AsNoTracking()
+            .Where(c => publicas.Contains(c.Estado))
             .OrderByDescending(c => c.FechaCreacion)
             .Select(c => new CausaOpcion(c.Id, c.Titulo)).ToListAsync();
         return model;

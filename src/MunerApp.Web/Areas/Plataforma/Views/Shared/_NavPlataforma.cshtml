@@ -1,0 +1,59 @@
+@* Menú lateral del superadministrador de MunerApp. *@
+@inject MunerApp.Infrastructure.Persistence.MunerAppDbContext Db
+@{
+    var porAprobar = Db.Causas.Count(c => c.Estado == EstadoCausa.PorAprobar);
+    var controlador = ViewContext.RouteData.Values["controller"] as string ?? "";
+    var accion = ViewContext.RouteData.Values["action"] as string ?? "";
+    var seccion = controlador == "Informes" ? "Informes" + accion : controlador;
+    string Activa(string c) => c == seccion ? "active" : "";
+    string? Actual(string c) => c == seccion ? "page" : null;
+    var titulo = seccion switch
+    {
+        "Resumen" => "Resumen", "Esales" => "Fundaciones", "Causas" => "Causas",
+        "InformesDonaciones" => "Informe de donaciones", "InformesApadrinamientos" => "Informe de apadrinamientos", _ => ""
+    };
+}
+<div class="panel-barra">
+    <div class="container-fluid panel-barra-contenido">
+        <button class="btn panel-boton-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuPanel" aria-controls="menuPanel">
+            <i class="bi bi-list" aria-hidden="true"></i><span>Menú</span>
+        </button>
+        <span class="panel-barra-nombre text-truncate">Administración de MunerApp</span>
+        <span class="panel-barra-seccion d-none d-sm-inline">@titulo</span>
+    </div>
+</div>
+
+<aside class="offcanvas offcanvas-start panel-lateral" tabindex="-1" id="menuPanel" aria-labelledby="menuPanelTitulo">
+    <div class="panel-lateral-cabecera">
+        <span class="panel-lateral-logo panel-lateral-iniciales" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>
+        <div class="flex-grow-1 min-w-0">
+            <div class="fw-bold text-truncate" id="menuPanelTitulo">MunerApp</div>
+            <div class="small text-suave text-truncate">Superadministrador</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#menuPanel" aria-label="Cerrar menú"></button>
+    </div>
+
+    <nav class="panel-lateral-menu" aria-label="Secciones de la administración">
+        <a class="panel-enlace @Activa("Resumen")" aria-current="@Actual("Resumen")" asp-area="Plataforma" asp-controller="Resumen" asp-action="Index"><i class="bi bi-speedometer2" aria-hidden="true"></i>Resumen</a>
+
+        <div class="panel-grupo">Gestión</div>
+        <a class="panel-enlace @Activa("Esales")" aria-current="@Actual("Esales")" asp-area="Plataforma" asp-controller="Esales" asp-action="Index"><i class="bi bi-buildings" aria-hidden="true"></i>Fundaciones</a>
+        <a class="panel-enlace @Activa("Causas")" aria-current="@Actual("Causas")" asp-area="Plataforma" asp-controller="Causas" asp-action="Index">
+            <i class="bi bi-bullseye" aria-hidden="true"></i>Causas
+            @if (porAprobar > 0)
+            {
+                <span class="panel-contador" title="Por aprobar">@porAprobar<span class="visually-hidden"> por aprobar</span></span>
+            }
+        </a>
+
+        <div class="panel-grupo">Informes</div>
+        <a class="panel-enlace @Activa("InformesDonaciones")" aria-current="@Actual("InformesDonaciones")" asp-area="Plataforma" asp-controller="Informes" asp-action="Donaciones"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i>Donaciones</a>
+        <a class="panel-enlace @Activa("InformesApadrinamientos")" aria-current="@Actual("InformesApadrinamientos")" asp-area="Plataforma" asp-controller="Informes" asp-action="Apadrinamientos"><i class="bi bi-heart" aria-hidden="true"></i>Apadrinamientos</a>
+    </nav>
+
+    <a class="panel-ver-publica" href="/fundaciones" target="_blank" rel="noopener">
+        <i class="bi bi-globe2" aria-hidden="true"></i>
+        <span class="flex-grow-1">Ver el sitio público<span class="d-block small fw-normal">Lo que ven los donantes</span></span>
+        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+    </a>
+</aside>

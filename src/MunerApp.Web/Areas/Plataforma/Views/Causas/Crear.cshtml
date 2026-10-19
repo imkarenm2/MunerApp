@@ -1,0 +1,30 @@
+@model CausaPlataformaFormViewModel
+@{
+    ViewData["Title"] = "Crear causa";
+}
+<div class="container py-4 py-md-5" style="max-width: 760px">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Causas</a>
+    <h1 class="h2 mt-2 mb-1">Crear causa para una fundación</h1>
+    <p class="text-suave mb-4">Como la crea MunerApp, se publica de una vez en el perfil de la fundación. Los administradores de la fundación reciben un aviso.</p>
+
+    <form asp-action="Crear" method="post" enctype="multipart/form-data" novalidate class="mu-card p-4 p-md-5"
+          data-confirmar="Se publicará en el perfil de la fundación y empezará a recibir donaciones."
+          data-confirmar-titulo="¿Publicar la causa?" data-confirmar-boton="Sí, publicar">
+        <div class="mb-3">
+            <label asp-for="EsalId" class="form-label"></label>
+            <select asp-for="EsalId" asp-items="Model.Fundaciones" class="form-select">
+                <option value="">Selecciona la fundación</option>
+            </select>
+            <span asp-validation-for="EsalId"></span>
+        </div>
+        <partial name="~/Areas/Fundacion/Views/Causas/_Formulario.cshtml" model="Model" />
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+            <button type="submit" class="btn btn-primary" data-cargando="Publicando...">Publicar causa</button>
+            <a asp-action="Index" class="btn btn-link">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

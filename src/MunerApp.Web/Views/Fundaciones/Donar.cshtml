@@ -7,6 +7,13 @@
     <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.Nombre, Model.LogoUrl, 48), Model.Slug, "Volver al perfil de")' />
 
     <h1 class="h2 mb-2">Donar a @Model.Nombre</h1>
+    @if (Model.NombreCausa is not null && Model.Disponible)
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-bullseye" aria-hidden="true"></i>
+            <div>Tu donación será para la causa <strong>@Model.NombreCausa</strong>. Cuando la fundación la confirme, sumará a su barra de progreso.</div>
+        </div>
+    }
 
     @if (!Model.Disponible)
     {
@@ -66,9 +73,16 @@
                     <div>
                         <h2 class="h5 mb-1">Reporta tu donación</h2>
                         <p class="text-suave mb-3">La fundación revisa que el dinero haya llegado y te enviamos tu comprobante.</p>
-                        <a class="btn btn-apoyar btn-lg" href="/fundaciones/@Model.Slug/reportar-donacion">
-                            <i class="bi bi-upload me-2" aria-hidden="true"></i>Ya doné, reportar mi donación
-                        </a>
+                        @if (MunerApp.Web.Seguridad.Politicas.EsCuentaInstitucional(User))
+                        {
+                            <p class="small text-suave mb-0"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>@MunerApp.Web.Seguridad.Politicas.MensajeCuentaInstitucional</p>
+                        }
+                        else
+                        {
+                            <a class="btn btn-apoyar btn-lg" href="@Model.UrlReportar">
+                                <i class="bi bi-upload me-2" aria-hidden="true"></i>Ya doné, reportar mi donación
+                            </a>
+                        }
                     </div>
                 </div>
             </div>

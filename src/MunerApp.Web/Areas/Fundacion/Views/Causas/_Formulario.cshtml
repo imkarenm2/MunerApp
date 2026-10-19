@@ -6,6 +6,13 @@
     var cupo = 5 - Model.FotosActuales.Count;
 }
 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+@if (!string.IsNullOrEmpty(Model.MotivoRechazo))
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+        <div><strong>El equipo de MunerApp pidió cambios:</strong> @Model.MotivoRechazo<br /><span class="small">Corrígela y guárdala: volverá a revisión.</span></div>
+    </div>
+}
 <div class="row g-3">
     <div class="col-12">
         <label asp-for="Titulo" class="form-label"></label>
@@ -35,6 +42,16 @@
                   placeholder="Cuenta qué necesidad hay, para qué se usará el dinero y por qué es urgente."></textarea>
         <span asp-validation-for="Descripcion"></span>
     </div>
+    @if (Model.PideJustificacion)
+    {
+        <div class="col-12">
+            <label asp-for="Justificacion" class="form-label"></label>
+            <textarea asp-for="Justificacion" class="form-control" rows="4" maxlength="1000"
+                      placeholder="Ej.: rescatamos 6 gatitos con infección y necesitamos cubrir medicamentos y controles durante un mes."></textarea>
+            <div class="form-text">No se publica: la lee el equipo de MunerApp para aprobar la causa.</div>
+            <span asp-validation-for="Justificacion"></span>
+        </div>
+    }
     <div class="col-12">
         <label class="form-label" for="Fotos">Fotos (@(editando ? "hasta 5 en total" : "al menos 1, máximo 5"))</label>
         @if (editando && Model.FotosActuales.Count > 0)

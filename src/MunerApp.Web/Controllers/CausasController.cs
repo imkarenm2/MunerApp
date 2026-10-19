@@ -20,9 +20,11 @@ public class CausasController : Controller
         _causas = causas;
     }
 
-    // Escenario 1: listado de causas de todas las fundaciones
+    // Escenario 1: listado de causas de todas las fundaciones.
+    // Se llama Todas y no Index: el área Fundacion tiene un CausasController con Index y, con el mismo nombre,
+    // las redirecciones del panel terminaban en /causas (el mismo caso que Donaciones y Postulaciones).
     [HttpGet("causas")]
-    public async Task<IActionResult> Index() => View(await _causas.ListarAsync(esalId: null, maxCerradas: 12));
+    public async Task<IActionResult> Todas() => View(await _causas.ListarAsync(esalId: null, maxCerradas: 12));
 
     // Escenarios 2 y 3: detalle (abierta, en pausa o cerrada)
     [HttpGet("fundaciones/{slug}/causas/{id:int}")]
