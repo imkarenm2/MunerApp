@@ -325,7 +325,8 @@ public class AdopcionesController : Controller
         a.Telefono = s.Celular!;
         a.Correo = await _db.Users.Where(u => u.Id == s.UsuarioId).Select(u => u.Email).FirstOrDefaultAsync();
         a.Ciudad = s.Ciudad!;
-        a.Direccion = s.Direccion!;
+        var direccion = string.IsNullOrEmpty(s.Barrio) ? s.Direccion! : $"{s.Direccion}, {s.Barrio}";
+        a.Direccion = direccion.Length > 200 ? direccion[..200] : direccion;
         a.FechaAdopcion = Formatos.Local(DateTime.UtcNow).Date;
         a.Observaciones = $"Solicitud de adopción {s.Codigo}." + (observaciones is null ? "" : " " + observaciones);
         if (a.Observaciones.Length > 500) a.Observaciones = a.Observaciones[..500];

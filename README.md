@@ -292,6 +292,7 @@ Migraciones, en orden: `HU023_Productos`, `HU025_ChatTienda`, `HU026_Pedidos`, `
 - `Servicios/EstadosBeneficiario.cs` concentra el cambio de estado de un beneficiario (historial, retiro del apadrinamiento y aviso a los padrinos). Lo usan la hoja de vida (Sprint 3) y la adopción concretada, para que las reglas estén en un solo lugar.
 - La acción pública se llama `MisAdopciones` (no `Index`) para que los enlaces del área `Fundacion` no se confundan con `/mis-adopciones`: ambos controladores se llaman `Adopciones`.
 - Requiere el módulo **Adopción** activo en la fundación.
+- **Formato de la fundación:** el formulario sigue las 30 preguntas que El Reino de los Gatos definió en la reunión de levantamiento del 9 de septiembre (teléfono adicional, barrio, edad de las mascotas, castrado y vacunas en una sola pregunta con 4 opciones, por qué quiere adoptar, gato que busca, compromiso de 15 años, mudanzas, lugar para la mascota, niños por rango de edad, toxoplasmosis, mejor cualidad, costo mensual y comentarios). Migración `FormularioAdopcionFormato`. Las preguntas separadas de esterilización y vacunas y la de "puede cubrir los costos" ya no se piden; se conservan en la base de datos solo para las solicitudes enviadas antes.
 
 ### Confirmación automática con Wompi (HU-044)
 

@@ -41,19 +41,29 @@
                 <span asp-validation-for="Celular"></span>
             </div>
             <div class="col-12 col-sm-6">
+                <label asp-for="TelefonoAdicional" class="form-label"></label>
+                <input asp-for="TelefonoAdicional" class="form-control" inputmode="tel" maxlength="16" placeholder="Otro celular o un fijo" autocomplete="off" />
+                <span asp-validation-for="TelefonoAdicional"></span>
+            </div>
+            <div class="col-12 col-sm-6">
                 <label class="form-label" for="correoCuenta">Correo</label>
                 <input id="correoCuenta" class="form-control" value="@Model.Correo" readonly aria-describedby="ayudaCorreo" />
                 <div class="form-text" id="ayudaCorreo">Es el correo de tu cuenta.</div>
             </div>
-            <div class="col-12 col-sm-5">
+            <div class="col-12 col-sm-6">
                 <label asp-for="Ciudad" class="form-label"></label>
                 <input asp-for="Ciudad" class="form-control" maxlength="100" placeholder="Facatativá" autocomplete="address-level2" />
                 <span asp-validation-for="Ciudad"></span>
             </div>
-            <div class="col-12 col-sm-7">
+            <div class="col-12 col-sm-6">
                 <label asp-for="Direccion" class="form-label"></label>
-                <input asp-for="Direccion" class="form-control" maxlength="200" placeholder="Calle 5 # 3-20, barrio Centro" autocomplete="street-address" />
+                <input asp-for="Direccion" class="form-control" maxlength="200" placeholder="Calle 5 # 3-20, apto 301" autocomplete="street-address" />
                 <span asp-validation-for="Direccion"></span>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label asp-for="Barrio" class="form-label"></label>
+                <input asp-for="Barrio" class="form-control" maxlength="100" placeholder="Ej.: Centro, Conjunto Los Pinos" autocomplete="off" />
+                <span asp-validation-for="Barrio"></span>
             </div>
             <div class="col-12 col-sm-6">
                 <label asp-for="Ocupacion" class="form-label"></label>
