@@ -129,6 +129,10 @@ public class HomeController : Controller
         return sb.ToString().ToLowerInvariant();
     }
 
+    /// <summary>Política de tratamiento de datos personales (Ley 1581 de 2012). Google la exige para el ingreso con Google.</summary>
+    [HttpGet("privacidad")]
+    public IActionResult Privacidad() => View();
+
     /// <summary>Guía de estilos para el equipo. Solo disponible en desarrollo.</summary>
     public IActionResult Estilos() => _entorno.IsDevelopment() ? View() : NotFound();
 

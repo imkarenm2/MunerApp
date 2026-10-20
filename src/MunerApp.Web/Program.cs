@@ -1,5 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
@@ -101,6 +103,14 @@ if (!string.IsNullOrWhiteSpace(googleClientId))
     });
 }
 
+// En Azure las llaves de cifrado (sesiones, enlaces de correo y llaves de Wompi) se guardan en una carpeta
+// que no se borra al publicar una versión nueva. En local no se configura y se usa la carpeta del usuario.
+var rutaLlaves = builder.Configuration["DataProtection:RutaLlaves"];
+if (!string.IsNullOrWhiteSpace(rutaLlaves))
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(rutaLlaves))
+        .SetApplicationName("MunerApp");
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -157,6 +167,13 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// En Azure las migraciones se aplican solas al arrancar cada versión nueva. En local se sigue usando Update-Database.
+if (app.Configuration.GetValue<bool>("BaseDatos:MigrarAlIniciar"))
+{
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<MunerApp.Infrastructure.Persistence.MunerAppDbContext>().Database.MigrateAsync();
+}
 
 await DataSeeder.SembrarAsync(app.Services, app.Configuration);
 

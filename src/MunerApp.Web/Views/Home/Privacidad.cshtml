@@ -1,0 +1,60 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+@{
+    ViewData["Title"] = "Política de privacidad";
+    var contacto = Config["Correo:Remitente"];
+}
+<div class="container py-5" style="max-width: 820px">
+    <h1 class="h2 mb-2">Política de tratamiento de datos personales</h1>
+    <p class="text-suave mb-4">Última actualización: 19 de octubre de 2026</p>
+
+    <div class="mu-card p-4 p-md-5">
+        <h2 class="h5">1. Quiénes somos</h2>
+        <p>
+            MunerApp es una plataforma que conecta a la comunidad de la Sabana de Occidente con fundaciones (ESAL) que rescatan y cuidan animales.
+            Es un Proyecto de Gestión del Conocimiento de la Universidad de Cundinamarca, Extensión Facatativá.
+            Tratamos los datos personales según la Ley 1581 de 2012 y el Decreto 1377 de 2013.
+        </p>
+
+        <h2 class="h5 mt-4">2. Qué datos recogemos</h2>
+        <ul>
+            <li><strong>Cuenta:</strong> nombre, correo, teléfono y contraseña cifrada. Si entras con Google, recibimos tu nombre y tu correo.</li>
+            <li><strong>Donaciones:</strong> valor, fecha, causa o fundación, soporte de la transferencia y lo que ofreces en especie. Los pagos en línea los procesa Wompi: MunerApp no ve ni guarda datos de tarjetas.</li>
+            <li><strong>Voluntariado y adopción:</strong> lo que escribes en la postulación o en la solicitud de adopción, como datos del hogar y de las mascotas.</li>
+            <li><strong>Uso de la plataforma:</strong> fechas de ingreso y acciones necesarias para la seguridad de tu cuenta.</li>
+        </ul>
+
+        <h2 class="h5 mt-4">3. Para qué los usamos</h2>
+        <ul>
+            <li>Crear y proteger tu cuenta, y confirmar tu correo.</li>
+            <li>Registrar tus donaciones, darte comprobantes y avisarte en qué se usó tu ayuda.</li>
+            <li>Que la fundación que elijas evalúe tu postulación o tu solicitud de adopción y te contacte.</li>
+            <li>Mostrar información agregada y anónima de transparencia, por ejemplo cuánto recibió una fundación. Nunca publicamos quién donó.</li>
+        </ul>
+
+        <h2 class="h5 mt-4">4. Con quién los compartimos</h2>
+        <p>
+            Solo con la fundación con la que interactúas, para lo que solicitaste. No vendemos ni cedemos tus datos a terceros.
+            Usamos proveedores para operar la plataforma: Microsoft Azure para el alojamiento, Google para el ingreso con Google
+            y el envío de correos, y Wompi para los pagos en línea.
+        </p>
+
+        <h2 class="h5 mt-4">5. Tus derechos</h2>
+        <p>
+            Puedes conocer, actualizar, rectificar y pedir que se eliminen tus datos, y revocar esta autorización, salvo cuando
+            debamos conservarlos por una obligación legal o contable de la fundación. También puedes presentar quejas ante la
+            Superintendencia de Industria y Comercio.
+        </p>
+
+        <h2 class="h5 mt-4">6. Cómo contactarnos</h2>
+        <p class="mb-0">
+            @if (!string.IsNullOrWhiteSpace(contacto))
+            {
+                <text>Escríbenos a <a href="mailto:@contacto">@contacto</a>. Respondemos en máximo 15 días hábiles.</text>
+            }
+            else
+            {
+                <text>Escríbenos desde la página de la fundación con la que interactuaste o al correo del equipo de MunerApp. Respondemos en máximo 15 días hábiles.</text>
+            }
+        </p>
+    </div>
+</div>
