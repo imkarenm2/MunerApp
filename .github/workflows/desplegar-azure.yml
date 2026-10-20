@@ -1,0 +1,40 @@
+# Publica MunerApp en Azure App Service cada vez que se fusiona algo en develop.
+# Necesita el secreto AZURE_WEBAPP_PUBLISH_PROFILE (perfil de publicación de la App Service)
+# y la variable AZURE_WEBAPP_NAME (nombre de la App Service) en Settings > Secrets and variables > Actions.
+name: Desplegar en Azure
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+
+concurrency:
+  group: desplegar-azure
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Compilar
+        run: dotnet build MunerApp.sln -c Release
+
+      - name: Pruebas
+        run: dotnet test tests/MunerApp.Tests/MunerApp.Tests.csproj -c Release --no-build
+
+      - name: Publicar
+        run: dotnet publish src/MunerApp.Web/MunerApp.Web.csproj -c Release -o ./publicado --no-build
+
+      - name: Subir a Azure
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publicado

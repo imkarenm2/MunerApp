@@ -429,6 +429,29 @@ Toda entidad nueva que pertenezca a una fundación debe:
 
 Los usuarios de una ESAL (administradores y voluntarios) solo ven los datos de su fundación. Las páginas públicas filtran explícitamente por la ESAL que se consulta. El superadministrador puede usar `IgnoreQueryFilters()` en el panel de plataforma; las páginas públicas también, filtrando siempre de forma explícita (ver Sprint 2).
 
+## Despliegue en Azure
+
+- La app vive en una **App Service Linux (plan B1, .NET 8)** y la base de datos en **Azure SQL**. Se paga con el crédito de Azure for Students.
+- Cada vez que se fusiona algo en `develop`, GitHub Actions (`.github/workflows/desplegar-azure.yml`) compila, corre las pruebas y publica. Si una prueba falla, no se publica.
+- Al arrancar, la app aplica sola las migraciones pendientes (`BaseDatos:MigrarAlIniciar`). Los datos no se borran al publicar.
+- Los archivos subidos y las llaves de cifrado se guardan en `/home/data`, que no se borra al publicar.
+
+**Configuración de la App Service** (Configuración > Variables de entorno):
+
+| Nombre | Valor |
+|---|---|
+| `ConnectionStrings__DefaultConnection` | Cadena ADO.NET de Azure SQL, con la contraseña |
+| `BaseDatos__MigrarAlIniciar` | `true` |
+| `Archivos__RutaBase` | `/home/data/archivos` |
+| `DataProtection__RutaLlaves` | `/home/data/llaves` |
+| `Seed__SuperAdmin__Email` y `Seed__SuperAdmin__Password` | Cuenta del superadministrador |
+| `Correo__Usuario`, `Correo__Contrasena`, `Correo__Remitente` | Gmail con contraseña de aplicación |
+| `Autenticacion__Google__ClientId` y `Autenticacion__Google__ClientSecret` | Login con Google (opcional) |
+
+- Activar **Always On** (Configuración > Configuración general) para que la revisión diaria se ejecute.
+- En GitHub (Settings > Secrets and variables > Actions): secreto `AZURE_WEBAPP_PUBLISH_PROFILE` con el perfil de publicación y variable `AZURE_WEBAPP_NAME` con el nombre de la App Service. Para descargar el perfil hay que activar *SCM Basic Auth Publishing Credentials* en Configuración > Configuración general.
+- En Google Cloud, agregar `https://<app>.azurewebsites.net/signin-google` a las URI de redirección. En Wompi, cada fundación copia su URL de eventos desde **Pagos en línea** (`https://<app>.azurewebsites.net/api/wompi/eventos/{esalId}`).
+
 ## Flujo de trabajo en Git
 
 ```bash
