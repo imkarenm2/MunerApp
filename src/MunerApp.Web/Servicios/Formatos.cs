@@ -12,10 +12,6 @@ public static class Formatos
     public static DateTime Local(DateTime utc) =>
         TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), Zona);
 
-    /// <summary>Convierte una hora de Colombia a UTC (para comparar con fechas guardadas en UTC).</summary>
-    public static DateTime AUtc(DateTime local) =>
-        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), Zona);
-
     /// <summary>Fecha de hoy en Colombia.</summary>
     public static DateTime Hoy() => Local(DateTime.UtcNow).Date;
 
@@ -26,7 +22,10 @@ public static class Formatos
         return char.ToUpper(texto[0]) + texto[1..];
     }
 
-    /// <summary>Convierte una fecha y hora de Colombia (por ejemplo, la de una cita) a UTC para guardarla.</summary>
+    /// <summary>
+    /// Convierte una fecha y hora de Colombia a UTC: para guardarla (una cita, un evento) o para compararla con
+    /// fechas guardadas en UTC (el inicio de un mes).
+    /// </summary>
     public static DateTime Utc(DateTime local) =>
         TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), Zona);
 
@@ -72,7 +71,7 @@ public static class Formatos
     /// <summary>"2 años y 3 meses", "8 meses", "Menos de 1 mes" (a partir de la fecha de nacimiento aproximada).</summary>
     public static string Edad(DateTime nacimiento)
     {
-        var hoy = DateTime.Today;
+        var hoy = Formatos.Hoy();
         var meses = (hoy.Year - nacimiento.Year) * 12 + hoy.Month - nacimiento.Month;
         if (hoy.Day < nacimiento.Day) meses--;
         if (meses < 1) return "Menos de 1 mes";
@@ -87,7 +86,7 @@ public static class Formatos
     /// <summary>Años y meses de una fecha de nacimiento aproximada (para llenar el formulario al editar).</summary>
     public static (int Anios, int Meses) AniosYMeses(DateTime nacimiento)
     {
-        var hoy = DateTime.Today;
+        var hoy = Formatos.Hoy();
         var meses = Math.Max(0, (hoy.Year - nacimiento.Year) * 12 + hoy.Month - nacimiento.Month - (hoy.Day < nacimiento.Day ? 1 : 0));
         return (meses / 12, meses % 12);
     }

@@ -50,7 +50,7 @@ public class PanelController : Controller
         var moduloBeneficiarios = await _modulos.EstaActivoAsync(esalId, CodigosModulo.Beneficiarios);
 
         var hoy = Formatos.Hoy();
-        var inicioMesUtc = Formatos.AUtc(new DateTime(hoy.Year, hoy.Month, 1));
+        var inicioMesUtc = Formatos.Utc(new DateTime(hoy.Year, hoy.Month, 1));
 
         var portada = await _db.FotosEsal.AsNoTracking().OrderBy(f => f.Orden).Select(f => f.Ruta).FirstOrDefaultAsync();
 

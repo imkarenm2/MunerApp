@@ -242,7 +242,7 @@ public class BoletinController : Controller
                 ModelState.AddModelError(nameof(model.FechaEvento), "Indica la fecha y la hora del evento.");
             else if (nueva && Formatos.Utc(model.FechaEvento.Value) <= DateTime.UtcNow)
                 ModelState.AddModelError(nameof(model.FechaEvento), "La fecha del evento debe ser futura.");
-            else if (model.FechaEvento > DateTime.Today.AddYears(2))
+            else if (model.FechaEvento > Formatos.Hoy().AddYears(2))
                 ModelState.AddModelError(nameof(model.FechaEvento), "La fecha del evento no puede superar los 2 años.");
             if (string.IsNullOrWhiteSpace(model.LugarEvento))
                 ModelState.AddModelError(nameof(model.LugarEvento), "Indica dónde es el evento (dirección o enlace si es virtual).");

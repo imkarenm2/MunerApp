@@ -34,9 +34,9 @@ public static class FormularioCausa
 
         if (model.FechaLimite is DateTime fecha)
         {
-            if (fecha.Date <= DateTime.Today)
+            if (fecha.Date <= Formatos.Hoy())
                 estado.AddModelError(nameof(model.FechaLimite), "La fecha límite debe ser posterior a hoy.");
-            else if (fecha.Date > DateTime.Today.AddYears(2))
+            else if (fecha.Date > Formatos.Hoy().AddYears(2))
                 estado.AddModelError(nameof(model.FechaLimite), "La fecha límite no puede superar los 2 años.");
         }
 

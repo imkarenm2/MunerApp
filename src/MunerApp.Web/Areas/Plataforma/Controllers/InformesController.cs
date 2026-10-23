@@ -113,7 +113,7 @@ public class InformesController : Controller
         var enCasa = ReglasBeneficiario.EnCasa;
 
         var hoy = Formatos.Hoy();
-        var inicioMesUtc = Formatos.AUtc(new DateTime(hoy.Year, hoy.Month, 1));
+        var inicioMesUtc = Formatos.Utc(new DateTime(hoy.Year, hoy.Month, 1));
 
         var modelo = new InformeApadrinamientosViewModel
         {
@@ -197,7 +197,7 @@ public class InformesController : Controller
     private static DateTime InicioMes(int mesesAtras)
     {
         var hoy = Formatos.Hoy();
-        return Formatos.AUtc(new DateTime(hoy.Year, hoy.Month, 1).AddMonths(-mesesAtras));
+        return Formatos.Utc(new DateTime(hoy.Year, hoy.Month, 1).AddMonths(-mesesAtras));
     }
 
     private async Task<IReadOnlyList<SelectListItem>> FundacionesAsync(int? seleccionada)

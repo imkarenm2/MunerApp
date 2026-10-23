@@ -128,6 +128,17 @@ else
     app.UseForwardedHeaders(reenviados);
 }
 
+// Cabeceras de seguridad: el navegador no adivina tipos de archivo (un soporte subido no se ejecuta como script),
+// ningún otro sitio puede mostrar MunerApp dentro de un marco y las direcciones internas no se filtran a otros sitios.
+app.Use(async (contexto, siguiente) =>
+{
+    var cabeceras = contexto.Response.Headers;
+    cabeceras["X-Content-Type-Options"] = "nosniff";
+    cabeceras["X-Frame-Options"] = "SAMEORIGIN";
+    cabeceras["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    await siguiente();
+});
+
 // Formatos de Colombia: $ 50.000 y fechas en español
 var culturaCo = new CultureInfo("es-CO");
 CultureInfo.DefaultThreadCurrentCulture = culturaCo;
@@ -158,6 +169,23 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UseRouting();
 app.UseAuthentication();
+
+// Un usuario del panel de fundación sin ESAL asignada (por ejemplo, desvinculado) no entra al panel:
+// vuelve al inicio en lugar de ver un error. El superadministrador sí puede abrirlo.
+app.Use(async (contexto, siguiente) =>
+{
+    var usuario = contexto.User;
+    if (contexto.Request.Path.StartsWithSegments("/Fundacion", StringComparison.OrdinalIgnoreCase)
+        && usuario.Identity?.IsAuthenticated == true
+        && !usuario.IsInRole(Roles.SuperAdministrador)
+        && usuario.FindFirst(MunerAppClaims.EsalId) is null)
+    {
+        contexto.Response.Redirect("/");
+        return;
+    }
+    await siguiente();
+});
+
 app.UseAuthorization();
 
 app.MapControllerRoute(

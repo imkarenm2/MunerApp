@@ -36,7 +36,7 @@ public class CausasPublicas
             .Include(c => c.Fotos)
             .ToListAsync();
         var recaudos = await RecaudadoAsync(causas.Select(c => c.Id).ToList());
-        var hoy = DateTime.Today;
+        var hoy = Formatos.Hoy();
 
         var tarjetas = causas.Select(c => Tarjeta(c, recaudos.GetValueOrDefault(c.Id), hoy)).ToList();
         foreach (var t in tarjetas) t.MostrarFundacion = esalId is null;
@@ -58,7 +58,7 @@ public class CausasPublicas
         if (c is null) return null;
 
         var recaudado = (await RecaudadoAsync(new List<int> { c.Id })).GetValueOrDefault(c.Id);
-        var t = Tarjeta(c, recaudado, DateTime.Today);
+        var t = Tarjeta(c, recaudado, Formatos.Hoy());
 
         string? rendicion = null;
         if (c.RendicionDocumentoId is int docId)
