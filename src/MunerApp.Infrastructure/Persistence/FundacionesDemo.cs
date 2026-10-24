@@ -24,9 +24,6 @@ namespace MunerApp.Infrastructure.Persistence;
 /// </summary>
 public static class FundacionesDemo
 {
-    private static readonly TimeSpan DiferenciaColombia = TimeSpan.FromHours(5); // Colombia es UTC-5 todo el año
-    private const int ModuloTienda = 6;
-
     // "Foto" es el nombre del archivo en wwwroot/img/fotos, sin la extensión .webp
     private record CausaDemo(string Titulo, string Descripcion, decimal Meta, decimal Recaudado, int DiasRestantes,
         string Foto, bool Cerrada = false);
@@ -77,42 +74,58 @@ public static class FundacionesDemo
     }
 
     /// <summary>
-    /// Las fundaciones de ejemplo creadas con la versión anterior tenían ilustraciones (.svg con emojis):
-    /// se cambian por las fotos, buscando cada causa, publicación y producto por su título.
+    /// Migración de una sola vez: las fundaciones de ejemplo creadas con la primera versión tenían ilustraciones
+    /// (.svg con emojis). Se cambian por fotos y se borran los .svg del almacenamiento. Si ya no queda ninguno,
+    /// no hace nada más que una consulta. La foto se elige por el título de la causa, publicación o producto;
+    /// si alguien lo editó y ya no coincide, se usa la foto principal de la fundación para que no quede ningún .svg.
     /// </summary>
     private static async Task CambiarIlustracionesPorFotosAsync(MunerAppDbContext db, IAlmacenamientoArchivos archivos,
         string carpetaFotos, List<FundacionDemo> existentes)
     {
+        var slugs = existentes.Select(f => f.Slug).ToList();
+        var ids = await db.Esales.Where(e => slugs.Contains(e.Slug!)).Select(e => e.Id).ToListAsync();
+        var quedanIlustraciones =
+            await db.Esales.AnyAsync(e => ids.Contains(e.Id) && e.LogoRuta!.EndsWith(".svg"))
+            || await db.FotosEsal.IgnoreQueryFilters().AnyAsync(x => ids.Contains(x.EsalId) && x.Ruta.EndsWith(".svg"))
+            || await db.FotosCausa.IgnoreQueryFilters().AnyAsync(x => ids.Contains(x.EsalId) && x.Ruta.EndsWith(".svg"))
+            || await db.Publicaciones.IgnoreQueryFilters().AnyAsync(x => ids.Contains(x.EsalId) && x.ImagenRuta!.EndsWith(".svg"))
+            || await db.FotosProducto.IgnoreQueryFilters().AnyAsync(x => ids.Contains(x.EsalId) && x.Ruta.EndsWith(".svg"));
+        if (!quedanIlustraciones) return;
+
         foreach (var f in existentes)
         {
             var esal = await db.Esales.FirstAsync(e => e.Slug == f.Slug);
-            if (FotosDemo.EsIlustracion(esal.LogoRuta)) esal.LogoRuta = null;
+            if (FotosDemo.EsIlustracion(esal.LogoRuta))
+            {
+                await archivos.EliminarAsync(esal.LogoRuta!);
+                esal.LogoRuta = null;
+            }
 
             foreach (var foto in await db.FotosEsal.IgnoreQueryFilters().Where(x => x.EsalId == esal.Id).ToListAsync())
                 if (FotosDemo.EsIlustracion(foto.Ruta))
-                    foto.Ruta = await FotosDemo.GuardarAsync(archivos, carpetaFotos, $"esal/{esal.Id}/perfil", f.Foto) ?? foto.Ruta;
+                    foto.Ruta = await DatosDemo.ReemplazarAsync(archivos, carpetaFotos, foto.Ruta, $"esal/{esal.Id}/perfil", f.Foto);
 
             var causas = await db.Causas.IgnoreQueryFilters().Where(x => x.EsalId == esal.Id).ToListAsync();
             foreach (var foto in await db.FotosCausa.IgnoreQueryFilters().Where(x => x.EsalId == esal.Id).ToListAsync())
             {
+                if (!FotosDemo.EsIlustracion(foto.Ruta)) continue;
                 var demo = f.Causas.FirstOrDefault(c => c.Titulo == causas.FirstOrDefault(x => x.Id == foto.CausaId)?.Titulo);
-                if (demo is not null && FotosDemo.EsIlustracion(foto.Ruta))
-                    foto.Ruta = await FotosDemo.GuardarAsync(archivos, carpetaFotos, $"esal/{esal.Id}/causas", demo.Foto) ?? foto.Ruta;
+                foto.Ruta = await DatosDemo.ReemplazarAsync(archivos, carpetaFotos, foto.Ruta, $"esal/{esal.Id}/causas", demo?.Foto ?? f.Foto);
             }
 
             foreach (var p in await db.Publicaciones.IgnoreQueryFilters().Where(x => x.EsalId == esal.Id).ToListAsync())
             {
+                if (!FotosDemo.EsIlustracion(p.ImagenRuta)) continue;
                 var demo = f.Publicaciones.FirstOrDefault(x => x.Titulo == p.Titulo);
-                if (demo is not null && FotosDemo.EsIlustracion(p.ImagenRuta))
-                    p.ImagenRuta = await FotosDemo.GuardarAsync(archivos, carpetaFotos, $"esal/{esal.Id}/boletin", demo.Foto) ?? p.ImagenRuta;
+                p.ImagenRuta = await DatosDemo.ReemplazarAsync(archivos, carpetaFotos, p.ImagenRuta!, $"esal/{esal.Id}/boletin", demo?.Foto ?? f.Foto);
             }
 
             var productos = await db.Productos.IgnoreQueryFilters().Where(x => x.EsalId == esal.Id).ToListAsync();
             foreach (var foto in await db.FotosProducto.IgnoreQueryFilters().Where(x => x.EsalId == esal.Id).ToListAsync())
             {
+                if (!FotosDemo.EsIlustracion(foto.Ruta)) continue;
                 var demo = f.Productos.FirstOrDefault(x => x.Nombre == productos.FirstOrDefault(p => p.Id == foto.ProductoId)?.Nombre);
-                if (demo is not null && FotosDemo.EsIlustracion(foto.Ruta))
-                    foto.Ruta = await FotosDemo.GuardarAsync(archivos, carpetaFotos, $"esal/{esal.Id}/tienda", demo.Foto) ?? foto.Ruta;
+                foto.Ruta = await DatosDemo.ReemplazarAsync(archivos, carpetaFotos, foto.Ruta, $"esal/{esal.Id}/tienda", demo?.Foto ?? f.Foto);
             }
         }
         await db.SaveChangesAsync();
@@ -141,15 +154,15 @@ public static class FundacionesDemo
     /// </summary>
     private static async Task AgregarApadrinablesAsync(MunerAppDbContext db, IAlmacenamientoArchivos archivos, string carpetaFotos)
     {
-        const int moduloBeneficiarios = 5;
         var esal = await db.Esales.FirstOrDefaultAsync(e => e.Slug == "huellitas-de-funza");
         if (esal is null || await db.Beneficiarios.IgnoreQueryFilters().AnyAsync(b => b.EsalId == esal.Id)) return;
 
+        var moduloBeneficiarios = await DatosDemo.ModuloIdAsync(db, CodigosModulo.Beneficiarios);
         var modulo = await db.EsalModulos.IgnoreQueryFilters().FirstOrDefaultAsync(m => m.EsalId == esal.Id && m.ModuloId == moduloBeneficiarios);
         if (modulo is null) db.EsalModulos.Add(new EsalModulo { EsalId = esal.Id, ModuloId = moduloBeneficiarios, Activo = true });
         else modulo.Activo = true;
 
-        var hoy = DateTime.UtcNow.Date;
+        var hoy = DatosDemo.HoyColombia();
         foreach (var a in ApadrinablesHuellitas)
             db.Beneficiarios.Add(new Beneficiario
             {
@@ -193,13 +206,18 @@ public static class FundacionesDemo
         string carpetaFotos, List<FundacionDemo> nuevas)
     {
         var donantes = await DonantesAsync(usuarios);
-        var hoy = (DateTime.UtcNow - DiferenciaColombia).Date;
+        var hoy = DatosDemo.HoyColombia();
+        var moduloTienda = await DatosDemo.ModuloIdAsync(db, CodigosModulo.Tienda);
         var ahora = DateTime.UtcNow;
         var azar = new Random(2026);
         var consecutivo = await db.Donaciones.IgnoreQueryFilters().CountAsync(d => d.Codigo.StartsWith("DEMO-"));
 
         foreach (var f in nuevas)
         {
+            // Cada fundación se crea completa o no se crea: si algo falla a mitad, la transacción se deshace
+            // y en el siguiente arranque se vuelve a intentar (si quedara a medias, su slug impediría completarla).
+            await using var transaccion = await db.Database.BeginTransactionAsync();
+
             var esal = new Esal
             {
                 Nombre = f.Nombre,
@@ -249,7 +267,7 @@ public static class FundacionesDemo
                     Meta = c.Meta,
                     FechaLimite = fechaLimite,
                     Estado = c.Cerrada ? EstadoCausa.Cerrada : EstadoCausa.Activa,
-                    FechaCierre = c.Cerrada ? fechaLimite.Add(DiferenciaColombia) : null,
+                    FechaCierre = c.Cerrada ? fechaLimite.Add(DatosDemo.DiferenciaColombia) : null,
                     MotivoCierre = c.Cerrada ? (c.Recaudado >= c.Meta ? MotivoCierreCausa.MetaAlcanzada : MotivoCierreCausa.FechaLimite) : null,
                     FechaCreacion = ahora.AddDays(-Math.Max(15, 45 - c.DiasRestantes)),
                     FechaRevision = ahora.AddDays(-Math.Max(14, 44 - c.DiasRestantes))
@@ -273,7 +291,7 @@ public static class FundacionesDemo
             // ---- Boletín: actividades próximas, logros y noticias ----
             foreach (var p in f.Publicaciones)
             {
-                DateTime? evento = p.DiasHastaEvento is int dias ? hoy.AddDays(dias).AddHours(p.Hora) + DiferenciaColombia : null;
+                DateTime? evento = p.DiasHastaEvento is int dias ? hoy.AddDays(dias).AddHours(p.Hora) + DatosDemo.DiferenciaColombia : null;
                 db.Publicaciones.Add(new Publicacion
                 {
                     EsalId = esal.Id,
@@ -302,7 +320,7 @@ public static class FundacionesDemo
             // ---- Tienda ----
             if (f.Productos.Length > 0)
             {
-                db.EsalModulos.Add(new EsalModulo { EsalId = esal.Id, ModuloId = ModuloTienda, Activo = true });
+                db.EsalModulos.Add(new EsalModulo { EsalId = esal.Id, ModuloId = moduloTienda, Activo = true });
                 foreach (var pr in f.Productos)
                 {
                     var producto = new Producto
@@ -319,6 +337,7 @@ public static class FundacionesDemo
             }
 
             await db.SaveChangesAsync();
+            await transaccion.CommitAsync();
         }
     }
 
