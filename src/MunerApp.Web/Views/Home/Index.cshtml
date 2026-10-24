@@ -49,36 +49,37 @@
     </section>
 }
 
-<section class="hero">
-    <div class="container">
-        <div class="row align-items-center gy-4 gx-lg-5">
-            <div class="col-12 col-lg-6">
-                <span class="hero-etiqueta mb-3">Fundaciones de Sabana de Occidente</span>
-                <h1 class="mb-4">Tu ayuda llega, y puedes ver a dónde.</h1>
-                <p class="lead mb-4">
-                    Conoce a las fundaciones de Facatativá, Madrid, Mosquera, Funza y sus vecinos,
-                    mira en qué usan cada donación y elige cómo apoyar: con dinero, cosas o tu tiempo.
-                </p>
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3 mb-4">
-                    <a class="btn btn-apoyar btn-lg" href="@(Model.Causas.Count > 0 ? "/causas" : "/fundaciones")">Quiero ayudar</a>
-                    @if (!autenticado)
-                    {
-                        <a class="enlace-flecha" asp-controller="Cuenta" asp-action="Registrar">Crear mi cuenta <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                    }
-                    else
-                    {
-                        <a class="enlace-flecha" href="/fundaciones">Ver fundaciones <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                    }
-                </div>
-                <p class="hero-dato mb-0">
-                    Cada fundación publica sus documentos y la rendición de cuentas de sus causas.
-                </p>
-            </div>
-            <div class="col-12 col-lg-6">
-                <img class="hero-foto" src="~/img/fotos/inicio.webp" srcset="/img/fotos/inicio-640.webp 640w, /img/fotos/inicio.webp 1200w" sizes="(min-width: 992px) 50vw, 100vw" alt="Una voluntaria abraza a un perro rescatado" fetchpriority="high" />
-            </div>
+@* Portada con video de fondo (Pexels, licencia libre). Sin sonido y en bucle; el video solo se descarga en pantallas
+   grandes y si la persona no pidió reducir el movimiento (site.js). En el celular se ve la foto. *@
+<section class="hero-video">
+    <video class="hero-video-fondo" muted loop playsinline preload="none" poster="/video/inicio-portada.jpg"
+           data-video="/video/inicio.mp4" aria-hidden="true"></video>
+    <div class="hero-video-capa" aria-hidden="true"></div>
+    <div class="container hero-video-contenido">
+        <span class="hero-etiqueta mb-3">Fundaciones de Sabana de Occidente</span>
+        <h1 class="mb-4">Tu ayuda llega, y puedes ver a dónde.</h1>
+        <p class="lead mb-4">
+            Conoce a las fundaciones de Facatativá, Madrid, Mosquera, Funza y sus vecinos,
+            mira en qué usan cada donación y elige cómo apoyar: con dinero, cosas o tu tiempo.
+        </p>
+        <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3 mb-4">
+            <a class="btn btn-light btn-lg" href="@(Model.Causas.Count > 0 ? "/causas" : "/fundaciones")">Quiero ayudar</a>
+            @if (!autenticado)
+            {
+                <a class="enlace-flecha" asp-controller="Cuenta" asp-action="Registrar">Crear mi cuenta <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            }
+            else
+            {
+                <a class="enlace-flecha" href="/fundaciones">Ver fundaciones <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            }
         </div>
+        <p class="hero-dato mb-0">
+            Cada fundación publica sus documentos y la rendición de cuentas de sus causas.
+        </p>
     </div>
+    <button type="button" class="hero-video-pausa" data-pausar-video hidden aria-label="Pausar el video de fondo">
+        <i class="bi bi-pause-fill" aria-hidden="true"></i>
+    </button>
 </section>
 
 @* ---------- Cifras reales de la plataforma ---------- *@
