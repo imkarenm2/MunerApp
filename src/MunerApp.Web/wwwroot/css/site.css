@@ -1384,3 +1384,112 @@ a.kpi:hover { box-shadow: var(--mu-sombra-hover); transform: translateY(-2px); c
 
 /* ---------- Novedades del apadrinado (HU-022) ---------- */
 .novedad-apadrinado { padding-left: 1rem; border-left: 3px solid var(--mu-acento-suave); }
+
+/* =========================================================================
+   Celular: más fácil para quienes no usan mucho el internet
+   Botones grandes (mínimo 44-48 px), íconos con texto y accesos siempre a la mano.
+   ========================================================================= */
+:root { --alto-barra-inferior: 64px; }
+
+/* Botón "Menú": ícono + palabra */
+.boton-menu {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    border: 1px solid var(--mu-borde);
+    border-radius: 999px;
+    padding: .4rem .9rem .4rem .6rem;
+    font-weight: 600;
+    color: var(--mu-texto);
+}
+.boton-menu .navbar-toggler-icon { width: 1.3em; height: 1.3em; }
+.boton-menu[aria-expanded="true"] { background: var(--mu-principal-suave); border-color: var(--mu-principal); }
+
+.mu-navbar .nav-link i { margin-right: .65rem; font-size: 1.15rem; color: var(--mu-principal); }
+@media (max-width: 991.98px) {
+    .mu-navbar .navbar-nav .nav-link {
+        display: flex;
+        align-items: center;
+        min-height: 48px;
+        font-size: 1.05rem;
+    }
+    .mu-navbar .navbar-collapse { max-height: calc(100vh - 70px); overflow-y: auto; }
+}
+@media (min-width: 992px) {
+    .mu-navbar .nav-link i { display: none; }
+}
+
+/* Barra de abajo con los accesos principales */
+.barra-inferior {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1030;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    background: #fff;
+    border-top: 1px solid var(--mu-borde);
+    box-shadow: 0 -4px 16px rgba(31, 42, 46, .06);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.barra-inferior a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .15rem;
+    min-height: var(--alto-barra-inferior);
+    font-size: .74rem;
+    font-weight: 600;
+    color: var(--mu-texto-suave);
+    text-decoration: none;
+    position: relative;
+}
+.barra-inferior a i { font-size: 1.35rem; line-height: 1; }
+.barra-inferior a.activo { color: var(--mu-principal); }
+.barra-inferior a.activo::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: var(--mu-principal);
+}
+@media (max-width: 991.98px) {
+    body.con-barra-inferior { padding-bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom)); }
+}
+
+/* Barra fija con el botón principal de la página (por ejemplo, Donar en una causa) */
+.barra-accion-movil {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1029;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .65rem 1rem calc(.65rem + env(safe-area-inset-bottom));
+    background: #fff;
+    border-top: 1px solid var(--mu-borde);
+    box-shadow: 0 -4px 16px rgba(31, 42, 46, .08);
+}
+.barra-accion-movil .btn { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.05rem; }
+.con-barra-inferior .barra-accion-movil { bottom: var(--alto-barra-inferior); padding-bottom: .65rem; }
+@media (max-width: 991.98px) {
+    body:has(.barra-accion-movil) { padding-bottom: calc(var(--alto-barra-inferior) + 72px); }
+    body:not(.con-barra-inferior):has(.barra-accion-movil) { padding-bottom: 72px; }
+}
+
+/* Botón visible dentro de las tarjetas que se pueden tocar */
+.tarjeta-accion { pointer-events: none; }
+.tarjeta-causa .tarjeta-accion { display: flex; align-items: center; justify-content: center; min-height: 44px; }
+
+/* Áreas de toque más grandes en el celular */
+@media (max-width: 575.98px) {
+    .chip { min-height: 44px; }
+    .mu-footer li a { display: inline-block; padding: .3rem 0; }
+}

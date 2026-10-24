@@ -28,7 +28,7 @@
                         <label asp-for="Email" class="form-label"></label>
                         <div class="input-icono">
                             <i class="bi bi-envelope" aria-hidden="true"></i>
-                            <input asp-for="Email" class="form-control" autocomplete="email" placeholder="tucorreo@ejemplo.com" />
+                            <input asp-for="Email" class="form-control" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="tucorreo@ejemplo.com" />
                         </div>
                         <span asp-validation-for="Email"></span>
                     </div>

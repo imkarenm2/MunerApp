@@ -1,6 +1,7 @@
 @model List<DonacionItem>
 @{
     ViewData["Title"] = "Mis donaciones";
+    ViewData["Nav"] = "MisAportes";
     var confirmado = Model.Where(d => d.Estado == EstadoDonacion.Confirmada).Sum(d => d.Valor);
     var especie = ViewData["Especie"] as List<MiDonacionEspecieItem> ?? new();
 }
