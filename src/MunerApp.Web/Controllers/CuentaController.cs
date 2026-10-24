@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using MunerApp.Domain.Constantes;
@@ -10,6 +11,8 @@ using MunerApp.Infrastructure.Identity;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Models.Cuenta;
 using MunerApp.Web.Servicios;
+
+using MunerApp.Web.Seguridad;
 
 namespace MunerApp.Web.Controllers;
 
@@ -46,6 +49,7 @@ public class CuentaController : Controller
     }
 
     [HttpPost]
+    [EnableRateLimiting(LimitesUso.Formularios)]
     [AllowAnonymous]
     public async Task<IActionResult> Registrar(RegistroViewModel model, string? returnUrl = null)
     {
@@ -92,6 +96,7 @@ public class CuentaController : Controller
     }
 
     [HttpPost]
+    [EnableRateLimiting(LimitesUso.Formularios)]
     [AllowAnonymous]
     public async Task<IActionResult> IniciarSesion(InicioSesionViewModel model, string? returnUrl = null)
     {
@@ -177,6 +182,7 @@ public class CuentaController : Controller
     }
 
     [HttpPost]
+    [EnableRateLimiting(LimitesUso.Formularios)]
     [AllowAnonymous]
     public async Task<IActionResult> ReenviarConfirmacion(string? email)
     {
@@ -319,6 +325,7 @@ public class CuentaController : Controller
     public IActionResult OlvideContrasena() => View(new OlvideContrasenaViewModel());
 
     [HttpPost]
+    [EnableRateLimiting(LimitesUso.Formularios)]
     [AllowAnonymous]
     public async Task<IActionResult> OlvideContrasena(OlvideContrasenaViewModel model)
     {
@@ -352,6 +359,7 @@ public class CuentaController : Controller
     }
 
     [HttpPost]
+    [EnableRateLimiting(LimitesUso.Formularios)]
     [AllowAnonymous]
     public async Task<IActionResult> RestablecerContrasena(RestablecerContrasenaViewModel model)
     {

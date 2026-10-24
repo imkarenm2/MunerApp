@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
 using MunerApp.Application.Seguridad;
@@ -45,6 +46,7 @@ public class PostulacionesController : Controller
     }
 
     [HttpPost("fundaciones/{slug}/voluntariado")]
+    [EnableRateLimiting(LimitesUso.Formularios)]
     [RequestSizeLimit(ValidadorArchivos.LimitePeticionBytes)]
     public async Task<IActionResult> Crear(string slug, PostulacionViewModel model)
     {
