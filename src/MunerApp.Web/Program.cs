@@ -24,6 +24,7 @@ builder.Services.AddControllersWithViews(options =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IEsalActual, EsalActual>();
+builder.Services.AddScoped<IUsuarioActual, UsuarioActual>();
 builder.Services.AddScoped<InvitacionService>();
 builder.Services.AddScoped<CausasPublicas>();
 builder.Services.AddScoped<AvisosCorreo>();

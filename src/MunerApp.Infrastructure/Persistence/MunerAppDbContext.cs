@@ -70,6 +70,9 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<RendicionCausa> RendicionesCausa => Set<RendicionCausa>();
     public DbSet<ArchivoRendicion> ArchivosRendicion => Set<ArchivoRendicion>();
 
+    /// <summary>Trazabilidad: lo escribe AuditoriaInterceptor; lo consultan el veedor y el superadministrador.</summary>
+    public DbSet<RegistroAuditoria> RegistrosAuditoria => Set<RegistroAuditoria>();
+
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
     // Solo el superadministrador, el veedor y las tareas internas (seed, migraciones, revisión diaria) ven todo.
@@ -715,6 +718,21 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.Property(x => x.Fecha).HasColumnType("date");
             e.Property(x => x.Tarea).HasMaxLength(60);
             e.Property(x => x.Resumen).HasMaxLength(500);
+        });
+
+        // Trazabilidad: sin filtro por fundación (lo consultan el veedor y el superadministrador)
+        builder.Entity<RegistroAuditoria>(e =>
+        {
+            e.ToTable("RegistroAuditoria");
+            e.Property(x => x.UsuarioId).HasMaxLength(450);
+            e.Property(x => x.UsuarioNombre).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Entidad).HasMaxLength(80).IsRequired();
+            e.Property(x => x.EntidadId).HasMaxLength(100).IsRequired();
+            e.Property(x => x.Accion).HasConversion<string>().HasMaxLength(15);
+            e.Property(x => x.Cambios).IsRequired();
+            e.HasIndex(x => x.Fecha);
+            e.HasIndex(x => new { x.EsalId, x.Fecha });
+            e.HasIndex(x => new { x.Entidad, x.EntidadId });
         });
 
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
