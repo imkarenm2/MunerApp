@@ -30,6 +30,9 @@ public sealed class AuditoriaInterceptor : SaveChangesInterceptor
 
     private const int LargoMaximo = 300;
 
+    /// <summary>Tildes y eñes legibles en la base de datos (sin ó); el JSON nunca se inserta en HTML sin codificar.</summary>
+    private static readonly JsonSerializerOptions Json = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
     private readonly IUsuarioActual? _usuario;
     private List<(EntityEntry Entrada, RegistroAuditoria Registro)>? _pendientes;
     private bool _guardandoRegistros;
@@ -141,11 +144,21 @@ public sealed class AuditoriaInterceptor : SaveChangesInterceptor
                 .ToDictionary(p => p.Metadata.Name, p => Valor(p.CurrentValue)),
             EntityState.Deleted => propiedades.Where(p => p.OriginalValue is not null)
                 .ToDictionary(p => p.Metadata.Name, p => Valor(p.OriginalValue)),
-            _ => propiedades.Where(p => p.IsModified && !Equals(p.OriginalValue, p.CurrentValue))
+            _ => propiedades.Where(p => p.IsModified && !MismoValor(p.OriginalValue, p.CurrentValue))
                 .ToDictionary(p => p.Metadata.Name, p => (object?)new[] { Valor(p.OriginalValue), Valor(p.CurrentValue) })
         };
-        return JsonSerializer.Serialize(cambios);
+        return JsonSerializer.Serialize(cambios, Json);
     }
+
+    /// <summary>
+    /// Dos textos que solo difieren en el salto de línea (\r\n del formulario frente a \n guardado) no son un cambio:
+    /// sin esto, cada vez que alguien guarda un formulario aparecerían cambios que nadie hizo.
+    /// </summary>
+    private static bool MismoValor(object? antes, object? despues) => (antes, despues) switch
+    {
+        (string a, string d) => a.ReplaceLineEndings("\n") == d.ReplaceLineEndings("\n"),
+        _ => Equals(antes, despues)
+    };
 
     /// <summary>Valores legibles y cortos: fechas ISO, enums por nombre, textos recortados.</summary>
     private static object? Valor(object? v) => v switch

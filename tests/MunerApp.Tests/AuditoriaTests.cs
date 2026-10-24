@@ -91,6 +91,22 @@ public class AuditoriaTests
     }
 
     [Fact]
+    public async Task CambiarSoloLosSaltosDeLinea_NoEsUnCambio()
+    {
+        await using var db = Contexto(new Persona("u-1", "Admin"));
+        var causa = new Causa { EsalId = 1, Titulo = "Texto", Descripcion = "Línea uno\nLínea dos", Meta = 100 };
+        db.Causas.Add(causa);
+        await db.SaveChangesAsync();
+
+        causa.Descripcion = "Línea uno\r\nLínea dos"; // así llega desde el formulario del navegador
+        await db.SaveChangesAsync();
+
+        var registros = await db.RegistrosAuditoria.ToListAsync();
+        Assert.Single(registros);
+        Assert.Contains("Línea uno", registros[0].Cambios); // tildes legibles, sin í
+    }
+
+    [Fact]
     public async Task UnGuardadoSinCambiosReales_NoDejaRegistro()
     {
         await using var db = Contexto(new Persona("u-1", "Admin"));
