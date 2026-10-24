@@ -57,3 +57,9 @@ los archivos manteniendo el mismo nombre.
 | p-mermelada | photo-1779120708355-7a41581b4584 |
 | p-cuaderno | photo-1761322572550-967ea8c0bfd9 |
 | p-camiseta | photo-1778671394516-8270eac13c42 |
+
+## Video de la portada
+
+`wwwroot/video/inicio.mp4` (960 × 540, 14 s, sin sonido) y su portada `inicio-portada.jpg` vienen de
+[Pexels](https://www.pexels.com/es-es/video/5101876/) con su licencia gratuita (sin atribución obligatoria).
+Para cambiarlo basta con reemplazar los dos archivos con el mismo nombre (mejor un video de menos de 3 MB).

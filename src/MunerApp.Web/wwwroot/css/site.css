@@ -1568,3 +1568,35 @@ a.kpi:hover { border-color: #CFCEC6; box-shadow: var(--mu-sombra-hover); color: 
 
 /* Las anclas del menú (Cómo ayudar, Transparencia) no quedan escondidas bajo el encabezado fijo */
 [id] { scroll-margin-top: 84px; }
+
+/* ---- Portada con video de fondo ---- */
+.hero-video {
+    position: relative; overflow: hidden; color: #fff;
+    min-height: min(78vh, 720px); display: flex; align-items: center;
+    background: #1b1d1b url("/img/fotos/inicio-640.webp") center / cover no-repeat;
+}
+.hero-video-fondo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hero-video-capa {
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(20, 20, 20, .78) 0%, rgba(20, 20, 20, .5) 45%, rgba(20, 20, 20, .12) 100%);
+}
+.hero-video-contenido { position: relative; z-index: 1; padding-top: 4rem; padding-bottom: 4rem; }
+.hero-video-contenido > * { max-width: 600px; }
+.hero-video h1 { color: #fff; font-size: clamp(2.4rem, 5.2vw, 4.2rem); line-height: 1.02; font-weight: 600; }
+.hero-video .lead { color: rgba(255, 255, 255, .85); font-size: 1.2rem; }
+.hero-video .hero-etiqueta { color: rgba(255, 255, 255, .75); }
+.hero-video .enlace-flecha { color: #fff; }
+.hero-video .hero-dato { color: rgba(255, 255, 255, .7); border-top-color: rgba(255, 255, 255, .25); }
+.hero-video-pausa {
+    position: absolute; right: 1.25rem; bottom: 1.25rem; z-index: 1;
+    width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .45);
+    background: rgba(20, 20, 20, .35); color: #fff; display: grid; place-items: center;
+}
+.hero-video-pausa:hover { background: rgba(20, 20, 20, .6); }
+@media (max-width: 767.98px) {
+    /* En el celular no se descarga el video: se ve la foto, con la capa oscura más pareja para leer el texto */
+    .hero-video-fondo { display: none; }
+    .hero-video-capa { background: linear-gradient(180deg, rgba(20, 20, 20, .55) 0%, rgba(20, 20, 20, .75) 100%); }
+    .hero-video { min-height: 0; }
+}
+.hero-video + .cifras { padding-top: 2.5rem; }

@@ -313,3 +313,26 @@ document.querySelectorAll('[data-contador][maxlength]').forEach(function (campo)
         }
     }));
 })();
+
+// ---------- Video de fondo de la portada ----------
+// Solo se descarga en pantallas grandes, sin "reducir movimiento" ni "ahorro de datos". Si no, queda la imagen fija.
+(function () {
+    const video = document.querySelector('video[data-video]');
+    if (!video) return;
+    const reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ahorro = navigator.connection && navigator.connection.saveData;
+    if (reducir || ahorro || !window.matchMedia('(min-width: 768px)').matches) return;
+
+    video.src = video.getAttribute('data-video');
+    video.play().catch(() => { /* el navegador no dejó reproducir: queda la portada */ });
+
+    const boton = document.querySelector('[data-pausar-video]');
+    if (!boton) return;
+    boton.hidden = false;
+    boton.addEventListener('click', () => {
+        const pausado = video.paused;
+        pausado ? video.play() : video.pause();
+        boton.setAttribute('aria-label', pausado ? 'Pausar el video de fondo' : 'Reproducir el video de fondo');
+        boton.querySelector('i').className = pausado ? 'bi bi-pause-fill' : 'bi bi-play-fill';
+    });
+})();
