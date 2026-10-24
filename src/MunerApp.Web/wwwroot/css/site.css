@@ -1526,3 +1526,33 @@ a.kpi:hover { border-color: #CFCEC6; box-shadow: var(--mu-sombra-hover); color: 
 .seccion-oscura h2, .seccion-oscura h3 { color: #fff; }
 .seccion-oscura .text-suave { color: rgba(255, 255, 255, .72) !important; }
 .seccion-oscura .paso-numero { color: rgba(255, 255, 255, .55); }
+
+/* ---- El verde institucional repartido en toda la página: cabeceras, pie y fechas ---- */
+.cabecera-pagina { background: var(--mu-fondo-oscuro); border-bottom: 0; color: #fff; padding: 3.5rem 0 3rem; }
+.cabecera-pagina h1 { color: #fff; }
+.cabecera-pagina .text-suave, .cabecera-pagina .sobretitulo { color: rgba(255, 255, 255, .75) !important; }
+.cabecera-pagina .buscador .form-control { border-color: transparent; }
+.cabecera-pagina .btn-primary { --bs-btn-bg: #fff; --bs-btn-border-color: #fff; --bs-btn-color: var(--mu-texto); --bs-btn-hover-bg: #EAF0EA; --bs-btn-hover-border-color: #EAF0EA; --bs-btn-hover-color: var(--mu-texto); }
+
+.mu-footer { background: var(--mu-fondo-oscuro); border-top: 0; color: rgba(255, 255, 255, .75); padding: 3.5rem 0 2rem; }
+.mu-footer h3, .mu-footer .mu-logo { color: #fff !important; }
+.mu-footer .text-suave { color: rgba(255, 255, 255, .7) !important; }
+.mu-footer a { color: rgba(255, 255, 255, .75); }
+.mu-footer a:hover { color: #fff; }
+.mu-footer hr { border-color: rgba(255, 255, 255, .25); opacity: 1; }
+.mu-footer .mu-logo rect { fill: #fff; }
+.mu-footer .mu-logo path { fill: var(--mu-fondo-oscuro); }
+.mu-footer .mu-logo circle { fill: #fff; }
+
+.evento-fecha { background: var(--mu-fondo-oscuro); color: #fff; border: 0; }
+
+/* Región en el inicio: bloque verde; los municipios con fundaciones resaltan en blanco */
+.region { background: var(--mu-fondo-oscuro); border: 0; color: #fff; border-radius: 20px; }
+.region h2 { color: #fff; }
+.region .text-suave { color: rgba(255, 255, 255, .75) !important; }
+.region .municipios li { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .16); color: #fff; }
+.region .municipios li .bi, .region .municipios li .small { color: rgba(255, 255, 255, .6); }
+.region .municipios li.con-fundacion { background: #fff; border-color: #fff; color: var(--mu-texto); }
+.region .municipios li.con-fundacion .bi { color: var(--mu-fondo-oscuro); }
+.region .municipios li.con-fundacion .small { color: var(--mu-texto-suave); }
+#donde-estamos { padding-top: 0; padding-bottom: 0; }
