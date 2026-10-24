@@ -6,7 +6,6 @@ public class HomeViewModel
     public IReadOnlyList<FundacionTarjeta> Fundaciones { get; set; } = Array.Empty<FundacionTarjeta>();
     public IReadOnlyList<CausaTarjeta> Causas { get; set; } = Array.Empty<CausaTarjeta>();
     public IReadOnlyList<GatoApadrinableHome> Gatos { get; set; } = Array.Empty<GatoApadrinableHome>();
-    public IReadOnlyList<string> FotosHero { get; set; } = Array.Empty<string>();
     public IReadOnlyList<MunicipioHome> Municipios { get; set; } = Array.Empty<MunicipioHome>();
 
     // Cifras reales

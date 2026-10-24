@@ -62,11 +62,6 @@ public class HomeController : Controller
             .Select(b => new { b.Id, b.Nombre, b.FotoPublicaRuta, b.HistoriaPublica, Fundacion = b.Esal!.Nombre, b.Esal.Slug })
             .ToListAsync();
 
-        var fotos = await _db.FotosEsal.IgnoreQueryFilters().AsNoTracking()
-            .Where(f => idsPublicas.Contains(f.EsalId))
-            .OrderBy(f => f.Orden).ThenByDescending(f => f.Id)
-            .Select(f => f.Ruta).Take(3).ToListAsync();
-
         // HU-028: "El periódico de MunerApp" con lo bueno que pasa en las fundaciones, visible sin cuenta
         ViewData["Periodico"] = await _periodico.ArmarAsync(recientes: 3);
 
@@ -84,7 +79,6 @@ public class HomeController : Controller
             Causas = causas.Abiertas.Where(c => c.RecibeDonaciones).Take(3).ToList(),
             Gatos = gatos.Select(g => new GatoApadrinableHome(g.Id, g.Nombre,
                 g.FotoPublicaRuta is null ? null : _archivos.UrlPublica(g.FotoPublicaRuta), g.Fundacion, g.Slug!, g.HistoriaPublica)).ToList(),
-            FotosHero = fotos.Select(_archivos.UrlPublica).ToList(),
             FundacionesPublicadas = esales.Count,
             GatosConHogar = await beneficiarios.CountAsync(b => hogares.Contains(b.Estado)),
             GatosCuidados = await beneficiarios.CountAsync(b => enCasa.Contains(b.Estado)),

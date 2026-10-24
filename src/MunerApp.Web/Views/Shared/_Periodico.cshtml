@@ -24,8 +24,14 @@
 
     <div class="periodico-cifras" role="list" aria-label="MunerApp en cifras">
         <div role="listitem"><span class="periodico-cifra">@Model.Fundaciones</span><span>@(Model.Fundaciones == 1 ? "fundación" : "fundaciones")</span></div>
-        <div role="listitem"><span class="periodico-cifra">@Model.Adopciones</span><span>@(Model.Adopciones == 1 ? "peludo adoptado" : "peludos adoptados")</span></div>
-        <div role="listitem"><span class="periodico-cifra">@Model.CausasCumplidas</span><span>@(Model.CausasCumplidas == 1 ? "causa cumplida" : "causas cumplidas")</span></div>
+        @if (Model.Adopciones > 0)
+        {
+            <div role="listitem"><span class="periodico-cifra">@Model.Adopciones</span><span>@(Model.Adopciones == 1 ? "peludo adoptado" : "peludos adoptados")</span></div>
+        }
+        @if (Model.CausasCumplidas > 0)
+        {
+            <div role="listitem"><span class="periodico-cifra">@Model.CausasCumplidas</span><span>@(Model.CausasCumplidas == 1 ? "causa cumplida" : "causas cumplidas")</span></div>
+        }
         <div role="listitem"><span class="periodico-cifra">@Formatos.Pesos(Model.TotalDonado)</span><span>donados</span></div>
     </div>
 
