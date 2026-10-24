@@ -1,4 +1,4 @@
-/* =========================================================================
+﻿/* =========================================================================
    MunerApp · Guía de estilos v2.0
    Tokens de diseño + ajustes sobre Bootstrap 5.3
    Línea sobria: fotos reales, un verde institucional, casi negro y blanco hueso.
@@ -1518,3 +1518,11 @@ a.kpi:hover { border-color: #CFCEC6; box-shadow: var(--mu-sombra-hover); color: 
 .periodico-seccion { text-transform: none; letter-spacing: 0; font-size: 1rem; font-weight: 600; border-bottom-width: 1px; }
 .evento-fecha { background: transparent; color: var(--mu-texto); border: 1px solid #CFCEC6; }
 .publicacion-imagen { border-radius: 16px !important; }
+
+/* ---- Un solo fondo para todo el contenido y una sección oscura que corta el ritmo ---- */
+:root { --mu-fondo-oscuro: #161716; }
+.seccion-blanca { background: transparent; }
+.seccion-oscura { background: var(--mu-fondo-oscuro); color: #fff; }
+.seccion-oscura h2, .seccion-oscura h3 { color: #fff; }
+.seccion-oscura .text-suave { color: rgba(255, 255, 255, .72) !important; }
+.seccion-oscura .paso-numero { color: rgba(255, 255, 255, .55); }
