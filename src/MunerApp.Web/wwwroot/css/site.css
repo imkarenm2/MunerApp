@@ -404,7 +404,7 @@ a { text-underline-offset: 3px; }
 .auth-lateral {
     background:
         linear-gradient(rgba(20, 20, 20, .55), rgba(20, 20, 20, .78)),
-        url("/img/fotos/adopcion.jpg") center / cover no-repeat;
+        url("/img/fotos/adopcion.webp") center / cover no-repeat;
 }
 .auth-lateral > * { position: relative; z-index: 1; }
 .auth-lateral h2 { color: #fff; }

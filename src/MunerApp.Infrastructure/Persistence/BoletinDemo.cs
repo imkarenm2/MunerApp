@@ -15,7 +15,7 @@ public static class BoletinDemo
 {
     private static readonly TimeSpan DiferenciaColombia = TimeSpan.FromHours(5); // Colombia es UTC-5 todo el año
 
-    // "Foto" es el nombre del archivo en wwwroot/img/fotos, sin la extensión .jpg
+    // "Foto" es el nombre del archivo en wwwroot/img/fotos, sin la extensión .webp
     private record Plantilla(CategoriaPublicacion Categoria, string Titulo, string Resumen, string Contenido,
         DateTime? FechaEventoLocal, string? Lugar, int DiasDesdePublicacion, string Foto);
 
