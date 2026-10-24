@@ -38,7 +38,20 @@ public class FundacionTarjeta
 
 public class DirectorioViewModel
 {
+    /// <summary>Filtro por forma de ayudar (desde "Cómo ayudar" del inicio): solo las fundaciones que la reciben.</summary>
+    public const string Voluntariado = "voluntariado";
+    public const string Apadrinar = "apadrinar";
+
     public string? Busqueda { get; set; }
+    public string? Ayuda { get; set; }
+
+    /// <summary>Con un filtro de ayuda, la tarjeta lleva directo a ese flujo y no al perfil.</summary>
+    public string Destino(string slug) => Ayuda switch
+    {
+        Voluntariado => $"/fundaciones/{slug}/voluntariado",
+        Apadrinar => $"/fundaciones/{slug}/apadrinar",
+        _ => $"/fundaciones/{slug}"
+    };
     public IReadOnlyList<FundacionTarjeta> Fundaciones { get; set; } = Array.Empty<FundacionTarjeta>();
     public int Pagina { get; set; } = 1;
     public int TotalPaginas { get; set; } = 1;

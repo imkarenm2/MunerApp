@@ -1556,3 +1556,15 @@ a.kpi:hover { border-color: #CFCEC6; box-shadow: var(--mu-sombra-hover); color: 
 .region .municipios li.con-fundacion .bi { color: var(--mu-fondo-oscuro); }
 .region .municipios li.con-fundacion .small { color: var(--mu-texto-suave); }
 #donde-estamos { padding-top: 0; padding-bottom: 0; }
+
+/* Municipios con fundaciones: todo el recuadro es un enlace al directorio filtrado */
+.municipios li.con-fundacion { padding: 0; }
+.municipios li > a {
+    display: grid; grid-template-columns: auto 1fr; column-gap: .6rem; align-items: center;
+    padding: .7rem .9rem; color: inherit; text-decoration: none; border-radius: inherit;
+}
+.municipios li > a .bi { grid-row: span 2; font-size: 1.2rem; }
+.municipios li.con-fundacion:hover { background: #EAF0EA; }
+
+/* Las anclas del menú (Cómo ayudar, Transparencia) no quedan escondidas bajo el encabezado fijo */
+[id] { scroll-margin-top: 84px; }

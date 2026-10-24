@@ -72,6 +72,7 @@ public static class FundacionesDemo
         var nuevas = Fundaciones().Where(f => !existentes.Contains(f.Slug)).ToList();
         if (nuevas.Count > 0) await CrearFundacionesAsync(db, usuarios, archivos, carpetaFotos, nuevas);
         await CambiarIlustracionesPorFotosAsync(db, archivos, carpetaFotos, Fundaciones().Where(f => existentes.Contains(f.Slug)).ToList());
+        await AgregarApadrinablesAsync(db, archivos, carpetaFotos);
         if (!string.IsNullOrWhiteSpace(contrasenaAdmins)) await CrearAdministradoresAsync(db, usuarios, contrasenaAdmins);
     }
 
@@ -114,6 +115,58 @@ public static class FundacionesDemo
                     foto.Ruta = await FotosDemo.GuardarAsync(archivos, carpetaFotos, $"esal/{esal.Id}/tienda", demo.Foto) ?? foto.Ruta;
             }
         }
+        await db.SaveChangesAsync();
+    }
+
+    private record ApadrinableDemo(string Nombre, SexoBeneficiario Sexo, string Color, int MesesDeEdad, int DiasEnLaFundacion,
+        string Historia, decimal Aporte, string Foto);
+
+    /// <summary>Perros de Huellitas de Funza que buscan padrino, para que la opción "Apadrinar" tenga a quién mostrar.</summary>
+    private static readonly ApadrinableDemo[] ApadrinablesHuellitas =
+    {
+        new("Tomás", SexoBeneficiario.Macho, "Tricolor", 26, 140,
+            "Llegó con una pata lastimada después de vivir meses en un lote. Ya camina perfecto y le encanta dormir al sol. Su padrino cubre su comida y sus vacunas mientras encuentra familia.",
+            40_000, "caniles"),
+        new("Luna", SexoBeneficiario.Hembra, "Café claro", 8, 60,
+            "La encontraron sola en la vía a Mosquera con apenas dos meses. Es juguetona y no suelta las pelotas. Con tu aporte mensual seguimos con su esterilización y sus controles.",
+            35_000, "p-collar"),
+        new("Canelo", SexoBeneficiario.Macho, "Dorado", 4, 25,
+            "Es el más pequeño del refugio y el que más duerme. Nació en una camada rescatada de la plaza de mercado. Tu apoyo cubre su alimento de cachorro y sus primeras vacunas.",
+            30_000, "cachorros")
+    };
+
+    /// <summary>
+    /// Activa el módulo de beneficiarios en Huellitas de Funza y le agrega perros apadrinables
+    /// (solo si todavía no tiene beneficiarios, así no se duplican).
+    /// </summary>
+    private static async Task AgregarApadrinablesAsync(MunerAppDbContext db, IAlmacenamientoArchivos archivos, string carpetaFotos)
+    {
+        const int moduloBeneficiarios = 5;
+        var esal = await db.Esales.FirstOrDefaultAsync(e => e.Slug == "huellitas-de-funza");
+        if (esal is null || await db.Beneficiarios.IgnoreQueryFilters().AnyAsync(b => b.EsalId == esal.Id)) return;
+
+        var modulo = await db.EsalModulos.IgnoreQueryFilters().FirstOrDefaultAsync(m => m.EsalId == esal.Id && m.ModuloId == moduloBeneficiarios);
+        if (modulo is null) db.EsalModulos.Add(new EsalModulo { EsalId = esal.Id, ModuloId = moduloBeneficiarios, Activo = true });
+        else modulo.Activo = true;
+
+        var hoy = DateTime.UtcNow.Date;
+        foreach (var a in ApadrinablesHuellitas)
+            db.Beneficiarios.Add(new Beneficiario
+            {
+                EsalId = esal.Id,
+                Nombre = a.Nombre,
+                Especie = "Canino",
+                Sexo = a.Sexo,
+                Color = a.Color,
+                FechaNacimiento = hoy.AddMonths(-a.MesesDeEdad),
+                FechaRescate = hoy.AddDays(-a.DiasEnLaFundacion),
+                Estado = EstadoBeneficiario.EnLaFundacion,
+                Apadrinable = true,
+                HistoriaPublica = a.Historia,
+                AporteSugerido = a.Aporte,
+                FotoPublicaRuta = await FotosDemo.GuardarAsync(archivos, carpetaFotos, $"esal/{esal.Id}/beneficiarios", a.Foto),
+                FechaApadrinable = DateTime.UtcNow.AddDays(-Math.Min(20, a.DiasEnLaFundacion))
+            });
         await db.SaveChangesAsync();
     }
 
