@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
 using MunerApp.Application.Seguridad;
@@ -87,6 +88,7 @@ public class DonacionesController : Controller
     }
 
     [HttpPost("fundaciones/{slug}/reportar-donacion")]
+    [EnableRateLimiting(LimitesUso.Formularios)]
     [RequestSizeLimit(ValidadorArchivos.LimitePeticionBytes)]
     public async Task<IActionResult> Reportar(string slug, ReportarDonacionViewModel model)
     {

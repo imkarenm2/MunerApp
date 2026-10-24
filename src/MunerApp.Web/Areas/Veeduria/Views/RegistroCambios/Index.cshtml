@@ -1,0 +1,150 @@
+@model RegistroCambiosViewModel
+@{
+    ViewData["Title"] = "Registro de cambios";
+    string Filtros(int pagina) =>
+        $"?pagina={pagina}" + (Model.EsalId is int e ? $"&esalId={e}" : "") + (Model.Entidad is { } en ? $"&entidad={Uri.EscapeDataString(en)}" : "")
+        + (Model.Accion is { } a ? $"&accion={a}" : "") + (Model.Desde is { } d ? $"&desde={d:yyyy-MM-dd}" : "") + (Model.Hasta is { } h ? $"&hasta={h:yyyy-MM-dd}" : "");
+}
+<section class="cabecera-pagina">
+    <div class="container">
+        <a class="sobretitulo d-inline-block mb-2" asp-controller="Consulta" asp-action="Index">← Veeduría ciudadana</a>
+        <h1 class="mb-2">Registro de cambios</h1>
+        <p class="text-suave mb-0" style="max-width: 760px">
+            Cada dato que se crea, modifica o elimina en MunerApp queda aquí: quién lo hizo, cuándo y qué cambió.
+            @if (Model.OcultaDatosPersonales)
+            {
+                <span>Los datos personales de los donantes no se muestran.</span>
+            }
+        </p>
+    </div>
+</section>
+
+<div class="container py-4 py-md-5">
+    <form method="get" class="row g-2 align-items-end mb-4">
+        <div class="col-12 col-md-3">
+            <label class="form-label" for="esalId">Fundación</label>
+            <select class="form-select" id="esalId" name="esalId">
+                <option value="">Todas</option>
+                @foreach (var (id, nombre) in Model.Fundaciones)
+                {
+                    <option value="@id" selected="@(Model.EsalId == id)">@nombre</option>
+                }
+            </select>
+        </div>
+        <div class="col-12 col-md-3">
+            <label class="form-label" for="entidad">Tipo de dato</label>
+            <select class="form-select" id="entidad" name="entidad">
+                <option value="">Todos</option>
+                @foreach (var e in Model.Entidades)
+                {
+                    <option value="@e" selected="@(Model.Entidad == e)">@RegistroCambiosViewModel.NombreEntidad(e)</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label" for="accion">Acción</label>
+            <select class="form-select" id="accion" name="accion">
+                <option value="">Todas</option>
+                @foreach (var a in Enum.GetValues<AccionAuditoria>())
+                {
+                    <option value="@a" selected="@(Model.Accion == a)">@a</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label" for="desde">Desde</label>
+            <input class="form-control" type="date" id="desde" name="desde" value="@Model.Desde?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label" for="hasta">Hasta</label>
+            <input class="form-control" type="date" id="hasta" name="hasta" value="@Model.Hasta?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-6 col-md-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <a class="btn btn-outline-dark" asp-action="Index">Limpiar</a>
+        </div>
+    </form>
+
+    <p class="small text-suave">@Model.Total @(Model.Total == 1 ? "cambio" : "cambios")</p>
+
+    @if (Model.Registros.Count == 0)
+    {
+        <div class="estado-vacio"><h2 class="h5">No hay cambios con esos filtros.</h2></div>
+    }
+    else
+    {
+        <div class="table-responsive mu-card">
+            <table class="table tabla-mu mb-0 align-top">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Quién</th>
+                        <th>Fundación</th>
+                        <th>Dato</th>
+                        <th>Acción</th>
+                        <th>Qué cambió</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Registros)
+                    {
+                        <tr>
+                            <td class="text-nowrap small">@Formatos.FechaHora(r.Fecha)</td>
+                            <td class="small">@r.Usuario</td>
+                            <td class="small">@(r.Fundacion ?? "—")</td>
+                            <td class="small">@RegistroCambiosViewModel.NombreEntidad(r.Entidad) <span class="text-suave">#@r.EntidadId</span></td>
+                            <td><span class="mu-badge @(r.Accion == AccionAuditoria.Eliminado ? "error" : r.Accion == AccionAuditoria.Creado ? "exito" : "")">@r.Accion</span></td>
+                            <td class="small">
+                                @if (r.Campos.Count == 0)
+                                {
+                                    <span class="text-suave">—</span>
+                                }
+                                else
+                                {
+                                    <details>
+                                        <summary>@r.Campos.Count @(r.Campos.Count == 1 ? "campo" : "campos")</summary>
+                                        <dl class="mb-0 mt-2">
+                                            @foreach (var (campo, antes, despues) in r.Campos)
+                                            {
+                                                <dt class="fw-semibold">@campo</dt>
+                                                <dd class="mb-1 text-break">
+                                                    @if (r.Accion == AccionAuditoria.Modificado)
+                                                    {
+                                                        <span class="text-suave text-decoration-line-through">@(antes ?? "(vacío)")</span>
+                                                        <span aria-hidden="true">→</span>
+                                                        <span>@(despues ?? "(vacío)")</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        @(antes ?? despues)
+                                                    }
+                                                </dd>
+                                            }
+                                        </dl>
+                                    </details>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.TotalPaginas > 1)
+        {
+            <nav class="mt-4" aria-label="Páginas del registro">
+                <ul class="pagination justify-content-center flex-wrap">
+                    @if (Model.Pagina > 1)
+                    {
+                        <li class="page-item"><a class="page-link" href="@Filtros(Model.Pagina - 1)">Anterior</a></li>
+                    }
+                    <li class="page-item disabled"><span class="page-link">Página @Model.Pagina de @Model.TotalPaginas</span></li>
+                    @if (Model.Pagina < Model.TotalPaginas)
+                    {
+                        <li class="page-item"><a class="page-link" href="@Filtros(Model.Pagina + 1)">Siguiente</a></li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+</div>

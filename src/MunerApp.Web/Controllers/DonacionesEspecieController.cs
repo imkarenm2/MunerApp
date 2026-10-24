@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
 using MunerApp.Domain.Constantes;
@@ -99,6 +100,7 @@ public class DonacionesEspecieController : Controller
 
     [Authorize]
     [HttpPost("fundaciones/{slug}/donar-en-especie/ofrecer")]
+    [EnableRateLimiting(LimitesUso.Formularios)]
     public async Task<IActionResult> Ofrecer(string slug, OfrecerEspecieViewModel model)
     {
         if (!Politicas.PuedeApoyar(User)) return CuentaInstitucional(slug);

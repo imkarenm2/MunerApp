@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.FileProviders;
 using MunerApp.Application.Interfaces;
 using MunerApp.Application.Seguridad;
@@ -24,6 +26,7 @@ builder.Services.AddControllersWithViews(options =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IEsalActual, EsalActual>();
+builder.Services.AddScoped<IUsuarioActual, UsuarioActual>();
 builder.Services.AddScoped<InvitacionService>();
 builder.Services.AddScoped<CausasPublicas>();
 builder.Services.AddScoped<AvisosCorreo>();
@@ -111,6 +114,42 @@ if (!string.IsNullOrWhiteSpace(rutaLlaves))
         .PersistKeysToFileSystem(new DirectoryInfo(rutaLlaves))
         .SetApplicationName("MunerApp");
 
+// ---- Requerimientos no funcionales ----
+
+// Seguridad: la respuesta no dice qué servidor web se usa (antes enviaba "Server: Kestrel")
+builder.WebHost.ConfigureKestrel(opciones => opciones.AddServerHeader = false);
+
+// Rendimiento: CSS, JS y SVG viajan comprimidos (Brotli o Gzip). Las páginas HTML no se comprimen a propósito:
+// sobre HTTPS, comprimirlas junto con los tokens anti-falsificación las expondría a ataques del tipo BREACH.
+builder.Services.AddResponseCompression(opciones =>
+{
+    opciones.EnableForHttps = true;
+    opciones.Providers.Add<BrotliCompressionProvider>();
+    opciones.Providers.Add<GzipCompressionProvider>();
+    opciones.MimeTypes = new[] { "text/css", "text/javascript", "application/javascript", "image/svg+xml" };
+});
+
+// Seguridad: límite de envíos por IP en los formularios públicos (ver LimitesUso)
+builder.Services.AddRateLimiter(opciones =>
+{
+    opciones.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    opciones.AddPolicy(LimitesUso.Formularios, contexto => RateLimitPartition.GetFixedWindowLimiter(
+        contexto.Connection.RemoteIpAddress?.ToString() ?? "desconocida",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = LimitesUso.EnviosPorMinuto, Window = TimeSpan.FromMinutes(1) }));
+    opciones.OnRejected = async (contexto, cancelacion) =>
+    {
+        contexto.HttpContext.Response.ContentType = "text/html; charset=utf-8";
+        await contexto.HttpContext.Response.WriteAsync(
+            "<!doctype html><meta charset=\"utf-8\"><title>Espera un momento · MunerApp</title>" +
+            "<body style=\"font-family:system-ui,sans-serif;max-width:520px;margin:4rem auto;padding:0 1rem\">" +
+            "<h1>Hiciste muchos intentos seguidos</h1><p>Por seguridad, espera un minuto y vuelve a intentarlo.</p>" +
+            "<p><a href=\"/\">Volver al inicio</a></p></body>", cancelacion);
+    };
+});
+
+// Disponibilidad: /salud responde "Healthy" si la aplicación y la base de datos funcionan (para el Health check de Azure)
+builder.Services.AddHealthChecks().AddDbContextCheck<MunerAppDbContext>("base-de-datos");
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -136,6 +175,9 @@ app.Use(async (contexto, siguiente) =>
     cabeceras["X-Content-Type-Options"] = "nosniff";
     cabeceras["X-Frame-Options"] = "SAMEORIGIN";
     cabeceras["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    // Política de contenido en modo "solo reporte": el navegador avisa en la consola lo que la violaría, sin bloquear nada.
+    // Cuando se confirme que la página no la viola, se cambia la cabecera a Content-Security-Policy para que se aplique.
+    cabeceras["Content-Security-Policy-Report-Only"] = PoliticaContenido.Valor;
     await siguiente();
 });
 
@@ -151,7 +193,21 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 });
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseResponseCompression();
+
+// Rendimiento: el navegador guarda los archivos estáticos. CSS y JS llevan ?v= (asp-append-version) y cambian de
+// dirección cuando cambian, así que se guardan un año; las fotos y el video, una semana.
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        var peticion = ctx.Context.Request;
+        if (peticion.Query.ContainsKey("v"))
+            ctx.Context.Response.Headers.CacheControl = "public,max-age=31536000,immutable";
+        else if (peticion.Path.StartsWithSegments("/img") || peticion.Path.StartsWithSegments("/video"))
+            ctx.Context.Response.Headers.CacheControl = "public,max-age=604800";
+    }
+});
 
 // Archivos públicos que suben las fundaciones (logo, fotos, documentos de transparencia).
 // Los soportes privados NO se sirven aquí: se entregan por controladores que validan permisos.
@@ -168,6 +224,7 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 
 // Un usuario del panel de fundación sin ESAL asignada (por ejemplo, desvinculado) no entra al panel.
@@ -199,6 +256,8 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHealthChecks("/salud");
 
 // En Azure las migraciones se aplican solas al arrancar cada versión nueva. En local se sigue usando Update-Database.
 if (app.Configuration.GetValue<bool>("BaseDatos:MigrarAlIniciar"))

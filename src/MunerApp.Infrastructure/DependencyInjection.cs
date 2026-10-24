@@ -11,8 +11,11 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
-        services.AddDbContext<MunerAppDbContext>(options =>
-            options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+        // Trazabilidad: cada cambio guardado queda en RegistroAuditoria (quién, cuándo, qué cambió)
+        services.AddScoped(sp => new AuditoriaInterceptor(sp.GetService<IUsuarioActual>()));
+        services.AddDbContext<MunerAppDbContext>((sp, options) => options
+            .UseSqlServer(config.GetConnectionString("DefaultConnection"))
+            .AddInterceptors(sp.GetRequiredService<AuditoriaInterceptor>()));
 
         services.AddScoped<IModuloService, ModuloService>();
         services.AddScoped<ICorreoService, CorreoSmtpService>();

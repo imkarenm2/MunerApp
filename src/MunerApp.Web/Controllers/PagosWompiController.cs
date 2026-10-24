@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
 using MunerApp.Domain.Entities;
@@ -8,6 +9,8 @@ using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Models.Publico;
 using MunerApp.Web.Servicios;
+
+using MunerApp.Web.Seguridad;
 
 namespace MunerApp.Web.Controllers;
 
@@ -66,6 +69,7 @@ public class PagosWompiController : Controller
     // ---------- Paso 2: crear la donación pendiente y enviar al checkout ----------
 
     [HttpPost("fundaciones/{slug}/causas/{causaId:int}/donar-en-linea")]
+    [EnableRateLimiting(LimitesUso.Formularios)]
     public async Task<IActionResult> Donar(string slug, int causaId, DonarEnLineaViewModel model)
     {
         var (causa, error) = await ValidarCausaAsync(slug, causaId);

@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using MunerApp.Application.Interfaces;
 using MunerApp.Domain.Constantes;
 using MunerApp.Infrastructure.Identity;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Models.Publico;
 using MunerApp.Web.Servicios;
+
+using MunerApp.Web.Seguridad;
 
 namespace MunerApp.Web.Controllers;
 
@@ -33,6 +36,7 @@ public class ParticiparController : Controller
     public IActionResult Index() => View(new ParticiparViewModel());
 
     [HttpPost("participar")]
+    [EnableRateLimiting(LimitesUso.Formularios)]
     public async Task<IActionResult> Index(ParticiparViewModel model)
     {
         if (!string.IsNullOrEmpty(model.SitioWeb)) return RedirectToAction(nameof(Enviada)); // robot
