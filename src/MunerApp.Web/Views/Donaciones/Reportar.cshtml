@@ -1,8 +1,8 @@
 @model ReportarDonacionViewModel
 @{
     ViewData["Title"] = "Reportar donación";
-    var hoy = DateTime.Today.ToString("yyyy-MM-dd");
-    var minimo = DateTime.Today.AddDays(-90).ToString("yyyy-MM-dd");
+    var hoy = Formatos.Hoy().ToString("yyyy-MM-dd");
+    var minimo = Formatos.Hoy().AddDays(-90).ToString("yyyy-MM-dd");
 }
 <div class="container py-4 py-md-5" style="max-width: 720px">
     <partial name="_EncabezadoEsal" model='(new LogoEsalModel(Model.NombreEsal, Model.LogoUrl, 48), Model.Slug, "Donación a")' />

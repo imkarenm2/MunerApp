@@ -8,4 +8,10 @@ public interface IEsalActual
 
     /// <summary>Nulo para visitantes, donantes y superadministrador.</summary>
     int? EsalId { get; }
+
+    /// <summary>
+    /// Puede leer los datos de todas las fundaciones: el superadministrador, el veedor (consulta de solo lectura)
+    /// y las tareas internas sin usuario (seed, migraciones, revisión diaria).
+    /// </summary>
+    bool VeTodasLasFundaciones { get; }
 }

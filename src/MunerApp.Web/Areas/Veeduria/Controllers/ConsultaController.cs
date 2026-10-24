@@ -37,7 +37,7 @@ public class ConsultaController : Controller
     {
         var desde = DateTime.UtcNow.AddYears(-1);
         var hace7 = DateTime.UtcNow.AddDays(-7);
-        var hoy = DateTime.Today;
+        var hoy = Formatos.Hoy();
         var esales = await _db.Esales.AsNoTracking().Where(e => e.Activa).OrderBy(e => e.Nombre)
             .Select(e => new FundacionVeeduriaItem
             {
@@ -73,7 +73,13 @@ public class ConsultaController : Controller
         if (m is null) return NotFound();
 
         var sb = new StringBuilder();
-        string C(string? v) => "\"" + (v ?? "").Replace("\"", "\"\"") + "\"";
+        // Un texto que empieza por = + - @ (o tabulador / salto) Excel lo ejecuta como fórmula: se antepone ' para que quede como texto
+        string C(string? v)
+        {
+            var texto = v ?? "";
+            if (texto.Length > 0 && "=+-@\t\r".Contains(texto[0])) texto = "'" + texto;
+            return "\"" + texto.Replace("\"", "\"\"") + "\"";
+        }
         switch (tipo)
         {
             case "especie":
@@ -105,9 +111,9 @@ public class ConsultaController : Controller
 
         var anioActual = Formatos.Hoy().Year;
         var a = anio is int x && x >= 2024 && x <= anioActual ? x : anioActual;
-        var desde = Formatos.AUtc(new DateTime(a, 1, 1));
-        var hasta = Formatos.AUtc(new DateTime(a + 1, 1, 1));
-        var hoy = DateTime.Today;
+        var desde = Formatos.Utc(new DateTime(a, 1, 1));
+        var hasta = Formatos.Utc(new DateTime(a + 1, 1, 1));
+        var hoy = Formatos.Hoy();
 
         var confirmadas = _db.Donaciones.AsNoTracking()
             .Where(d => d.EsalId == id && d.Estado == EstadoDonacion.Confirmada && d.FechaRevision >= desde && d.FechaRevision < hasta);

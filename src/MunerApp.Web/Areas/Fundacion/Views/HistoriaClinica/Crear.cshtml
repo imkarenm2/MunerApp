@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Registrar evento clínico";
     ViewData["Seccion"] = "Beneficiarios";
-    var hoy = DateTime.Today.ToString("yyyy-MM-dd");
+    var hoy = Formatos.Hoy().ToString("yyyy-MM-dd");
     var iconos = new Dictionary<TipoEventoClinico, string>
     {
         [TipoEventoClinico.Vacuna] = "bi-shield-plus",

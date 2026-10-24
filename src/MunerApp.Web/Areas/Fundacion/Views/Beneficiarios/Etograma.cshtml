@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Etograma de " + Model.NombreBeneficiario;
     ViewData["Seccion"] = "Beneficiarios";
-    var hoy = DateTime.Today.ToString("yyyy-MM-dd");
+    var hoy = Formatos.Hoy().ToString("yyyy-MM-dd");
 }
 <div class="container py-4 py-md-5" style="max-width: 980px">
     <a asp-action="Detalle" asp-route-id="@Model.BeneficiarioId" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Hoja de vida de @Model.NombreBeneficiario</a>

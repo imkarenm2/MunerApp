@@ -98,7 +98,7 @@ public class HistoriaClinicaController : Controller
         {
             BeneficiarioId = id,
             NombreBeneficiario = nombre,
-            Fecha = DateTime.Today,
+            Fecha = Formatos.Hoy(),
             Responsable = User.FindFirstValue(MunerAppClaims.NombreCompleto) ?? ""
         });
     }
@@ -113,7 +113,7 @@ public class HistoriaClinicaController : Controller
         model.BeneficiarioId = id;
         model.NombreBeneficiario = b.Nombre;
 
-        if (model.Fecha is DateTime fecha && fecha.Date > DateTime.Today)
+        if (model.Fecha is DateTime fecha && fecha.Date > Formatos.Hoy())
             ModelState.AddModelError(nameof(model.Fecha), "La fecha no puede ser futura.");
 
         // Campos según el tipo (formato de la fundación: vacunación, desparasitación y pruebas virales)

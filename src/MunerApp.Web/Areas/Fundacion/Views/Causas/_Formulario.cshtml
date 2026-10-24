@@ -1,7 +1,7 @@
 @model CausaFormViewModel
 @{
-    var manana = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
-    var maximo = DateTime.Today.AddYears(2).ToString("yyyy-MM-dd");
+    var manana = Formatos.Hoy().AddDays(1).ToString("yyyy-MM-dd");
+    var maximo = Formatos.Hoy().AddYears(2).ToString("yyyy-MM-dd");
     var editando = Model.Id is not null;
     var cupo = 5 - Model.FotosActuales.Count;
 }

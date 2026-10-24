@@ -386,7 +386,7 @@ public class MedicamentosController : Controller
     private void ValidarFecha(MedicamentoFormViewModel model)
     {
         // Se permite registrar un medicamento ya vencido (para dejar constancia), pero no fechas absurdas
-        if (model.FechaVencimiento is DateTime f && (f.Year < 2000 || f > DateTime.Today.AddYears(15)))
+        if (model.FechaVencimiento is DateTime f && (f.Year < 2000 || f > Formatos.Hoy().AddYears(15)))
             ModelState.AddModelError(nameof(model.FechaVencimiento), "Revisa la fecha de vencimiento.");
     }
 

@@ -72,11 +72,12 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
 
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
-    // Superadministrador, tareas internas (seed, migraciones) y usuarios sin ESAL no se filtran:
-    // las páginas públicas filtran explícitamente por la ESAL que se está consultando,
-    // y los datos internos se protegen además con autorización por rol.
+    // Solo el superadministrador, el veedor y las tareas internas (seed, migraciones, revisión diaria) ven todo.
+    // Cualquier otro usuario sin ESAL (visitante, donante) no ve nada por defecto: las páginas públicas y las
+    // de donantes consultan con IgnoreQueryFilters() y filtran explícitamente por la ESAL o por el usuario.
+    // Así, si un administrador queda sin ESAL por error, no ve los datos de todas las fundaciones.
     private int? EsalIdActual => _esalActual?.EsalId;
-    private bool SinFiltroEsal => _esalActual is null || _esalActual.EsSuperAdmin || _esalActual.EsalId is null;
+    private bool SinFiltroEsal => _esalActual is null || _esalActual.VeTodasLasFundaciones;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

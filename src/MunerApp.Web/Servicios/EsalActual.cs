@@ -19,4 +19,8 @@ public class EsalActual : IEsalActual
 
     public int? EsalId =>
         int.TryParse(Usuario?.FindFirst(MunerAppClaims.EsalId)?.Value, out var id) ? id : null;
+
+    // Sin petición web = tarea interna (seed, revisión diaria)
+    public bool VeTodasLasFundaciones =>
+        _http.HttpContext is null || EsSuperAdmin || (Usuario?.IsInRole(Roles.Veedor) ?? false);
 }

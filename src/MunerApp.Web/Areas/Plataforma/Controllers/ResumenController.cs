@@ -28,7 +28,7 @@ public class ResumenController : Controller
     public async Task<IActionResult> Index()
     {
         var hoy = Formatos.Hoy();
-        var inicioMesUtc = Formatos.AUtc(new DateTime(hoy.Year, hoy.Month, 1));
+        var inicioMesUtc = Formatos.Utc(new DateTime(hoy.Year, hoy.Month, 1));
         var enCasa = ReglasBeneficiario.EnCasa;
         var hogares = new[] { EstadoBeneficiario.Adoptado, EstadoBeneficiario.EncontroSuHogar };
 

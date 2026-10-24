@@ -70,7 +70,7 @@ public class CausasController : Controller
             .OrderBy(c => c.Estado == EstadoCausa.Cerrada).ThenByDescending(c => c.FechaCreacion)
             .ToListAsync();
         var recaudos = await RecaudadoPorCausaAsync();
-        var hoy = DateTime.Today;
+        var hoy = Formatos.Hoy();
         var conRendicion = (await _db.RendicionesCausa.AsNoTracking().Select(r => r.CausaId).ToListAsync()).ToHashSet();
 
         return View(new CausasIndexViewModel
@@ -91,7 +91,7 @@ public class CausasController : Controller
     public async Task<IActionResult> Crear()
     {
         if (!await _db.DatosDonacion.AnyAsync()) return SinDatosParaDonar();
-        return View(new CausaFormViewModel { FechaLimite = DateTime.Today.AddDays(30), PideJustificacion = true });
+        return View(new CausaFormViewModel { FechaLimite = Formatos.Hoy().AddDays(30), PideJustificacion = true });
     }
 
     [HttpPost]
@@ -139,7 +139,7 @@ public class CausasController : Controller
         if (c is null) return NotFound();
 
         var recaudado = await RecaudadoAsync(id);
-        if (c.EstaCerrada(recaudado, DateTime.Today))
+        if (c.EstaCerrada(recaudado, Formatos.Hoy()))
         {
             TempData["Error"] = $"\"{c.Titulo}\" ya está cerrada y no se puede editar.";
             return RedirectToAction(nameof(Index), new { area = AreaFundacion });
@@ -164,7 +164,7 @@ public class CausasController : Controller
         if (c is null) return NotFound();
 
         var recaudado = await RecaudadoAsync(id);
-        if (c.EstaCerrada(recaudado, DateTime.Today))
+        if (c.EstaCerrada(recaudado, Formatos.Hoy()))
         {
             TempData["Error"] = $"\"{c.Titulo}\" ya está cerrada y no se puede editar.";
             return RedirectToAction(nameof(Index), new { area = AreaFundacion });
@@ -234,7 +234,7 @@ public class CausasController : Controller
         var c = await _db.Causas.FirstOrDefaultAsync(x => x.Id == id);
         if (c is null) return NotFound();
 
-        if (c.EstaCerrada(await RecaudadoAsync(id), DateTime.Today))
+        if (c.EstaCerrada(await RecaudadoAsync(id), Formatos.Hoy()))
         {
             TempData["Error"] = $"\"{c.Titulo}\" ya está cerrada.";
             return RedirectToAction(nameof(Index), new { area = AreaFundacion });

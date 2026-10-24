@@ -184,8 +184,7 @@ public class DonacionEsalDetalleViewModel : DonacionEsalItem
     public string? RevisadoPor { get; set; }
     public bool SoporteEsPdf { get; set; }
 
-    /// <summary>HU-044: las donaciones en línea las confirma el aviso de Wompi, no la fundación.</summary>
-    public bool EnLinea { get; set; }
+    /// <summary>HU-044: id de la transacción en Wompi de una donación en línea (EnLinea viene de <see cref="DonacionEsalItem"/>).</summary>
     public string? TransaccionPasarelaId { get; set; }
 }
 

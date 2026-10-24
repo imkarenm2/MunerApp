@@ -1,6 +1,6 @@
 @model BeneficiarioFormViewModel
 @{
-    var hoy = DateTime.Today.ToString("yyyy-MM-dd");
+    var hoy = Formatos.Hoy().ToString("yyyy-MM-dd");
     var editando = Model.Id is not null;
 }
 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>

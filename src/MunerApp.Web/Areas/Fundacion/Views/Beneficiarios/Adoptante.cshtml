@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Adoptante de " + Model.NombreBeneficiario;
     ViewData["Seccion"] = "Beneficiarios";
-    var hoy = DateTime.Today.ToString("yyyy-MM-dd");
+    var hoy = Formatos.Hoy().ToString("yyyy-MM-dd");
     var desde = Model.FechaRescate.ToString("yyyy-MM-dd");
 }
 <div class="container py-4 py-md-5" style="max-width: 720px">

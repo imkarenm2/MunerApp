@@ -57,7 +57,7 @@ public class DonacionesController : Controller
             return Redirect($"/fundaciones/{slug}/donar");
         }
 
-        var modelo = new ReportarDonacionViewModel { FechaTransferencia = DateTime.Today };
+        var modelo = new ReportarDonacionViewModel { FechaTransferencia = Formatos.Hoy() };
 
         // HU-021: el aporte de un apadrinamiento activo propio, con el valor mensual ya escrito
         if (apadrinamiento is int apId)
@@ -130,9 +130,9 @@ public class DonacionesController : Controller
 
         if (model.FechaTransferencia is DateTime fecha)
         {
-            if (fecha.Date > DateTime.Today.AddDays(1))
+            if (fecha.Date > Formatos.Hoy().AddDays(1))
                 ModelState.AddModelError(nameof(model.FechaTransferencia), "La fecha no puede ser futura.");
-            else if (fecha.Date < DateTime.Today.AddDays(-90))
+            else if (fecha.Date < Formatos.Hoy().AddDays(-90))
                 ModelState.AddModelError(nameof(model.FechaTransferencia), "Solo puedes reportar transferencias de los últimos 90 días.");
         }
 

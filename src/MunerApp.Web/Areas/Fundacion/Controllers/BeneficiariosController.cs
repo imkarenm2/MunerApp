@@ -129,7 +129,7 @@ public class BeneficiariosController : Controller
 
     [HttpGet]
     [Authorize(Policy = Politicas.AdminEsalPrincipal)]
-    public IActionResult Crear() => View(new BeneficiarioFormViewModel { FechaRescate = DateTime.Today });
+    public IActionResult Crear() => View(new BeneficiarioFormViewModel { FechaRescate = Formatos.Hoy() });
 
     [HttpPost]
     [Authorize(Policy = Politicas.AdminEsalPrincipal)]
@@ -367,7 +367,7 @@ public class BeneficiariosController : Controller
         {
             BeneficiarioId = b.Id,
             NombreBeneficiario = b.Nombre,
-            Fecha = DateTime.Today,
+            Fecha = Formatos.Hoy(),
             Momento = yaPre || b.EstadoReproductivo == EstadoReproductivo.Castrado ? MomentoEtograma.PostCastracion : MomentoEtograma.PreCastracion
         });
     }
@@ -385,7 +385,7 @@ public class BeneficiariosController : Controller
         model.Conductas = model.Conductas.Where(validas.Contains).Distinct().ToList();
         if (model.Conductas.Count == 0)
             ModelState.AddModelError(nameof(model.Conductas), "Marca al menos una conducta observada.");
-        if (model.Fecha is DateTime f && f.Date > DateTime.Today)
+        if (model.Fecha is DateTime f && f.Date > Formatos.Hoy())
             ModelState.AddModelError(nameof(model.Fecha), "La fecha no puede ser futura.");
         if (!ModelState.IsValid) return View(model);
 
@@ -581,7 +581,7 @@ public class BeneficiariosController : Controller
             Direccion = a?.Direccion,
             NumeroFormulario = a?.NumeroFormulario,
             Elaboro = a?.Elaboro ?? User.FindFirstValue(MunerAppClaims.NombreCompleto) ?? "",
-            FechaAdopcion = a?.FechaAdopcion ?? DateTime.Today,
+            FechaAdopcion = a?.FechaAdopcion ?? Formatos.Hoy(),
             Observaciones = a?.Observaciones
         });
     }
@@ -600,7 +600,7 @@ public class BeneficiariosController : Controller
 
         if (model.FechaAdopcion is DateTime fecha)
         {
-            if (fecha.Date > DateTime.Today)
+            if (fecha.Date > Formatos.Hoy())
                 ModelState.AddModelError(nameof(model.FechaAdopcion), "La fecha de adopción no puede ser futura.");
             else if (fecha.Date < b.FechaRescate.Date)
                 ModelState.AddModelError(nameof(model.FechaAdopcion), $"La fecha de adopción no puede ser anterior al ingreso ({Formatos.Fecha(b.FechaRescate)}).");
@@ -771,14 +771,14 @@ public class BeneficiariosController : Controller
 
     private async Task<ArchivoValidado?> ValidarAsync(BeneficiarioFormViewModel model)
     {
-        if (model.FechaRescate is DateTime rescate && rescate.Date > DateTime.Today)
+        if (model.FechaRescate is DateTime rescate && rescate.Date > Formatos.Hoy())
             ModelState.AddModelError(nameof(model.FechaRescate), "La fecha de ingreso no puede ser futura.");
 
         if (model.FechaNacimiento is DateTime nacimiento)
         {
-            if (nacimiento.Date > DateTime.Today)
+            if (nacimiento.Date > Formatos.Hoy())
                 ModelState.AddModelError(nameof(model.FechaNacimiento), "La fecha de nacimiento no puede ser futura.");
-            else if (nacimiento.Date < DateTime.Today.AddYears(-30))
+            else if (nacimiento.Date < Formatos.Hoy().AddYears(-30))
                 ModelState.AddModelError(nameof(model.FechaNacimiento), "Revisa la fecha de nacimiento: es de hace más de 30 años.");
             else if (model.FechaRescate is DateTime ingreso && nacimiento.Date > ingreso.Date)
                 ModelState.AddModelError(nameof(model.FechaNacimiento), "La fecha de nacimiento no puede ser posterior al ingreso.");
@@ -798,7 +798,7 @@ public class BeneficiariosController : Controller
     }
 
     private static DateTime Nacimiento(BeneficiarioFormViewModel m)
-        => m.FechaNacimiento?.Date ?? DateTime.Today.AddYears(-m.EdadAnios).AddMonths(-m.EdadMeses);
+        => m.FechaNacimiento?.Date ?? Formatos.Hoy().AddYears(-m.EdadAnios).AddMonths(-m.EdadMeses);
 
     /// <summary>Datos de la reseña del paciente (formato "Historia clínica e ingreso" de la fundación).</summary>
     private static void AplicarResena(Beneficiario b, BeneficiarioFormViewModel m)

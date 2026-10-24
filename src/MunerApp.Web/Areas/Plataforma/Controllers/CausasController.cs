@@ -60,7 +60,7 @@ public class CausasController : Controller
             _ => consulta
         };
 
-        var hoy = DateTime.Today;
+        var hoy = Formatos.Hoy();
         var causas = await consulta
             .OrderBy(c => c.Estado == EstadoCausa.PorAprobar ? 0 : 1)
             .ThenByDescending(c => c.FechaCreacion)
@@ -116,7 +116,7 @@ public class CausasController : Controller
             TempData["Error"] = $"\"{c.Titulo}\" no está esperando aprobación.";
             return RedirectToAction(nameof(Revisar), new { id });
         }
-        if (c.FechaLimite.Date <= DateTime.Today)
+        if (c.FechaLimite.Date <= Formatos.Hoy())
         {
             TempData["Error"] = "La fecha límite de la causa ya pasó. Devuélvela para que la fundación ponga una fecha nueva.";
             return RedirectToAction(nameof(Revisar), new { id });
@@ -182,7 +182,7 @@ public class CausasController : Controller
     [HttpGet]
     public async Task<IActionResult> Crear(int? esal)
     {
-        var modelo = new CausaPlataformaFormViewModel { EsalId = esal, FechaLimite = DateTime.Today.AddDays(30) };
+        var modelo = new CausaPlataformaFormViewModel { EsalId = esal, FechaLimite = Formatos.Hoy().AddDays(30) };
         return View(await ConFundacionesAsync(modelo));
     }
 
@@ -250,7 +250,7 @@ public class CausasController : Controller
             FechaLimite = c.FechaLimite,
             FechaCreacion = c.FechaCreacion,
             Estado = c.Estado,
-            Cerrada = c.EsPublica && c.EstaCerrada(recaudado, DateTime.Today),
+            Cerrada = c.EsPublica && c.EstaCerrada(recaudado, Formatos.Hoy()),
             MotivoRechazo = c.MotivoRechazo,
             FechaRevision = c.FechaRevision,
             RevisadaPor = c.RevisadaPorId is null ? null : nombres.GetValueOrDefault(c.RevisadaPorId),
