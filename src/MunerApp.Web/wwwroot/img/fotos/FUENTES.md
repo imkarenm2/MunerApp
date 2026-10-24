@@ -1,7 +1,9 @@
 # Fotos de los datos de ejemplo
 
 Todas vienen de [Unsplash](https://unsplash.com) con su licencia gratuita (uso comercial y no comercial, sin atribución obligatoria).
-Se descargaron recortadas a 1200 px de ancho. El identificador sirve para encontrar la foto original:
+Se descargaron en WebP, recortadas a 1000 px de ancho (1200 la portada y 700 los productos). Las que se usan
+directo en el inicio tienen además una versión `-640` para el celular (`srcset`). El identificador sirve para
+encontrar la foto original:
 `https://images.unsplash.com/<identificador>`.
 
 Las usan la portada (`inicio`, `comunidad`), el inicio de sesión (`adopcion`) y los datos de ejemplo

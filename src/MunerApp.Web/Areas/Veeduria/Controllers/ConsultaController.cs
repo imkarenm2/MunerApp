@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MunerApp.Application.Exportacion;
 using MunerApp.Application.Interfaces;
 using MunerApp.Domain.Constantes;
 using MunerApp.Domain.Entities;
@@ -73,13 +74,8 @@ public class ConsultaController : Controller
         if (m is null) return NotFound();
 
         var sb = new StringBuilder();
-        // Un texto que empieza por = + - @ (o tabulador / salto) Excel lo ejecuta como fórmula: se antepone ' para que quede como texto
-        string C(string? v)
-        {
-            var texto = v ?? "";
-            if (texto.Length > 0 && "=+-@\t\r".Contains(texto[0])) texto = "'" + texto;
-            return "\"" + texto.Replace("\"", "\"\"") + "\"";
-        }
+        // Celdas protegidas contra inyección de fórmulas en Excel (ver ArchivoCsv.Celda)
+        static string C(string? v) => ArchivoCsv.Celda(v);
         switch (tipo)
         {
             case "especie":

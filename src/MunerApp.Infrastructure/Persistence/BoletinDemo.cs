@@ -13,9 +13,7 @@ namespace MunerApp.Infrastructure.Persistence;
 /// </summary>
 public static class BoletinDemo
 {
-    private static readonly TimeSpan DiferenciaColombia = TimeSpan.FromHours(5); // Colombia es UTC-5 todo el año
-
-    // "Foto" es el nombre del archivo en wwwroot/img/fotos, sin la extensión .jpg
+    // "Foto" es el nombre del archivo en wwwroot/img/fotos, sin la extensión .webp
     private record Plantilla(CategoriaPublicacion Categoria, string Titulo, string Resumen, string Contenido,
         DateTime? FechaEventoLocal, string? Lugar, int DiasDesdePublicacion, string Foto);
 
@@ -30,7 +28,7 @@ public static class BoletinDemo
         var ahora = DateTime.UtcNow;
         foreach (var esal in esales)
         {
-            foreach (var p in Plantillas(esal.Nombre, esal.Ciudad, Hoy()))
+            foreach (var p in Plantillas(esal.Nombre, esal.Ciudad, DatosDemo.HoyColombia()))
             {
                 db.Publicaciones.Add(new Publicacion
                 {
@@ -40,7 +38,7 @@ public static class BoletinDemo
                     Contenido = p.Contenido,
                     Categoria = p.Categoria,
                     Estado = EstadoPublicacion.Publicada,
-                    FechaEvento = p.FechaEventoLocal is DateTime f ? f + DiferenciaColombia : null,
+                    FechaEvento = p.FechaEventoLocal is DateTime f ? f + DatosDemo.DiferenciaColombia : null,
                     LugarEvento = p.Lugar,
                     FechaCreacion = ahora.AddDays(-p.DiasDesdePublicacion),
                     FechaPublicacion = ahora.AddDays(-p.DiasDesdePublicacion),
@@ -51,21 +49,23 @@ public static class BoletinDemo
         await db.SaveChangesAsync();
     }
 
-    /// <summary>Las publicaciones de demostración de la versión anterior tenían ilustraciones (.svg): se cambian por fotos.</summary>
+    /// <summary>
+    /// Migración de una sola vez: las publicaciones de demostración de la versión anterior tenían ilustraciones (.svg).
+    /// Se cambian por fotos y se borran los .svg del almacenamiento; si ya no queda ninguno, solo hace una consulta.
+    /// </summary>
     private static async Task CambiarIlustracionesPorFotosAsync(MunerAppDbContext db, IAlmacenamientoArchivos archivos, string carpetaFotos)
     {
-        var fotos = Plantillas("", null, Hoy()).ToDictionary(p => p.Titulo, p => p.Foto);
+        var fotos = Plantillas("", null, DatosDemo.HoyColombia()).ToDictionary(p => p.Titulo, p => p.Foto);
         var titulos = fotos.Keys.ToList();
-        var antiguas = (await db.Publicaciones.IgnoreQueryFilters().Where(p => titulos.Contains(p.Titulo)).ToListAsync())
-            .Where(p => FotosDemo.EsIlustracion(p.ImagenRuta)).ToList();
+        var antiguas = await db.Publicaciones.IgnoreQueryFilters()
+            .Where(p => titulos.Contains(p.Titulo) && p.ImagenRuta!.EndsWith(".svg")).ToListAsync();
         if (antiguas.Count == 0) return;
 
         foreach (var p in antiguas)
-            p.ImagenRuta = await FotosDemo.GuardarAsync(archivos, carpetaFotos, $"esal/{p.EsalId}/boletin", fotos[p.Titulo]) ?? p.ImagenRuta;
+            p.ImagenRuta = await DatosDemo.ReemplazarAsync(archivos, carpetaFotos, p.ImagenRuta!, $"esal/{p.EsalId}/boletin", fotos[p.Titulo]);
         await db.SaveChangesAsync();
     }
 
-    private static DateTime Hoy() => (DateTime.UtcNow - DiferenciaColombia).Date;
 
     /// <summary>El sábado siguiente a la fecha (o la misma si ya es sábado), a la hora indicada.</summary>
     private static DateTime Sabado(DateTime dia, int hora) =>

@@ -75,7 +75,11 @@ public record DocumentoPublico(string Titulo, string Categoria, string? Descripc
 }
 
 /// <summary>Una opción de "Otras formas de ayudar" (HU-016).</summary>
-public record FormaAyuda(string Codigo, string Titulo, string Descripcion, string Icono, string ClaseIcono, string? Url, bool RequiereCuenta, bool Disponible);
+public record FormaAyuda(string Codigo, string Titulo, string Descripcion, string Icono, string ClaseIcono, string? Url, bool RequiereCuenta, bool Disponible)
+{
+    /// <summary>Donar en especie no es un módulo (siempre está disponible), por eso no está en CodigosModulo.</summary>
+    public const string CodigoEspecie = "Especie";
+}
 
 public class PerfilPublicoViewModel
 {

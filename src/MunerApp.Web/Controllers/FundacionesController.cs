@@ -270,7 +270,7 @@ public class FundacionesController : Controller
                 "bi-cash-coin", "acento", $"/fundaciones/{slug}/donar", false, true)
         };
 
-        formas.Add(new("Especie", "Donar en especie",
+        formas.Add(new(FormaAyuda.CodigoEspecie, "Donar en especie",
             "Concentrado, arena, medicamentos o cobijas: mira lo que necesitan y dinos qué vas a llevar.",
             "bi-box-seam", "exito", $"/fundaciones/{slug}/donar-en-especie", false, true));
 

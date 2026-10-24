@@ -404,7 +404,7 @@ a { text-underline-offset: 3px; }
 .auth-lateral {
     background:
         linear-gradient(rgba(20, 20, 20, .55), rgba(20, 20, 20, .78)),
-        url("/img/fotos/adopcion.jpg") center / cover no-repeat;
+        url("/img/fotos/adopcion.webp") center / cover no-repeat;
 }
 .auth-lateral > * { position: relative; z-index: 1; }
 .auth-lateral h2 { color: #fff; }
@@ -1400,8 +1400,8 @@ a.kpi:hover { border-color: #CFCEC6; box-shadow: var(--mu-sombra-hover); color: 
 .barra-accion-movil .btn { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.05rem; }
 .con-barra-inferior .barra-accion-movil { bottom: var(--alto-barra-inferior); padding-bottom: .65rem; }
 @media (max-width: 991.98px) {
-    body:has(.barra-accion-movil) { padding-bottom: calc(var(--alto-barra-inferior) + 72px); }
-    body:not(.con-barra-inferior):has(.barra-accion-movil) { padding-bottom: 72px; }
+    body.con-barra-accion { padding-bottom: 72px; }
+    body.con-barra-accion.con-barra-inferior { padding-bottom: calc(var(--alto-barra-inferior) + 72px); }
 }
 
 /* Botón visible dentro de las tarjetas que se pueden tocar */
