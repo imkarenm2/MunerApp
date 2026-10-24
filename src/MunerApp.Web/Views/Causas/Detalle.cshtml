@@ -158,6 +158,20 @@
     </div>
 </div>
 
+@if (Model.RecibeDonaciones)
+{
+    @* En el celular el botón de donar queda abajo de todo: esta barra lo deja siempre a la vista *@
+    <div class="barra-accion-movil d-lg-none">
+        <div class="small lh-sm">
+            <strong class="d-block">@Formatos.Pesos(Model.Recaudado)</strong>
+            <span class="text-suave">de @Formatos.Pesos(Model.Meta)</span>
+        </div>
+        <a class="btn btn-apoyar flex-grow-1" href="@(Model.PagosEnLineaActivos ? $"/fundaciones/{Model.SlugEsal}/causas/{Model.Id}/donar-en-linea" : $"/fundaciones/{Model.SlugEsal}/donar?causa={Model.Id}")">
+            <i class="bi bi-heart-fill me-2" aria-hidden="true"></i>Donar
+        </a>
+    </div>
+}
+
 @if (Model.Fotos.Count > 0)
 {
     <div class="modal fade" id="visorFoto" tabindex="-1" aria-label="Foto de la causa" aria-hidden="true">
