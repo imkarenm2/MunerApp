@@ -50,8 +50,9 @@ public class HomeController : Controller
 
         var esales = await esalesPublicas
             .OrderByDescending(e => e.FechaActualizacionPerfil ?? e.FechaRegistro)
-            .Select(e => new { e.Slug, e.Nombre, e.TipoEntidad, e.DescripcionCorta, e.Ciudad, e.LogoRuta })
+            .Select(e => new { e.Id, e.Slug, e.Nombre, e.TipoEntidad, e.DescripcionCorta, e.Ciudad, e.LogoRuta })
             .ToListAsync();
+        var portadas = await PortadasEsal.ObtenerAsync(_db, esales.Take(3).Select(e => e.Id).ToList());
 
         var causas = await _causas.ListarAsync(esalId: null, maxCerradas: 0);
 
@@ -74,7 +75,8 @@ public class HomeController : Controller
                 TipoEntidad = e.TipoEntidad,
                 DescripcionCorta = e.DescripcionCorta,
                 Ciudad = e.Ciudad,
-                LogoUrl = e.LogoRuta is null ? null : _archivos.UrlPublica(e.LogoRuta)
+                LogoUrl = e.LogoRuta is null ? null : _archivos.UrlPublica(e.LogoRuta),
+                PortadaUrl = portadas.TryGetValue(e.Id, out var portada) ? _archivos.UrlPublica(portada) : null
             }).ToList(),
             Causas = causas.Abiertas.Where(c => c.RecibeDonaciones).Take(3).ToList(),
             Gatos = gatos.Select(g => new GatoApadrinableHome(g.Id, g.Nombre,

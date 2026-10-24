@@ -284,7 +284,7 @@
                 {
                     <div class="col-12 col-md-4">
                         <a class="tarjeta-esal mu-card mu-card-hover h-100" href="/fundaciones/@f.Slug">
-                            <div class="tarjeta-esal-banda" aria-hidden="true"></div>
+                            <div class="tarjeta-esal-banda @(f.PortadaUrl is null ? "" : "con-foto")" style="@(f.PortadaUrl is null ? null : $"--portada: url('{f.PortadaUrl}')")" aria-hidden="true"></div>
                             <div class="tarjeta-esal-cuerpo">
                                 <partial name="_LogoEsal" model="new LogoEsalModel(f.Nombre, f.LogoUrl, 64)" />
                                 <h3 class="h5 mt-3 mb-1">@f.Nombre</h3>

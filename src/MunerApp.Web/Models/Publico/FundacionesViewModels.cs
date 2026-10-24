@@ -31,6 +31,9 @@ public class FundacionTarjeta
     public string? DescripcionCorta { get; set; }
     public string? Ciudad { get; set; }
     public string? LogoUrl { get; set; }
+
+    /// <summary>Primera foto de la fundación: se muestra como portada de la tarjeta.</summary>
+    public string? PortadaUrl { get; set; }
 }
 
 public class DirectorioViewModel

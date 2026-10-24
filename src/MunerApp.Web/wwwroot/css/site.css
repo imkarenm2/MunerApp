@@ -577,6 +577,7 @@ a { text-underline-offset: 3px; }
     height: 72px;
     background: var(--mu-principal-suave);
 }
+.tarjeta-esal-banda.con-foto { height: 150px; background: var(--portada) center / cover no-repeat, var(--mu-principal-suave); }
 .tarjeta-esal-cuerpo { padding: 0 1.4rem 1.4rem; margin-top: -36px; }
 .tarjeta-esal-cuerpo .logo-esal { border: 3px solid #fff; box-shadow: var(--mu-sombra); }
 .tarjeta-esal:hover .enlace-flecha .bi { transform: translateX(3px); }
@@ -637,7 +638,7 @@ a { text-underline-offset: 3px; }
 @media (min-width: 992px) {
     .perfil-lateral { position: sticky; top: 130px; }
 }
-.tarjeta-donar { border-top: 4px solid var(--mu-acento); }
+
 
 .galeria {
     display: grid;
