@@ -59,11 +59,19 @@
             @foreach (var f in Model.Fundaciones)
             {
                 <div class="col-12 col-sm-6 col-lg-4">
-                    <a class="tarjeta-esal mu-card mu-card-hover h-100" href="/fundaciones/@f.Slug">
-                        <div class="tarjeta-esal-banda @(f.PortadaUrl is null ? "" : "con-foto")" style="@(f.PortadaUrl is null ? null : $"--portada: url('{f.PortadaUrl}')")" aria-hidden="true"></div>
+                    <a class="tarjeta-esal h-100" href="/fundaciones/@f.Slug">
+                        <span class="tarjeta-marco">
+                            @if (f.PortadaUrl is not null)
+                            {
+                                <img class="tarjeta-esal-foto" src="@f.PortadaUrl" alt="" loading="lazy" />
+                            }
+                            else
+                            {
+                                <span class="tarjeta-esal-foto sin-foto"><partial name="_LogoEsal" model="new LogoEsalModel(f.Nombre, f.LogoUrl, 72)" /></span>
+                            }
+                        </span>
                         <div class="tarjeta-esal-cuerpo">
-                            <partial name="_LogoEsal" model="new LogoEsalModel(f.Nombre, f.LogoUrl, 72)" />
-                            <h2 class="h5 mt-3 mb-1">@f.Nombre</h2>
+                            <h2 class="h5 mb-1">@f.Nombre</h2>
                             <div class="small text-suave mb-2">
                                 <span>@f.TipoEntidad</span>
                                 @if (!string.IsNullOrEmpty(f.Ciudad))

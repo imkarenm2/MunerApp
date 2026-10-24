@@ -1413,3 +1413,108 @@ a.kpi:hover { border-color: #CFCEC6; box-shadow: var(--mu-sombra-hover); color: 
     .chip { min-height: 44px; }
     .mu-footer li a { display: inline-block; padding: .3rem 0; }
 }
+
+/* =========================================================================
+   v2.1 · Línea moderna
+   Tarjetas sin caja (la foto manda y el texto va debajo), botones en píldora,
+   bloques de foto, más aire entre secciones y todas las fotos con el mismo tratamiento.
+   ========================================================================= */
+
+/* ---- Botones en píldora ---- */
+.btn { border-radius: 999px; }
+.btn-lg { padding: .85rem 1.75rem; }
+.btn-sm { padding: .42rem 1rem; }
+.btn-outline-dark { --bs-btn-color: var(--mu-texto); --bs-btn-border-color: #CFCEC6; --bs-btn-hover-bg: var(--mu-texto); --bs-btn-hover-border-color: var(--mu-texto); }
+
+/* ---- Encabezado: enlaces sin fondo; el activo se marca con color y peso ---- */
+.mu-navbar .nav-link { color: var(--mu-texto-suave); }
+.mu-navbar .nav-link:hover,
+.mu-navbar .nav-link.active { color: var(--mu-texto); background: transparent; }
+.mu-navbar .nav-link.active { font-weight: 600; }
+.enlace-sesion { color: var(--mu-texto); font-weight: 500; }
+.enlace-sesion:hover { color: var(--mu-principal); }
+@media (max-width: 991.98px) {
+    .mu-navbar .navbar-nav .nav-link.active { background: var(--mu-acento-suave); }
+    .enlace-sesion { border: 1px solid #CFCEC6; }
+}
+
+/* ---- Más aire y jerarquía entre secciones ---- */
+.seccion { padding: 4.5rem 0; }
+@media (min-width: 992px) { .seccion { padding: 6rem 0; } }
+.titulo-seccion { font-size: clamp(1.8rem, 3.2vw, 2.6rem); letter-spacing: -.03em; }
+.seccion-blanca { border: 0; }
+
+/* ---- Fotos de la misma serie: un poco menos saturadas y con algo más de contraste ---- */
+.hero-foto, .tarjeta-causa-foto, .producto-foto, .tarjeta-esal-foto, .forma-apoyo img,
+.cta-fundaciones img, .publicacion-imagen, .galeria-item img, .gato-home img {
+    filter: saturate(.85) contrast(1.04);
+}
+.hero-foto { border-radius: 20px; }
+
+/* ---- Tarjetas sin caja: causas, productos y fundaciones ---- */
+.tarjeta-causa, .tarjeta-producto, .tarjeta-esal, .tarjeta-publicacion {
+    display: flex; flex-direction: column; height: 100%;
+    background: transparent; border: 0; box-shadow: none; overflow: visible;
+    color: var(--mu-texto); text-decoration: none;
+}
+.tarjeta-marco { position: relative; display: block; overflow: hidden; border-radius: 16px; background: #E6E5DF; }
+.tarjeta-marco img, .tarjeta-marco .beneficiario-sin-foto { transition: transform .5s ease, filter .3s; }
+.tarjeta-causa:hover .tarjeta-marco img, .tarjeta-producto:hover .tarjeta-marco img, .tarjeta-esal:hover .tarjeta-marco img, .tarjeta-publicacion:hover .tarjeta-marco img { transform: scale(1.04); }
+.tarjeta-causa-foto { aspect-ratio: 4 / 3; }
+.tarjeta-estado {
+    position: absolute; left: .75rem; top: .75rem;
+    background: rgba(255, 255, 255, .92); color: var(--mu-texto);
+    font-size: .78rem; font-weight: 600; padding: .25rem .6rem; border-radius: 999px;
+}
+.tarjeta-texto { display: flex; flex-direction: column; gap: .45rem; flex: 1 1 auto; padding-top: 1rem; }
+.tarjeta-fundacion { font-size: .85rem; color: var(--mu-texto-suave); }
+.tarjeta-titulo { font-family: var(--mu-fuente-titulos); font-size: 1.15rem; font-weight: 600; line-height: 1.3; letter-spacing: -.01em; }
+.tarjeta-cifras { font-size: .9rem; color: var(--mu-texto-suave); }
+.tarjeta-cifras strong { color: var(--mu-texto); font-weight: 600; }
+.tarjeta-precio { font-weight: 600; }
+.tarjeta-texto .mu-progreso { display: block; margin-top: .15rem; }
+.tarjeta-texto .tarjeta-accion { align-self: flex-start; margin-top: auto; }
+.tarjeta-texto .tarjeta-titulo + .tarjeta-accion,
+.tarjeta-texto .tarjeta-precio + .tarjeta-accion,
+.tarjeta-texto .tarjeta-cifras + .tarjeta-accion { margin-top: .6rem; }
+.tarjeta-causa .tarjeta-accion { display: inline-flex; min-height: 40px; }
+
+.tarjeta-esal-foto { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.tarjeta-esal-foto.sin-foto { display: grid; place-items: center; background: var(--mu-principal-suave); }
+.tarjeta-esal-cuerpo { padding: 1rem 0 0; margin-top: 0; }
+.tarjeta-esal-cuerpo .enlace-flecha { margin-top: .25rem; }
+
+/* ---- Formas de apoyar: bloques de foto ---- */
+.formas-apoyo { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+@media (min-width: 576px) { .formas-apoyo { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 992px) {
+    .formas-apoyo { grid-template-columns: 1.4fr 1fr 1fr; grid-template-rows: 250px 250px; }
+    .forma-apoyo:first-child { grid-row: span 2; }
+    .forma-apoyo:nth-child(4) { grid-column: span 2; }
+}
+.forma-apoyo {
+    position: relative; display: block; min-height: 240px;
+    border-radius: 16px; overflow: hidden; color: #fff; text-decoration: none;
+}
+.forma-apoyo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .6s ease; }
+.forma-apoyo:hover img { transform: scale(1.04); }
+.forma-apoyo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20, 20, 20, 0) 35%, rgba(20, 20, 20, .75) 100%); }
+.forma-apoyo-texto { position: absolute; left: 1.4rem; right: 1.4rem; bottom: 1.25rem; z-index: 1; color: rgba(255, 255, 255, .88); font-size: .95rem; max-width: 420px; }
+.forma-apoyo-texto .h3, .forma-apoyo-texto .h4 { color: #fff; margin-bottom: .3rem; }
+.forma-apoyo:hover { color: #fff; }
+
+/* ---- Bloque de cierre ---- */
+.cta-fundaciones { border-radius: 20px; }
+
+/* ---- El periódico con la misma letra y sobriedad del resto ---- */
+.periodico-cabecera { text-align: left; border-top: 1px solid var(--mu-texto); border-bottom: 1px solid var(--mu-borde); padding: 1.25rem 0; }
+.periodico-fecha { text-transform: none; letter-spacing: 0; font-size: .9rem; }
+.periodico-nombre, .periodico-titular-texto { font-family: var(--mu-fuente-titulos); font-weight: 600; letter-spacing: -.03em; }
+.periodico-lema { font-family: var(--mu-fuente-texto); font-style: normal; }
+.periodico-cifras { gap: 0; border-bottom: 1px solid var(--mu-borde); }
+.periodico-cifras > div { align-items: flex-start; text-align: left; background: transparent; border: 0; border-radius: 0; padding: .5rem 1.25rem 1.25rem 0; font-size: .9rem; }
+.periodico-cifras > div + div { padding-left: 1.25rem; border-left: 1px solid var(--mu-borde); }
+.periodico-cifra { font-weight: 500; letter-spacing: -.03em; color: var(--mu-texto); }
+.periodico-seccion { text-transform: none; letter-spacing: 0; font-size: 1rem; font-weight: 600; border-bottom-width: 1px; }
+.evento-fecha { background: transparent; color: var(--mu-texto); border: 1px solid #CFCEC6; }
+.publicacion-imagen { border-radius: 16px !important; }

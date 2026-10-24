@@ -106,7 +106,7 @@
         <div class="container">
             <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
                 <div>
-                    <h2 class="mb-0">Necesitan tu ayuda ahora</h2>
+                    <h2 class="titulo-seccion mb-0">Necesitan tu ayuda ahora</h2>
                 </div>
                 <a class="enlace-flecha" href="/causas">Ver las @Model.CausasAbiertas causas <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
             </div>
@@ -126,7 +126,7 @@
         <div class="container">
             <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
                 <div>
-                    <h2 class="mb-0">Buscan un padrino</h2>
+                    <h2 class="titulo-seccion mb-0">Buscan un padrino</h2>
                     <p class="text-suave mb-0 mt-2">Con un aporte mensual cubres su comida y su salud, y recibes noticias de cómo va.@(Model.Padrinos > 0 ? $" Ya hay {Model.Padrinos} padrinos." : "")</p>
                 </div>
             </div>
@@ -157,7 +157,7 @@
         <div class="region mu-card p-4 p-md-5">
             <div class="row g-4 align-items-center">
                 <div class="col-12 col-lg-5">
-                    <h2 class="mb-3">Empezamos por Sabana de Occidente</h2>
+                    <h2 class="titulo-seccion mb-3">Empezamos por Sabana de Occidente</h2>
                     <p class="text-suave mb-0">
                         MunerApp nació en la Universidad de Cundinamarca, extensión Facatativá. Por ahora trabajamos con fundaciones
                         de los ocho municipios de la provincia de Sabana de Occidente, en Cundinamarca. Más adelante llegaremos a otras regiones.
@@ -196,38 +196,39 @@
 <section class="seccion seccion-blanca" id="formas-de-ayudar">
     <div class="container">
         <div class="seccion-titulo">
-            <h2>Hay más de una forma de apoyar</h2>
+            <h2 class="titulo-seccion">Hay más de una forma de apoyar</h2>
             <p class="text-suave mb-0">Cada fundación elige cómo quiere recibir ayuda. Tú eliges la que mejor se ajusta a ti.</p>
         </div>
-        <div class="row g-4">
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="mu-card mu-card-hover h-100 p-4">
-                    <div class="icono-circulo acento mb-3"><i class="bi bi-cash-coin" aria-hidden="true"></i></div>
-                    <h3 class="h5">Donar</h3>
-                    <p class="text-suave mb-0">Aporta a una causa en línea o por transferencia, y recibe tu comprobante.</p>
-                </div>
-            </div>
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="mu-card mu-card-hover h-100 p-4">
-                    <div class="icono-circulo mb-3"><i class="bi bi-balloon-heart" aria-hidden="true"></i></div>
-                    <h3 class="h5">Apadrinar</h3>
-                    <p class="text-suave mb-0">Acompaña a un beneficiario con un aporte periódico y sigue sus novedades.</p>
-                </div>
-            </div>
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="mu-card mu-card-hover h-100 p-4">
-                    <div class="icono-circulo exito mb-3"><i class="bi bi-people" aria-hidden="true"></i></div>
-                    <h3 class="h5">Ser voluntario</h3>
-                    <p class="text-suave mb-0">Dona tu tiempo o tus conocimientos en las labores que la fundación necesita.</p>
-                </div>
-            </div>
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="mu-card mu-card-hover h-100 p-4">
-                    <div class="icono-circulo alerta mb-3"><i class="bi bi-bag-heart" aria-hidden="true"></i></div>
-                    <h3 class="h5">Comprar en su tienda</h3>
-                    <p class="text-suave mb-0">Algunas fundaciones venden productos propios. Cada compra también ayuda.</p>
-                </div>
-            </div>
+        @* Bloques con foto: cada forma de ayudar lleva a donde se hace *@
+        <div class="formas-apoyo">
+            <a class="forma-apoyo" href="/causas">
+                <img src="~/img/fotos/mercados.jpg" alt="" loading="lazy" />
+                <span class="forma-apoyo-texto">
+                    <span class="h3 d-block">Donar</span>
+                    <span class="d-block">Aporta a una causa en línea o por transferencia, y recibe tu comprobante.</span>
+                </span>
+            </a>
+            <a class="forma-apoyo" href="/fundaciones">
+                <img src="~/img/fotos/esterilizacion.jpg" alt="" loading="lazy" />
+                <span class="forma-apoyo-texto">
+                    <span class="h4 d-block">Apadrinar</span>
+                    <span class="d-block">Acompaña a un beneficiario con un aporte periódico.</span>
+                </span>
+            </a>
+            <a class="forma-apoyo" href="/fundaciones">
+                <img src="~/img/fotos/arboles.jpg" alt="" loading="lazy" />
+                <span class="forma-apoyo-texto">
+                    <span class="h4 d-block">Ser voluntario</span>
+                    <span class="d-block">Dona tu tiempo o lo que sabes hacer.</span>
+                </span>
+            </a>
+            <a class="forma-apoyo" href="/tienda">
+                <img src="~/img/fotos/p-bufanda.jpg" alt="" loading="lazy" />
+                <span class="forma-apoyo-texto">
+                    <span class="h4 d-block">Comprar en su tienda</span>
+                    <span class="d-block">Productos hechos por las fundaciones. Cada compra también ayuda.</span>
+                </span>
+            </a>
         </div>
     </div>
 </section>
@@ -235,7 +236,7 @@
 <section class="seccion" id="transparencia">
     <div class="container">
         <div class="seccion-titulo">
-            <h2>Sabes a dónde va tu ayuda</h2>
+            <h2 class="titulo-seccion">Sabes a dónde va tu ayuda</h2>
         </div>
         <div class="row g-4">
             <div class="col-12 col-md-4">
@@ -275,7 +276,7 @@
         <div class="container">
             <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
                 <div>
-                    <h2 class="mb-0">Conoce a quién puedes ayudar</h2>
+                    <h2 class="titulo-seccion mb-0">Conoce a quién puedes ayudar</h2>
                 </div>
                 <a class="enlace-flecha" href="/fundaciones">Ver todas <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
             </div>
@@ -283,11 +284,19 @@
                 @foreach (var f in Model.Fundaciones)
                 {
                     <div class="col-12 col-md-4">
-                        <a class="tarjeta-esal mu-card mu-card-hover h-100" href="/fundaciones/@f.Slug">
-                            <div class="tarjeta-esal-banda @(f.PortadaUrl is null ? "" : "con-foto")" style="@(f.PortadaUrl is null ? null : $"--portada: url('{f.PortadaUrl}')")" aria-hidden="true"></div>
+                        <a class="tarjeta-esal h-100" href="/fundaciones/@f.Slug">
+                            <span class="tarjeta-marco">
+                                @if (f.PortadaUrl is not null)
+                                {
+                                    <img class="tarjeta-esal-foto" src="@f.PortadaUrl" alt="" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <span class="tarjeta-esal-foto sin-foto"><partial name="_LogoEsal" model="new LogoEsalModel(f.Nombre, f.LogoUrl, 64)" /></span>
+                                }
+                            </span>
                             <div class="tarjeta-esal-cuerpo">
-                                <partial name="_LogoEsal" model="new LogoEsalModel(f.Nombre, f.LogoUrl, 64)" />
-                                <h3 class="h5 mt-3 mb-1">@f.Nombre</h3>
+                                <h3 class="h5 mb-1">@f.Nombre</h3>
                                 <p class="texto-recortado text-suave small mb-3">@(f.DescripcionCorta ?? f.TipoEntidad)</p>
                                 <span class="enlace-flecha">Ver perfil <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
                             </div>
