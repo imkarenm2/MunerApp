@@ -1,47 +1,38 @@
 @* Tarjeta de una causa de recaudación: foto, meta, monto recaudado, barra de progreso y días restantes (HU-042) *@
 @model CausaTarjeta
-<a class="mu-card mu-card-hover tarjeta-causa text-decoration-none text-body @(Model.Cerrada ? "cerrada" : "")" href="@Model.Url"
+<a class="tarjeta-causa text-decoration-none text-body @(Model.Cerrada ? "cerrada" : "")" href="@Model.Url"
    aria-label="Ver la causa @Model.Titulo">
-    @if (Model.FotoUrl is not null)
-    {
-        <img class="tarjeta-causa-foto" src="@Model.FotoUrl" alt="Foto de la causa @Model.Titulo" loading="lazy" />
-    }
-    else
-    {
-        <span class="tarjeta-causa-foto beneficiario-sin-foto d-flex" aria-hidden="true"><i class="bi bi-bullseye"></i></span>
-    }
-    <div class="p-4">
-        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-            @if (Model.Cerrada)
-            {
-                <span class="mu-badge"><i class="bi bi-flag" aria-hidden="true"></i>Cerrada</span>
-            }
-            else if (Model.Pausada)
-            {
-                <span class="mu-badge alerta"><i class="bi bi-pause-circle" aria-hidden="true"></i>En pausa</span>
-            }
-            else
-            {
-                <span class="mu-badge exito"><i class="bi bi-broadcast" aria-hidden="true"></i>Activa</span>
-            }
-            <span class="small text-suave">@(Model.Cerrada ? "Terminó el " + Formatos.Fecha(Model.FechaFin) : Formatos.DiasRestantes(Model.DiasRestantes))</span>
-        </div>
-        <h3 class="h5 mb-3">@Model.Titulo</h3>
-        <div class="mu-progreso @(Model.Cerrada ? "cerrada" : "") mb-2" role="progressbar" aria-valuenow="@Model.Porcentaje" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso de la causa @Model.Titulo">
-            <span style="width: @(Model.Porcentaje)%"></span>
-        </div>
-        <div class="d-flex justify-content-between small">
-            <span><strong>@Formatos.Pesos(Model.Recaudado)</strong> recaudados</span>
-            <span class="text-suave">@Model.Porcentaje %</span>
-        </div>
-        <div class="small text-suave">Meta: @Formatos.Pesos(Model.Meta)</div>
+    <span class="tarjeta-marco">
+        @if (Model.FotoUrl is not null)
+        {
+            <img class="tarjeta-causa-foto" src="@Model.FotoUrl" alt="Foto de la causa @Model.Titulo" loading="lazy" />
+        }
+        else
+        {
+            <span class="tarjeta-causa-foto beneficiario-sin-foto d-flex" aria-hidden="true"><i class="bi bi-bullseye"></i></span>
+        }
+        @if (Model.Cerrada || Model.Pausada)
+        {
+            <span class="tarjeta-estado">@(Model.Cerrada ? "Cerrada" : "En pausa")</span>
+        }
+    </span>
+    <span class="tarjeta-texto">
         @if (Model.MostrarFundacion)
         {
-            <div class="small text-suave mt-2"><i class="bi bi-building me-1" aria-hidden="true"></i>@Model.NombreEsal</div>
+            <span class="tarjeta-fundacion">@Model.NombreEsal</span>
         }
+        <span class="tarjeta-titulo">@Model.Titulo</span>
+        <span class="mu-progreso @(Model.Cerrada ? "cerrada" : "")" role="progressbar" aria-valuenow="@Model.Porcentaje" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso de la causa @Model.Titulo">
+            <span style="width: @(Model.Porcentaje)%"></span>
+        </span>
+        <span class="tarjeta-cifras">
+            <strong>@Formatos.Pesos(Model.Recaudado)</strong> de @Formatos.Pesos(Model.Meta)
+            <span aria-hidden="true">·</span>
+            @(Model.Cerrada ? "Terminó el " + Formatos.Fecha(Model.FechaFin) : Formatos.DiasRestantes(Model.DiasRestantes).ToLowerInvariant())
+        </span>
         @* Un botón visible: no todos saben que la tarjeta completa se puede tocar *@
-        <span class="btn @(Model.Cerrada || Model.Pausada ? "btn-outline-primary" : "btn-apoyar") w-100 mt-3 tarjeta-accion" aria-hidden="true">
+        <span class="btn btn-outline-dark btn-sm tarjeta-accion" aria-hidden="true">
             @(Model.Cerrada || Model.Pausada ? "Ver la causa" : "Ver y donar")
         </span>
-    </div>
+    </span>
 </a>

@@ -1,5 +1,3 @@
-using System.Net;
-using System.Text;
 using Microsoft.EntityFrameworkCore;
 using MunerApp.Application.Interfaces;
 using MunerApp.Domain.Entities;
@@ -11,17 +9,20 @@ namespace MunerApp.Infrastructure.Persistence;
 /// Publicaciones de demostración para el boletín (HU-028), para que en desarrollo y en las demos se vea lleno.
 /// Son ficticias: solo se crean con Seed:BoletinDemo = true (appsettings.Development.json), nunca en producción,
 /// y solo en fundaciones activas que todavía no tienen ninguna publicación. Las fechas de los eventos se calculan
-/// desde hoy, así siempre hay eventos próximos.
+/// desde hoy, así siempre hay eventos próximos. Las imágenes son fotos de bancos libres (ver FotosDemo).
 /// </summary>
 public static class BoletinDemo
 {
     private static readonly TimeSpan DiferenciaColombia = TimeSpan.FromHours(5); // Colombia es UTC-5 todo el año
 
+    // "Foto" es el nombre del archivo en wwwroot/img/fotos, sin la extensión .jpg
     private record Plantilla(CategoriaPublicacion Categoria, string Titulo, string Resumen, string Contenido,
-        DateTime? FechaEventoLocal, string? Lugar, int DiasDesdePublicacion, string Emoji, string Color1, string Color2);
+        DateTime? FechaEventoLocal, string? Lugar, int DiasDesdePublicacion, string Foto);
 
-    public static async Task SembrarAsync(MunerAppDbContext db, IAlmacenamientoArchivos archivos)
+    public static async Task SembrarAsync(MunerAppDbContext db, IAlmacenamientoArchivos archivos, string carpetaFotos)
     {
+        await CambiarIlustracionesPorFotosAsync(db, archivos, carpetaFotos);
+
         var conPublicaciones = await db.Publicaciones.IgnoreQueryFilters().Select(p => p.EsalId).Distinct().ToListAsync();
         var esales = await db.Esales.Where(e => e.Activa && e.Slug != null && !conPublicaciones.Contains(e.Id)).ToListAsync();
         if (esales.Count == 0) return;
@@ -43,10 +44,24 @@ public static class BoletinDemo
                     LugarEvento = p.Lugar,
                     FechaCreacion = ahora.AddDays(-p.DiasDesdePublicacion),
                     FechaPublicacion = ahora.AddDays(-p.DiasDesdePublicacion),
-                    ImagenRuta = await GuardarImagenAsync(archivos, esal.Id, p)
+                    ImagenRuta = await FotosDemo.GuardarAsync(archivos, carpetaFotos, $"esal/{esal.Id}/boletin", p.Foto)
                 });
             }
         }
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>Las publicaciones de demostración de la versión anterior tenían ilustraciones (.svg): se cambian por fotos.</summary>
+    private static async Task CambiarIlustracionesPorFotosAsync(MunerAppDbContext db, IAlmacenamientoArchivos archivos, string carpetaFotos)
+    {
+        var fotos = Plantillas("", null, Hoy()).ToDictionary(p => p.Titulo, p => p.Foto);
+        var titulos = fotos.Keys.ToList();
+        var antiguas = (await db.Publicaciones.IgnoreQueryFilters().Where(p => titulos.Contains(p.Titulo)).ToListAsync())
+            .Where(p => FotosDemo.EsIlustracion(p.ImagenRuta)).ToList();
+        if (antiguas.Count == 0) return;
+
+        foreach (var p in antiguas)
+            p.ImagenRuta = await FotosDemo.GuardarAsync(archivos, carpetaFotos, $"esal/{p.EsalId}/boletin", fotos[p.Titulo]) ?? p.ImagenRuta;
         await db.SaveChangesAsync();
     }
 
@@ -81,7 +96,7 @@ public static class BoletinDemo
             Regalo sugerido: desde $ 30.000. Habrá chocolate caliente, buñuelos y mucho ronroneo.
             Cupos limitados: hay un participante por cada gato de la sede.
             """,
-            gatoSecreto, $"Sede de {fundacion}{enCiudad}", 3, "🎁", "#C2410C", "#F59E0B");
+            gatoSecreto, $"Sede de {fundacion}{enCiudad}", 3, "gato-secreto");
 
         yield return new(CategoriaPublicacion.Evento,
             "Gran jornada de adopción: encuentra a tu compañero",
@@ -95,7 +110,7 @@ public static class BoletinDemo
 
             Recuerda: adoptar es para toda la vida. Trae tu documento de identidad si quieres iniciar el proceso ese mismo día.
             """,
-            Sabado(hoy.AddDays(10), 10), $"Parque principal{enCiudad}", 6, "🐾", "#0F5257", "#14B8A6");
+            Sabado(hoy.AddDays(10), 10), $"Parque principal{enCiudad}", 6, "adopcion");
 
         yield return new(CategoriaPublicacion.Evento,
             "Taller gratuito: primeros auxilios para perros y gatos",
@@ -110,7 +125,7 @@ public static class BoletinDemo
 
             El taller es gratuito y virtual. Inscríbete escribiéndonos y te enviamos el enlace. Si puedes, haz un aporte voluntario: va directo a la atención de los rescatados.
             """,
-            Sabado(hoy.AddDays(24), 9), "Virtual (te enviamos el enlace al inscribirte)", 2, "🩺", "#1D4ED8", "#60A5FA");
+            Sabado(hoy.AddDays(24), 9), "Virtual (te enviamos el enlace al inscribirte)", 2, "taller-vet");
 
         yield return new(CategoriaPublicacion.Evento,
             "Noche de cine y mantas por los peludos",
@@ -122,7 +137,7 @@ public static class BoletinDemo
 
             Todo lo recaudado se destina a los tratamientos veterinarios del mes.
             """,
-            Sabado(hoy.AddDays(38), 19), $"Sede de {fundacion}{enCiudad}", 1, "🎬", "#6D28D9", "#A78BFA");
+            Sabado(hoy.AddDays(38), 19), $"Sede de {fundacion}{enCiudad}", 1, "cine");
 
         yield return new(CategoriaPublicacion.Logro,
             "¡Superamos las 100 adopciones este año!",
@@ -134,7 +149,7 @@ public static class BoletinDemo
 
             Gracias por hacerlo posible. Y como todavía hay muchos esperando, vamos por los próximos cien.
             """,
-            null, null, 9, "🏆", "#15803D", "#4ADE80");
+            null, null, 9, "familia-perro");
 
         yield return new(CategoriaPublicacion.Noticia,
             "Así fue la jornada de esterilización: 48 gatitos operados",
@@ -146,7 +161,7 @@ public static class BoletinDemo
 
             Gracias a los veterinarios voluntarios, a quienes trajeron a los gatos de su cuadra y a cada donante que aportó a esta causa.
             """,
-            null, null, 15, "✂️", "#BE185D", "#F472B6");
+            null, null, 15, "esterilizacion");
 
         yield return new(CategoriaPublicacion.Evento,
             "Caminata perruna por la adopción responsable",
@@ -156,7 +171,7 @@ public static class BoletinDemo
 
             Recogimos 180 kilos de concentrado y 12 personas se inscribieron como voluntarias. ¡Nos vemos en la próxima!
             """,
-            Sabado(hoy.AddDays(-20), 8), $"Parque principal{enCiudad}", 18, "🐕", "#92400E", "#D97706");
+            Sabado(hoy.AddDays(-20), 8), $"Parque principal{enCiudad}", 18, "caminata");
 
         yield return new(CategoriaPublicacion.Noticia,
             "Buscamos hogares de paso para diciembre",
@@ -168,27 +183,6 @@ public static class BoletinDemo
 
             Escríbenos si quieres ser hogar de paso. Te explicamos todo el proceso.
             """,
-            null, null, 4, "🏡", "#0E7490", "#22D3EE");
-    }
-
-    /// <summary>Imagen sencilla (degradado con un emoji grande) para que las tarjetas se vean ilustradas.</summary>
-    private static async Task<string> GuardarImagenAsync(IAlmacenamientoArchivos archivos, int esalId, Plantilla p)
-    {
-        var svg = $"""
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
-              <defs>
-                <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="{p.Color1}"/>
-                  <stop offset="1" stop-color="{p.Color2}"/>
-                </linearGradient>
-              </defs>
-              <rect width="1600" height="900" fill="url(#g)"/>
-              <circle cx="1350" cy="150" r="260" fill="#ffffff" opacity=".08"/>
-              <circle cx="180" cy="820" r="320" fill="#ffffff" opacity=".07"/>
-              <text x="800" y="560" font-size="380" text-anchor="middle" font-family="Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji, sans-serif">{WebUtility.HtmlEncode(p.Emoji)}</text>
-            </svg>
-            """;
-        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
-        return await archivos.GuardarAsync(stream, $"esal/{esalId}/boletin", ".svg", publico: true);
+            null, null, 4, "hogar-paso");
     }
 }

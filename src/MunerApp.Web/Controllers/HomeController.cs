@@ -50,8 +50,9 @@ public class HomeController : Controller
 
         var esales = await esalesPublicas
             .OrderByDescending(e => e.FechaActualizacionPerfil ?? e.FechaRegistro)
-            .Select(e => new { e.Slug, e.Nombre, e.TipoEntidad, e.DescripcionCorta, e.Ciudad, e.LogoRuta })
+            .Select(e => new { e.Id, e.Slug, e.Nombre, e.TipoEntidad, e.DescripcionCorta, e.Ciudad, e.LogoRuta })
             .ToListAsync();
+        var portadas = await PortadasEsal.ObtenerAsync(_db, esales.Take(3).Select(e => e.Id).ToList());
 
         var causas = await _causas.ListarAsync(esalId: null, maxCerradas: 0);
 
@@ -61,11 +62,6 @@ public class HomeController : Controller
             .Take(4)
             .Select(b => new { b.Id, b.Nombre, b.FotoPublicaRuta, b.HistoriaPublica, Fundacion = b.Esal!.Nombre, b.Esal.Slug })
             .ToListAsync();
-
-        var fotos = await _db.FotosEsal.IgnoreQueryFilters().AsNoTracking()
-            .Where(f => idsPublicas.Contains(f.EsalId))
-            .OrderBy(f => f.Orden).ThenByDescending(f => f.Id)
-            .Select(f => f.Ruta).Take(3).ToListAsync();
 
         // HU-028: "El periódico de MunerApp" con lo bueno que pasa en las fundaciones, visible sin cuenta
         ViewData["Periodico"] = await _periodico.ArmarAsync(recientes: 3);
@@ -79,12 +75,12 @@ public class HomeController : Controller
                 TipoEntidad = e.TipoEntidad,
                 DescripcionCorta = e.DescripcionCorta,
                 Ciudad = e.Ciudad,
-                LogoUrl = e.LogoRuta is null ? null : _archivos.UrlPublica(e.LogoRuta)
+                LogoUrl = e.LogoRuta is null ? null : _archivos.UrlPublica(e.LogoRuta),
+                PortadaUrl = portadas.TryGetValue(e.Id, out var portada) ? _archivos.UrlPublica(portada) : null
             }).ToList(),
             Causas = causas.Abiertas.Where(c => c.RecibeDonaciones).Take(3).ToList(),
             Gatos = gatos.Select(g => new GatoApadrinableHome(g.Id, g.Nombre,
                 g.FotoPublicaRuta is null ? null : _archivos.UrlPublica(g.FotoPublicaRuta), g.Fundacion, g.Slug!, g.HistoriaPublica)).ToList(),
-            FotosHero = fotos.Select(_archivos.UrlPublica).ToList(),
             FundacionesPublicadas = esales.Count,
             GatosConHogar = await beneficiarios.CountAsync(b => hogares.Contains(b.Estado)),
             GatosCuidados = await beneficiarios.CountAsync(b => enCasa.Contains(b.Estado)),

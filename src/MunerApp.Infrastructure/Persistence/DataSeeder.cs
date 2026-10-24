@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MunerApp.Application.Interfaces;
 using MunerApp.Domain.Common;
@@ -29,17 +30,20 @@ public static class DataSeeder
 
             await AsignarSlugsAsync(scope.ServiceProvider.GetRequiredService<MunerAppDbContext>());
 
+            // Fotos de bancos libres que usan los datos de ejemplo (vienen publicadas con la aplicación)
+            var carpetaFotos = Path.Combine(scope.ServiceProvider.GetRequiredService<IHostEnvironment>().ContentRootPath, "wwwroot", "img", "fotos");
+
             // Fundaciones de ejemplo con causas, donaciones y actividades (antes del boletín demo: ya traen sus publicaciones)
             if (config.GetValue<bool>("Seed:FundacionesDemo"))
                 await FundacionesDemo.SembrarAsync(scope.ServiceProvider.GetRequiredService<MunerAppDbContext>(),
                     scope.ServiceProvider.GetRequiredService<UserManager<Usuario>>(),
                     scope.ServiceProvider.GetRequiredService<IAlmacenamientoArchivos>(),
-                    config["Seed:FundacionesDemoContrasena"]);
+                    carpetaFotos, config["Seed:FundacionesDemoContrasena"]);
 
             // Publicaciones ficticias para que el boletín no se vea vacío en desarrollo y en las demos (HU-028)
             if (config.GetValue<bool>("Seed:BoletinDemo"))
                 await BoletinDemo.SembrarAsync(scope.ServiceProvider.GetRequiredService<MunerAppDbContext>(),
-                    scope.ServiceProvider.GetRequiredService<IAlmacenamientoArchivos>());
+                    scope.ServiceProvider.GetRequiredService<IAlmacenamientoArchivos>(), carpetaFotos);
 
             var email = config["Seed:SuperAdmin:Email"];
             var password = config["Seed:SuperAdmin:Password"];

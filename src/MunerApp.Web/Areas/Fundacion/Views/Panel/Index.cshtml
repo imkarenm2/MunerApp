@@ -39,10 +39,6 @@
                 </div>
             }
         </div>
-        @if (Model.FotoPortada is null)
-        {
-            <div class="panel-hero-ilustracion d-none d-md-block"><partial name="_IlustracionGatos" /></div>
-        }
     </section>
 
     @* HU-039: alertas de salud para administradores y voluntarios de salud *@
@@ -138,7 +134,7 @@
                     <div class="text-center py-4">
                         <div class="icono-circulo exito mx-auto mb-3"><i class="bi bi-emoji-smile" aria-hidden="true"></i></div>
                         <p class="fw-semibold mb-1">¡Todo al día!</p>
-                        <p class="small text-suave mb-0">No hay nada pendiente por ahora. Los gatos se lo agradecen.</p>
+                        <p class="small text-suave mb-0">No hay nada pendiente por ahora.</p>
                     </div>
                 }
                 else
@@ -234,7 +230,7 @@
                 <h2 class="h5 mb-3"><i class="bi bi-clock-history me-2 text-acento" aria-hidden="true"></i>Lo último que pasó</h2>
                 @if (Model.Actividad.Count == 0)
                 {
-                    <p class="small text-suave mb-0">Aquí verán los gatos que llegan, los cambios de estado@(Model.EsAdmin ? ", las donaciones" : "") y los registros de salud.</p>
+                    <p class="small text-suave mb-0">Aquí aparecerán los movimientos recientes de la fundación: beneficiarios, cambios de estado@(Model.EsAdmin ? ", donaciones" : "") y registros de salud.</p>
                 }
                 else
                 {

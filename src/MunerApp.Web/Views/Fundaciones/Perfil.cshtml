@@ -30,7 +30,7 @@
 }
 
 @* ---------- Encabezado del perfil ---------- *@
-<section class="perfil-portada">
+<section class="perfil-portada @(Model.Fotos.Count > 0 ? "con-foto" : "")" style="@(Model.Fotos.Count > 0 ? $"--portada: url('{Model.Fotos[0]}')" : null)">
     <div class="container">
         <div class="perfil-encabezado">
             <div class="perfil-logo">

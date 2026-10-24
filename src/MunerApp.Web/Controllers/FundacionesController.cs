@@ -53,8 +53,9 @@ public class FundacionesController : Controller
             .OrderBy(e => e.Nombre)
             .Skip((pagina - 1) * PorPagina)
             .Take(PorPagina)
-            .Select(e => new { e.Slug, e.Nombre, e.TipoEntidad, e.DescripcionCorta, e.Ciudad, e.LogoRuta })
+            .Select(e => new { e.Id, e.Slug, e.Nombre, e.TipoEntidad, e.DescripcionCorta, e.Ciudad, e.LogoRuta })
             .ToListAsync();
+        var portadas = await PortadasEsal.ObtenerAsync(_db, esales.Select(e => e.Id).ToList());
 
         return View(new DirectorioViewModel
         {
@@ -69,7 +70,8 @@ public class FundacionesController : Controller
                 TipoEntidad = e.TipoEntidad,
                 DescripcionCorta = e.DescripcionCorta,
                 Ciudad = e.Ciudad,
-                LogoUrl = UrlArchivo(e.LogoRuta)
+                LogoUrl = UrlArchivo(e.LogoRuta),
+                PortadaUrl = UrlArchivo(portadas.GetValueOrDefault(e.Id))
             }).ToList()
         });
     }
