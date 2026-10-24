@@ -34,6 +34,10 @@ public class EsalDatosViewModel
     [Display(Name = "Tipo de entidad")]
     public string TipoEntidad { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Selecciona el municipio.")]
+    [Display(Name = "Municipio")]
+    public string Ciudad { get; set; } = string.Empty;
+
     [Required(ErrorMessage = "Ingresa el correo de contacto.")]
     [Correo]
     [Display(Name = "Correo de contacto de la fundación")]

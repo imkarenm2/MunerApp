@@ -45,7 +45,7 @@ public class HomeController : Controller
         var esalesPublicas = _db.Esales.AsNoTracking().Where(ReglasPublicacion.EnDirectorio);
         var idsPublicas = await esalesPublicas.Select(e => e.Id).ToListAsync();
         var enCasa = ReglasBeneficiario.EnCasa;
-        var hogares = new[] { EstadoBeneficiario.Adoptado, EstadoBeneficiario.EncontroSuHogar };
+        var estadosPublicos = MunerApp.Domain.Entities.Causa.EstadosPublicos;
         var beneficiarios = _db.Beneficiarios.IgnoreQueryFilters().AsNoTracking().Where(b => idsPublicas.Contains(b.EsalId));
 
         var esales = await esalesPublicas
@@ -82,11 +82,12 @@ public class HomeController : Controller
             Apadrinables = apadrinables.Select(g => new ApadrinableHome(g.Id, g.Nombre,
                 g.FotoPublicaRuta is null ? null : _archivos.UrlPublica(g.FotoPublicaRuta), g.Fundacion, g.Slug!, g.HistoriaPublica)).ToList(),
             FundacionesPublicadas = esales.Count,
-            BeneficiariosConHogar = await beneficiarios.CountAsync(b => hogares.Contains(b.Estado)),
-            BeneficiariosCuidados = await beneficiarios.CountAsync(b => enCasa.Contains(b.Estado)),
-            Donado = await _db.Donaciones.IgnoreQueryFilters()
-                .Where(d => d.Estado == EstadoDonacion.Confirmada && idsPublicas.Contains(d.EsalId))
+            // Solo cifras que las fundaciones ya muestran en sus páginas: nada de su operación interna
+            RecaudadoCausas = await _db.Donaciones.IgnoreQueryFilters()
+                .Where(d => d.Estado == EstadoDonacion.Confirmada && d.CausaId != null && idsPublicas.Contains(d.EsalId)
+                    && estadosPublicos.Contains(d.Causa!.Estado))
                 .SumAsync(d => (decimal?)d.Valor) ?? 0,
+            Rendiciones = await _db.RendicionesCausa.IgnoreQueryFilters().CountAsync(r => idsPublicas.Contains(r.EsalId)),
             CausasAbiertas = causas.Abiertas.Count(c => c.RecibeDonaciones),
             Padrinos = await _db.Apadrinamientos.IgnoreQueryFilters()
                 .Where(a => a.Estado == EstadoApadrinamiento.Activo && idsPublicas.Contains(a.EsalId))

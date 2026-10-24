@@ -70,6 +70,9 @@ public class EsalesController : Controller
 
         if (!TiposEntidad.Todos.Contains(model.TipoEntidad))
             ModelState.AddModelError(nameof(model.TipoEntidad), "Selecciona un tipo de entidad de la lista.");
+        // El municipio ubica a la fundación en "Dónde estamos" del inicio y en el buscador del directorio
+        if (!Region.EsMunicipioValido(model.Ciudad))
+            ModelState.AddModelError(nameof(model.Ciudad), $"Selecciona un municipio de {Region.Nombre}.");
 
         if (!ModelState.IsValid) return View(model);
 
@@ -87,6 +90,7 @@ public class EsalesController : Controller
             Nombre = model.Nombre,
             Nit = model.Nit,
             TipoEntidad = model.TipoEntidad,
+            Ciudad = model.Ciudad.Trim(),
             CorreoContacto = model.CorreoContacto
         };
 
@@ -142,6 +146,7 @@ public class EsalesController : Controller
             Nombre = esal.Nombre,
             Nit = esal.Nit,
             TipoEntidad = esal.TipoEntidad,
+            Ciudad = esal.Ciudad ?? "",
             CorreoContacto = esal.CorreoContacto
         });
     }
@@ -156,11 +161,15 @@ public class EsalesController : Controller
         await ValidarDuplicadosAsync(model);
         if (!TiposEntidad.Todos.Contains(model.TipoEntidad))
             ModelState.AddModelError(nameof(model.TipoEntidad), "Selecciona un tipo de entidad de la lista.");
+        // El municipio ubica a la fundación en "Dónde estamos" del inicio y en el buscador del directorio
+        if (!Region.EsMunicipioValido(model.Ciudad))
+            ModelState.AddModelError(nameof(model.Ciudad), $"Selecciona un municipio de {Region.Nombre}.");
         if (!ModelState.IsValid) return View(model);
 
         esal.Nombre = model.Nombre;
         esal.Nit = model.Nit;
         esal.TipoEntidad = model.TipoEntidad;
+        esal.Ciudad = model.Ciudad.Trim();
         esal.CorreoContacto = model.CorreoContacto;
         await _db.SaveChangesAsync();
 

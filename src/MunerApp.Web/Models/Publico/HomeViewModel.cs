@@ -8,11 +8,13 @@ public class HomeViewModel
     public IReadOnlyList<ApadrinableHome> Apadrinables { get; set; } = Array.Empty<ApadrinableHome>();
     public IReadOnlyList<MunicipioHome> Municipios { get; set; } = Array.Empty<MunicipioHome>();
 
-    // Cifras reales
+    // Cifras públicas: solo lo que las fundaciones ya publican
     public int FundacionesPublicadas { get; set; }
-    public int BeneficiariosConHogar { get; set; }
-    public int BeneficiariosCuidados { get; set; }
-    public decimal Donado { get; set; }
+    /// <summary>Recaudado y confirmado en causas públicas (lo mismo que suman sus barras de progreso).</summary>
+    public decimal RecaudadoCausas { get; set; }
+
+    /// <summary>Rendiciones de cuentas publicadas por las fundaciones.</summary>
+    public int Rendiciones { get; set; }
     public int CausasAbiertas { get; set; }
     public int Padrinos { get; set; }
 

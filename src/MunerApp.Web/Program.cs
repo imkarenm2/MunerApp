@@ -133,8 +133,10 @@ builder.Services.AddResponseCompression(opciones =>
 builder.Services.AddRateLimiter(opciones =>
 {
     opciones.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // Se cuenta por IP y por formulario: registrarse no gasta los intentos de iniciar sesión, y varias personas
+    // en la misma red (la universidad, una oficina) no se bloquean entre sí tan rápido.
     opciones.AddPolicy(LimitesUso.Formularios, contexto => RateLimitPartition.GetFixedWindowLimiter(
-        contexto.Connection.RemoteIpAddress?.ToString() ?? "desconocida",
+        $"{contexto.Connection.RemoteIpAddress?.ToString() ?? "desconocida"}|{contexto.Request.Path.Value?.ToLowerInvariant()}",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = LimitesUso.EnviosPorMinuto, Window = TimeSpan.FromMinutes(1) }));
     opciones.OnRejected = async (contexto, cancelacion) =>
     {

@@ -9,12 +9,12 @@
     var cifras = new List<(string Valor, string Texto)>();
     if (Model.FundacionesPublicadas > 0)
         cifras.Add((Model.FundacionesPublicadas.ToString(), Model.FundacionesPublicadas == 1 ? "fundación publicada" : "fundaciones publicadas"));
-    if (Model.Donado > 0)
-        cifras.Add((Formatos.Pesos(Model.Donado), "donados y confirmados por las fundaciones"));
-    if (Model.BeneficiariosCuidados > 0)
-        cifras.Add((Model.BeneficiariosCuidados.ToString(), "animales bajo su cuidado hoy"));
-    if (Model.BeneficiariosConHogar > 0)
-        cifras.Add((Model.BeneficiariosConHogar.ToString(), "animales ya encontraron hogar"));
+    if (Model.CausasAbiertas > 0)
+        cifras.Add((Model.CausasAbiertas.ToString(), Model.CausasAbiertas == 1 ? "causa abierta" : "causas abiertas"));
+    if (Model.RecaudadoCausas > 0)
+        cifras.Add((Formatos.Pesos(Model.RecaudadoCausas), "recaudados para causas"));
+    if (Model.Rendiciones > 0)
+        cifras.Add((Model.Rendiciones.ToString(), Model.Rendiciones == 1 ? "rendición de cuentas publicada" : "rendiciones de cuentas publicadas"));
 }
 
 @if (Model.Donante is { } d)
@@ -96,7 +96,7 @@
                     </div>
                 }
             </div>
-            <p class="small text-suave mt-3 mb-0">Calculado en este momento con lo que registran las fundaciones.</p>
+            <p class="small text-suave mt-3 mb-0">Calculado en este momento con lo que las fundaciones publican en MunerApp.</p>
         </div>
     </section>
 }
