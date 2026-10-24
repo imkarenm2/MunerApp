@@ -29,6 +29,13 @@ public static class DataSeeder
 
             await AsignarSlugsAsync(scope.ServiceProvider.GetRequiredService<MunerAppDbContext>());
 
+            // Fundaciones de ejemplo con causas, donaciones y actividades (antes del boletín demo: ya traen sus publicaciones)
+            if (config.GetValue<bool>("Seed:FundacionesDemo"))
+                await FundacionesDemo.SembrarAsync(scope.ServiceProvider.GetRequiredService<MunerAppDbContext>(),
+                    scope.ServiceProvider.GetRequiredService<UserManager<Usuario>>(),
+                    scope.ServiceProvider.GetRequiredService<IAlmacenamientoArchivos>(),
+                    config["Seed:FundacionesDemoContrasena"]);
+
             // Publicaciones ficticias para que el boletín no se vea vacío en desarrollo y en las demos (HU-028)
             if (config.GetValue<bool>("Seed:BoletinDemo"))
                 await BoletinDemo.SembrarAsync(scope.ServiceProvider.GetRequiredService<MunerAppDbContext>(),
