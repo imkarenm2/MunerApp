@@ -167,11 +167,25 @@
                     <ul class="municipios">
                         @foreach (var m in Model.Municipios)
                         {
-                            <li class="@(m.Fundaciones > 0 ? "con-fundacion" : "")">
-                                <i class="bi @(m.Fundaciones > 0 ? "bi-geo-alt-fill" : "bi-geo-alt")" aria-hidden="true"></i>
-                                <span class="fw-semibold">@m.Nombre</span>
-                                <span class="small">@(m.Fundaciones == 0 ? "Próximamente" : m.Fundaciones == 1 ? "1 fundación" : $"{m.Fundaciones} fundaciones")</span>
-                            </li>
+                            @if (m.Fundaciones > 0)
+                            {
+                                @* Con fundaciones: lleva al directorio filtrado por ese municipio *@
+                                <li class="con-fundacion">
+                                    <a href="/fundaciones?q=@Uri.EscapeDataString(m.Nombre)" aria-label="Ver las fundaciones de @m.Nombre">
+                                        <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
+                                        <span class="fw-semibold">@m.Nombre</span>
+                                        <span class="small">@(m.Fundaciones == 1 ? "1 fundación" : $"{m.Fundaciones} fundaciones") →</span>
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li>
+                                    <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                                    <span class="fw-semibold">@m.Nombre</span>
+                                    <span class="small">Próximamente</span>
+                                </li>
+                            }
                         }
                     </ul>
                     @if (conFundacion == 0)
@@ -196,8 +210,8 @@
 <section class="seccion seccion-blanca" id="formas-de-ayudar">
     <div class="container">
         <div class="seccion-titulo">
-            <h2 class="titulo-seccion">Hay más de una forma de apoyar</h2>
-            <p class="text-suave mb-0">Cada fundación elige cómo quiere recibir ayuda. Tú eliges la que mejor se ajusta a ti.</p>
+            <h2 class="titulo-seccion">Cómo ayudar</h2>
+            <p class="text-suave mb-0">Hay más de una forma de apoyar. Cada fundación elige cómo quiere recibir ayuda y tú eliges la que mejor se ajusta a ti.</p>
         </div>
         @* Bloques con foto: cada forma de ayudar lleva a donde se hace *@
         <div class="formas-apoyo">
@@ -208,14 +222,14 @@
                     <span class="d-block">Aporta a una causa en línea o por transferencia, y recibe tu comprobante.</span>
                 </span>
             </a>
-            <a class="forma-apoyo" href="/fundaciones">
+            <a class="forma-apoyo" href="/fundaciones?ayuda=apadrinar">
                 <img src="~/img/fotos/esterilizacion.jpg" alt="" loading="lazy" />
                 <span class="forma-apoyo-texto">
                     <span class="h4 d-block">Apadrinar</span>
                     <span class="d-block">Acompaña a un beneficiario con un aporte periódico.</span>
                 </span>
             </a>
-            <a class="forma-apoyo" href="/fundaciones">
+            <a class="forma-apoyo" href="/fundaciones?ayuda=voluntariado">
                 <img src="~/img/fotos/arboles.jpg" alt="" loading="lazy" />
                 <span class="forma-apoyo-texto">
                     <span class="h4 d-block">Ser voluntario</span>
@@ -236,7 +250,8 @@
 <section class="seccion seccion-oscura" id="transparencia">
     <div class="container">
         <div class="seccion-titulo">
-            <h2 class="titulo-seccion">Sabes a dónde va tu ayuda</h2>
+            <h2 class="titulo-seccion mb-2">Transparencia</h2>
+            <p class="text-suave mb-0">Sabes a dónde va tu ayuda. Así funciona:</p>
         </div>
         <div class="row g-4">
             <div class="col-12 col-md-4">
@@ -278,7 +293,7 @@
                 <div>
                     <h2 class="titulo-seccion mb-0">Conoce a quién puedes ayudar</h2>
                 </div>
-                <a class="enlace-flecha" href="/fundaciones">Ver todas <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                <a class="enlace-flecha" href="/fundaciones">Ver las @Model.FundacionesPublicadas fundaciones <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
             </div>
             <div class="row g-4">
                 @foreach (var f in Model.Fundaciones)

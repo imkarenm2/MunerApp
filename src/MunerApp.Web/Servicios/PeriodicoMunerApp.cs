@@ -31,8 +31,10 @@ public class PeriodicoMunerApp
     public async Task<PeriodicoViewModel> ArmarAsync(int recientes = 4)
     {
         var ahora = DateTime.UtcNow;
+        // Solo cuentan las fundaciones publicadas en el directorio: las mismas que muestra el inicio
+        var publicas = await _db.Esales.Where(ReglasPublicacion.EnDirectorio).Select(e => e.Id).ToListAsync();
         var publicadas = _db.Publicaciones.IgnoreQueryFilters().AsNoTracking().Include(p => p.Esal)
-            .Where(p => p.Estado == EstadoPublicacion.Publicada && p.Esal!.Activa && p.Esal.Slug != null);
+            .Where(p => p.Estado == EstadoPublicacion.Publicada && publicas.Contains(p.EsalId));
 
         var proximos = await publicadas
             .Where(p => p.Categoria == CategoriaPublicacion.Evento && p.FechaEvento >= ahora)
@@ -50,23 +52,23 @@ public class PeriodicoMunerApp
             // Los eventos futuros ya salen en "Próximos eventos": aquí van las demás publicaciones
             Recientes = ultimas.Where(p => p.Id != titular?.Id && !(p.FechaEvento >= ahora))
                 .Take(recientes).Select(Tarjeta).ToList(),
-            BuenasNoticias = await BuenasNoticiasAsync(ahora),
-            Fundaciones = await _db.Esales.CountAsync(e => e.Activa && e.Slug != null),
-            Adopciones = await _db.Beneficiarios.IgnoreQueryFilters().CountAsync(b => b.Estado == EstadoBeneficiario.Adoptado && b.Esal!.Activa),
-            CausasCumplidas = (await RecaudoCausasAsync()).Count(c => c.Recaudado >= c.Meta),
+            BuenasNoticias = await BuenasNoticiasAsync(ahora, publicas),
+            Fundaciones = publicas.Count,
+            Adopciones = await _db.Beneficiarios.IgnoreQueryFilters().CountAsync(b => b.Estado == EstadoBeneficiario.Adoptado && publicas.Contains(b.EsalId)),
+            CausasCumplidas = (await RecaudoCausasAsync(publicas)).Count(c => c.Recaudado >= c.Meta),
             TotalDonado = await _db.Donaciones.IgnoreQueryFilters()
-                .Where(d => d.Estado == EstadoDonacion.Confirmada && d.Esal!.Activa).SumAsync(d => (decimal?)d.Valor) ?? 0
+                .Where(d => d.Estado == EstadoDonacion.Confirmada && publicas.Contains(d.EsalId)).SumAsync(d => (decimal?)d.Valor) ?? 0
         };
     }
 
-    private async Task<List<BuenaNoticia>> BuenasNoticiasAsync(DateTime ahora)
+    private async Task<List<BuenaNoticia>> BuenasNoticiasAsync(DateTime ahora, List<int> publicas)
     {
         var desde = ahora.AddDays(-DiasBuenasNoticias);
         var noticias = new List<BuenaNoticia>();
 
         // Adopciones: el peludo encontró familia (de la familia no se publica nada)
         var adopciones = await _db.HistorialEstadosBeneficiario.IgnoreQueryFilters().AsNoTracking()
-            .Where(h => h.Estado == EstadoBeneficiario.Adoptado && h.Fecha >= desde && h.Beneficiario!.Esal!.Activa && h.Beneficiario.Esal.Slug != null)
+            .Where(h => h.Estado == EstadoBeneficiario.Adoptado && h.Fecha >= desde && publicas.Contains(h.Beneficiario!.EsalId))
             .OrderByDescending(h => h.Fecha).Take(MaxBuenasNoticias)
             .Select(h => new { h.Fecha, h.Beneficiario!.Nombre, Esal = h.Beneficiario.Esal!.Nombre, h.Beneficiario.Esal.Slug })
             .ToListAsync();
@@ -74,14 +76,14 @@ public class PeriodicoMunerApp
             $"¡{a.Nombre} encontró una familia!", $"Fue adoptado en {a.Esal}.", $"/fundaciones/{a.Slug}", a.Fecha)));
 
         // Causas que llegaron a su meta
-        foreach (var c in (await RecaudoCausasAsync()).Where(c => c.Recaudado >= c.Meta && c.UltimaDonacion >= desde))
+        foreach (var c in (await RecaudoCausasAsync(publicas)).Where(c => c.Recaudado >= c.Meta && c.UltimaDonacion >= desde))
             noticias.Add(new BuenaNoticia("bi-bullseye", "acento",
                 $"La causa «{c.Titulo}» llegó a su meta", $"{c.Esal} reunió {Formatos.Pesos(c.Recaudado)}. ¡Gracias a cada donante!",
                 $"/fundaciones/{c.Slug}/causas/{c.Id}", c.UltimaDonacion!.Value));
 
         // Fundaciones nuevas
         var nuevas = await _db.Esales.AsNoTracking()
-            .Where(e => e.Activa && e.Slug != null && e.FechaRegistro >= desde)
+            .Where(ReglasPublicacion.EnDirectorio).Where(e => e.FechaRegistro >= desde)
             .OrderByDescending(e => e.FechaRegistro).Take(MaxBuenasNoticias)
             .Select(e => new { e.Nombre, e.Slug, e.Ciudad, e.FechaRegistro }).ToListAsync();
         noticias.AddRange(nuevas.Select(e => new BuenaNoticia("bi-stars", "",
@@ -90,7 +92,7 @@ public class PeriodicoMunerApp
 
         // Productos nuevos en las tiendas (solo fundaciones con el módulo Tienda activo)
         var productos = await _db.Productos.IgnoreQueryFilters().AsNoTracking()
-            .Where(p => p.Estado == EstadoProducto.Disponible && p.FechaCreacion >= desde && p.Esal!.Activa && p.Esal.Slug != null
+            .Where(p => p.Estado == EstadoProducto.Disponible && p.FechaCreacion >= desde && publicas.Contains(p.EsalId)
                 && _db.EsalModulos.IgnoreQueryFilters().Any(m => m.EsalId == p.EsalId && m.Activo && m.Modulo!.Codigo == CodigosModulo.Tienda))
             .OrderByDescending(p => p.FechaCreacion).Take(3)
             .Select(p => new { p.Id, p.Nombre, p.FechaCreacion, Esal = p.Esal!.Nombre, p.Esal.Slug }).ToListAsync();
@@ -102,10 +104,10 @@ public class PeriodicoMunerApp
 
     private record RecaudoCausa(int Id, string Titulo, decimal Meta, decimal Recaudado, DateTime? UltimaDonacion, string Esal, string Slug);
 
-    /// <summary>Lo recaudado por cada causa de fundaciones activas (suma de sus donaciones confirmadas).</summary>
-    private Task<List<RecaudoCausa>> RecaudoCausasAsync()
+    /// <summary>Lo recaudado por cada causa de las fundaciones publicadas (suma de sus donaciones confirmadas).</summary>
+    private Task<List<RecaudoCausa>> RecaudoCausasAsync(List<int> publicas)
         => _db.Causas.IgnoreQueryFilters().AsNoTracking()
-            .Where(c => c.Esal!.Activa && c.Esal.Slug != null)
+            .Where(c => publicas.Contains(c.EsalId))
             .Select(c => new RecaudoCausa(c.Id, c.Titulo, c.Meta,
                 _db.Donaciones.IgnoreQueryFilters().Where(d => d.CausaId == c.Id && d.Estado == EstadoDonacion.Confirmada).Sum(d => (decimal?)d.Valor) ?? 0,
                 _db.Donaciones.IgnoreQueryFilters().Where(d => d.CausaId == c.Id && d.Estado == EstadoDonacion.Confirmada).Max(d => d.FechaRevision),

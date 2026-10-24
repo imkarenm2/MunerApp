@@ -37,9 +37,18 @@ public class FundacionesController : Controller
     // ---------- HU-010: listado y búsqueda ----------
 
     [HttpGet("")]
-    public async Task<IActionResult> Index(string? q, int pagina = 1)
+    public async Task<IActionResult> Index(string? q, string? ayuda, int pagina = 1)
     {
         var consulta = _db.Esales.AsNoTracking().Where(ReglasPublicacion.EnDirectorio);
+
+        // "Cómo ayudar": solo las fundaciones que reciben voluntarios o tienen beneficiarios para apadrinar
+        ayuda = ayuda is DirectorioViewModel.Voluntariado or DirectorioViewModel.Apadrinar ? ayuda : null;
+        if (ayuda == DirectorioViewModel.Voluntariado)
+            consulta = consulta.Where(e => !e.VoluntariadoPausado);
+        else if (ayuda == DirectorioViewModel.Apadrinar)
+            consulta = consulta.Where(e =>
+                _db.EsalModulos.IgnoreQueryFilters().Any(m => m.EsalId == e.Id && m.Activo && m.Modulo!.Codigo == CodigosModulo.Beneficiarios)
+                && _db.Beneficiarios.IgnoreQueryFilters().Any(b => b.EsalId == e.Id && b.Apadrinable));
 
         q = q?.Trim();
         if (!string.IsNullOrEmpty(q))
@@ -60,6 +69,7 @@ public class FundacionesController : Controller
         return View(new DirectorioViewModel
         {
             Busqueda = q,
+            Ayuda = ayuda,
             Pagina = pagina,
             TotalPaginas = totalPaginas,
             Total = total,

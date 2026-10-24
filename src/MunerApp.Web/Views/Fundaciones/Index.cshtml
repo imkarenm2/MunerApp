@@ -3,6 +3,13 @@
     ViewData["Title"] = "Fundaciones";
     ViewData["Nav"] = "Fundaciones";
     var buscando = !string.IsNullOrEmpty(Model.Busqueda);
+    var (titulo, subtitulo, enlace) = Model.Ayuda switch
+    {
+        DirectorioViewModel.Voluntariado => ("Sé voluntario", "Fundaciones que hoy reciben voluntarios. Elige una y cuéntale cuándo puedes ayudar.", "Postularme"),
+        DirectorioViewModel.Apadrinar => ("Apadrina", "Fundaciones con beneficiarios que buscan un padrino. Elige una y conócelos.", "Ver a quién apadrinar"),
+        _ => ("Conoce a las fundaciones", "Cada una con su historia, sus documentos y las formas en que puedes apoyarla.", "Ver perfil")
+    };
+    var filtros = (Model.Ayuda is null ? "" : "&ayuda=" + Model.Ayuda) + (buscando ? "&q=" + Uri.EscapeDataString(Model.Busqueda!) : "");
 }
 
 <section class="cabecera-pagina">
@@ -10,11 +17,15 @@
         <div class="row align-items-end gy-3">
             <div class="col-12 col-lg-7">
                 <div class="sobretitulo mb-2">Directorio</div>
-                <h1 class="mb-2">Conoce a las fundaciones</h1>
-                <p class="text-suave mb-0">Cada una con su historia, sus documentos y las formas en que puedes apoyarla.</p>
+                <h1 class="mb-2">@titulo</h1>
+                <p class="text-suave mb-0">@subtitulo</p>
             </div>
             <div class="col-12 col-lg-5">
                 <form method="get" action="/fundaciones" role="search" class="buscador">
+                    @if (Model.Ayuda is not null)
+                    {
+                        <input type="hidden" name="ayuda" value="@Model.Ayuda" />
+                    }
                     <label for="q" class="visually-hidden">Buscar fundación por nombre o ciudad</label>
                     <i class="bi bi-search" aria-hidden="true"></i>
                     <input id="q" name="q" type="search" class="form-control" value="@Model.Busqueda"
@@ -35,6 +46,13 @@
             <a href="/fundaciones" class="small ms-1">Ver todas</a>
         </div>
     }
+    else if (Model.Ayuda is not null && Model.Fundaciones.Count > 0)
+    {
+        <p class="text-suave mb-4">
+            @Model.Total @(Model.Total == 1 ? "fundación" : "fundaciones") ·
+            <a href="/fundaciones">Ver todas las fundaciones</a>
+        </p>
+    }
 
     @if (Model.Fundaciones.Count == 0)
     {
@@ -45,6 +63,18 @@
                 <h2 class="h5">No encontramos fundaciones con "@Model.Busqueda"</h2>
                 <p class="text-suave">Revisa cómo lo escribiste o busca con otra palabra.</p>
                 <a href="/fundaciones" class="btn btn-suave">Ver todas las fundaciones</a>
+            }
+            else if (Model.Ayuda == DirectorioViewModel.Apadrinar)
+            {
+                <h2 class="h5">Por ahora ninguna fundación tiene beneficiarios para apadrinar</h2>
+                <p class="text-suave">Mientras tanto puedes apoyarlas de otras formas.</p>
+                <a href="/fundaciones" class="btn btn-outline-dark">Ver todas las fundaciones</a>
+            }
+            else if (Model.Ayuda == DirectorioViewModel.Voluntariado)
+            {
+                <h2 class="h5">Por ahora ninguna fundación está recibiendo voluntarios</h2>
+                <p class="text-suave">Vuelve pronto o apóyalas de otras formas.</p>
+                <a href="/fundaciones" class="btn btn-outline-dark">Ver todas las fundaciones</a>
             }
             else
             {
@@ -59,7 +89,7 @@
             @foreach (var f in Model.Fundaciones)
             {
                 <div class="col-12 col-sm-6 col-lg-4">
-                    <a class="tarjeta-esal h-100" href="/fundaciones/@f.Slug">
+                    <a class="tarjeta-esal h-100" href="@Model.Destino(f.Slug)">
                         <span class="tarjeta-marco">
                             @if (f.PortadaUrl is not null)
                             {
@@ -80,7 +110,7 @@
                                 }
                             </div>
                             <p class="texto-recortado text-suave mb-3">@(f.DescripcionCorta ?? "Conoce su labor y las formas en que puedes apoyarla.")</p>
-                            <span class="enlace-flecha">Ver perfil <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+                            <span class="enlace-flecha">@enlace <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
                         </div>
                     </a>
                 </div>
@@ -94,7 +124,7 @@
                     @for (var i = 1; i <= Model.TotalPaginas; i++)
                     {
                         <li class="page-item @(i == Model.Pagina ? "active" : "")">
-                            <a class="page-link" href="/fundaciones?pagina=@i@(buscando ? "&q=" + Uri.EscapeDataString(Model.Busqueda!) : "")"
+                            <a class="page-link" href="/fundaciones?pagina=@i@filtros"
                                aria-current="@(i == Model.Pagina ? "page" : null)">@i</a>
                         </li>
                     }
