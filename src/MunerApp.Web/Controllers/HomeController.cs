@@ -56,7 +56,7 @@ public class HomeController : Controller
 
         var causas = await _causas.ListarAsync(esalId: null, maxCerradas: 0);
 
-        var gatos = await beneficiarios
+        var apadrinables = await beneficiarios
             .Where(b => b.Apadrinable && enCasa.Contains(b.Estado) && b.FotoPublicaRuta != null)
             .OrderByDescending(b => b.FechaApadrinable)
             .Take(4)
@@ -79,11 +79,11 @@ public class HomeController : Controller
                 PortadaUrl = portadas.TryGetValue(e.Id, out var portada) ? _archivos.UrlPublica(portada) : null
             }).ToList(),
             Causas = causas.Abiertas.Where(c => c.RecibeDonaciones).Take(3).ToList(),
-            Gatos = gatos.Select(g => new GatoApadrinableHome(g.Id, g.Nombre,
+            Apadrinables = apadrinables.Select(g => new ApadrinableHome(g.Id, g.Nombre,
                 g.FotoPublicaRuta is null ? null : _archivos.UrlPublica(g.FotoPublicaRuta), g.Fundacion, g.Slug!, g.HistoriaPublica)).ToList(),
             FundacionesPublicadas = esales.Count,
-            GatosConHogar = await beneficiarios.CountAsync(b => hogares.Contains(b.Estado)),
-            GatosCuidados = await beneficiarios.CountAsync(b => enCasa.Contains(b.Estado)),
+            BeneficiariosConHogar = await beneficiarios.CountAsync(b => hogares.Contains(b.Estado)),
+            BeneficiariosCuidados = await beneficiarios.CountAsync(b => enCasa.Contains(b.Estado)),
             Donado = await _db.Donaciones.IgnoreQueryFilters()
                 .Where(d => d.Estado == EstadoDonacion.Confirmada && idsPublicas.Contains(d.EsalId))
                 .SumAsync(d => (decimal?)d.Valor) ?? 0,

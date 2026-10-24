@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @await RenderSectionAsync("Estilos", required: false)
 </head>
-<body class="d-flex flex-column min-vh-100 @(barraInferior ? "con-barra-inferior" : "")">
+<body class="d-flex flex-column min-vh-100 @(barraInferior ? "con-barra-inferior" : "") @(ViewData["ConBarraAccion"] is true ? "con-barra-accion" : "")">
     <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
 
     <header class="sticky-top">
@@ -120,7 +120,7 @@
             <a href="/tienda" class="@(nav == "Tienda" ? "activo" : "")" aria-current="@(nav == "Tienda" ? "page" : null)"><i class="bi bi-shop" aria-hidden="true"></i>Tienda</a>
             @if (autenticado)
             {
-                <a href="/mis-donaciones" class="@(nav == "MisAportes" ? "activo" : "")"><i class="bi bi-heart" aria-hidden="true"></i>Mis aportes</a>
+                <a href="/mis-donaciones" class="@(nav == "MisAportes" ? "activo" : "")" aria-current="@(nav == "MisAportes" ? "page" : null)"><i class="bi bi-heart" aria-hidden="true"></i>Mis aportes</a>
             }
             else
             {

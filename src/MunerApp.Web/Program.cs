@@ -170,8 +170,9 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseRouting();
 app.UseAuthentication();
 
-// Un usuario del panel de fundación sin ESAL asignada (por ejemplo, desvinculado) no entra al panel:
-// vuelve al inicio en lugar de ver un error. El superadministrador sí puede abrirlo.
+// Un usuario del panel de fundación sin ESAL asignada (por ejemplo, desvinculado) no entra al panel.
+// Al abrir una página ve "Acceso denegado" (sabe qué pasó); un formulario o una llamada interna recibe 403.
+// El superadministrador sí puede abrirlo.
 app.Use(async (contexto, siguiente) =>
 {
     var usuario = contexto.User;
@@ -180,7 +181,10 @@ app.Use(async (contexto, siguiente) =>
         && !usuario.IsInRole(Roles.SuperAdministrador)
         && usuario.FindFirst(MunerAppClaims.EsalId) is null)
     {
-        contexto.Response.Redirect("/");
+        if (HttpMethods.IsGet(contexto.Request.Method))
+            contexto.Response.Redirect("/Cuenta/AccesoDenegado");
+        else
+            contexto.Response.StatusCode = StatusCodes.Status403Forbidden;
         return;
     }
     await siguiente();
