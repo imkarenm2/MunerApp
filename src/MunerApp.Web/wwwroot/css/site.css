@@ -1520,7 +1520,7 @@ a.kpi:hover { border-color: #CFCEC6; box-shadow: var(--mu-sombra-hover); color: 
 .publicacion-imagen { border-radius: 16px !important; }
 
 /* ---- Un solo fondo para todo el contenido y una sección oscura que corta el ritmo ---- */
-:root { --mu-fondo-oscuro: #161716; }
+:root { --mu-fondo-oscuro: #1F4D3A; }
 .seccion-blanca { background: transparent; }
 .seccion-oscura { background: var(--mu-fondo-oscuro); color: #fff; }
 .seccion-oscura h2, .seccion-oscura h3 { color: #fff; }
