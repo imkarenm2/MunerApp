@@ -1,3 +1,13 @@
+@{
+    var nav = ViewData["Nav"] as string;
+    var esInicio = ViewContext.RouteData.Values["area"] is null or ""
+        && ViewContext.RouteData.Values["controller"] as string == "Home"
+        && ViewContext.RouteData.Values["action"] as string == "Index";
+    var esEquipoOAdmin = User.IsInRole(Roles.SuperAdministrador) || User.IsInRole(Roles.Veedor)
+        || User.IsInRole(Roles.AdministradorESAL) || User.IsInRole(Roles.Voluntario);
+    // Barra de abajo en el celular (visitantes y donantes): los botones principales siempre a la mano
+    var barraInferior = ViewData["Panel"] is not true && !esEquipoOAdmin;
+}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -14,16 +24,18 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @await RenderSectionAsync("Estilos", required: false)
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100 @(barraInferior ? "con-barra-inferior" : "")">
     <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
 
     <header class="sticky-top">
         <nav class="navbar navbar-expand-lg mu-navbar py-2" aria-label="Menú principal">
             <div class="container">
                 <partial name="_Logo" />
-                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#menu"
-                        aria-controls="menu" aria-expanded="false" aria-label="Abrir menú">
-                    <span class="navbar-toggler-icon"></span>
+                @* En el celular el botón dice "Menú": un ícono de tres rayas solo no lo reconoce todo el mundo *@
+                <button class="navbar-toggler boton-menu" type="button" data-bs-toggle="collapse" data-bs-target="#menu"
+                        aria-controls="menu" aria-expanded="false">
+                    <span class="navbar-toggler-icon" aria-hidden="true"></span>
+                    <span class="boton-menu-texto">Menú</span>
                 </button>
                 <div class="collapse navbar-collapse" id="menu">
                     <ul class="navbar-nav mx-lg-auto my-3 my-lg-0 gap-lg-1">
@@ -42,12 +54,13 @@
                         }
                         else
                         {
-                            <li class="nav-item"><a class="nav-link @(ViewData["Nav"] as string == "Fundaciones" ? "active" : "")" href="/fundaciones">Fundaciones</a></li>
-                            <li class="nav-item"><a class="nav-link @(ViewData["Nav"] as string == "Causas" ? "active" : "")" href="/causas">Causas</a></li>
-                            <li class="nav-item"><a class="nav-link @(ViewData["Nav"] as string == "Tienda" ? "active" : "")" href="/tienda">Tienda</a></li>
-                            <li class="nav-item"><a class="nav-link @(ViewData["Nav"] as string == "Boletin" ? "active" : "")" href="/boletin">Boletín</a></li>
-                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar">Cómo ayudar</a></li>
-                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="transparencia">Transparencia</a></li>
+                            <li class="nav-item d-lg-none"><a class="nav-link @(esInicio ? "active" : "")" href="/"><i class="bi bi-house-door" aria-hidden="true"></i>Inicio</a></li>
+                            <li class="nav-item"><a class="nav-link @(nav == "Fundaciones" ? "active" : "")" href="/fundaciones"><i class="bi bi-buildings" aria-hidden="true"></i>Fundaciones</a></li>
+                            <li class="nav-item"><a class="nav-link @(nav == "Causas" ? "active" : "")" href="/causas"><i class="bi bi-bullseye" aria-hidden="true"></i>Causas</a></li>
+                            <li class="nav-item"><a class="nav-link @(nav == "Tienda" ? "active" : "")" href="/tienda"><i class="bi bi-shop" aria-hidden="true"></i>Tienda</a></li>
+                            <li class="nav-item"><a class="nav-link @(nav == "Boletin" ? "active" : "")" href="/boletin"><i class="bi bi-newspaper" aria-hidden="true"></i>Boletín</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar"><i class="bi bi-hand-thumbs-up" aria-hidden="true"></i>Cómo ayudar</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="transparencia"><i class="bi bi-shield-check" aria-hidden="true"></i>Transparencia</a></li>
                         }
                     </ul>
                     <partial name="_LoginPartial" />
@@ -95,6 +108,25 @@
             <p class="small text-suave mb-0">© @DateTime.Now.Year MunerApp · <a href="/privacidad">Política de privacidad</a></p>
         </div>
     </footer>
+    }
+
+    @if (barraInferior)
+    {
+        var autenticado = User.Identity?.IsAuthenticated ?? false;
+        <nav class="barra-inferior d-lg-none" aria-label="Accesos rápidos">
+            <a href="/" class="@(esInicio ? "activo" : "")" aria-current="@(esInicio ? "page" : null)"><i class="bi bi-house-door" aria-hidden="true"></i>Inicio</a>
+            <a href="/fundaciones" class="@(nav == "Fundaciones" ? "activo" : "")" aria-current="@(nav == "Fundaciones" ? "page" : null)"><i class="bi bi-buildings" aria-hidden="true"></i>Fundaciones</a>
+            <a href="/causas" class="@(nav == "Causas" ? "activo" : "")" aria-current="@(nav == "Causas" ? "page" : null)"><i class="bi bi-bullseye" aria-hidden="true"></i>Causas</a>
+            <a href="/tienda" class="@(nav == "Tienda" ? "activo" : "")" aria-current="@(nav == "Tienda" ? "page" : null)"><i class="bi bi-shop" aria-hidden="true"></i>Tienda</a>
+            @if (autenticado)
+            {
+                <a href="/mis-donaciones" class="@(nav == "MisAportes" ? "activo" : "")"><i class="bi bi-heart" aria-hidden="true"></i>Mis aportes</a>
+            }
+            else
+            {
+                <a asp-area="" asp-controller="Cuenta" asp-action="IniciarSesion"><i class="bi bi-person-circle" aria-hidden="true"></i>Ingresar</a>
+            }
+        </nav>
     }
 
     <!-- Ventana de confirmación general: se usa con <form data-confirmar="..."> (ver site.js) -->
