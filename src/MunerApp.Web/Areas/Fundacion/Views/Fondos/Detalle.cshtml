@@ -1,0 +1,143 @@
+@model FondoDetalleViewModel
+@{
+    var f = Model.Fondo;
+    ViewData["Title"] = f.Nombre;
+    var hoy = Formatos.Hoy();
+}
+<div class="container py-4 py-md-5" style="max-width: 1100px">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Libro de fondos</a>
+    <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mb-1">
+        <h1 class="h2 mb-0">@f.Nombre</h1>
+        <span class="mu-badge">@Textos.De(f.Tipo)</span>
+        @if (!f.Abierto)
+        {
+            <span class="mu-badge"><i class="bi bi-lock" aria-hidden="true"></i>Cerrado</span>
+        }
+    </div>
+    @if (!string.IsNullOrEmpty(f.Descripcion))
+    {
+        <p class="text-suave mb-3">@f.Descripcion</p>
+    }
+
+    <div class="row g-3 my-2">
+        <div class="col-6 col-md-3"><div class="kpi exito"><span class="kpi-valor">@Formatos.Pesos(f.Donaciones)</span><span class="kpi-titulo">Donaciones</span><span class="kpi-detalle">@f.NumeroDonaciones confirmadas</span></div></div>
+        <div class="col-6 col-md-3"><div class="kpi"><span class="kpi-valor">@Formatos.Pesos(f.TrasladosEntrada - f.TrasladosSalida)</span><span class="kpi-titulo">Traslados (neto)</span></div></div>
+        <div class="col-6 col-md-3"><div class="kpi"><span class="kpi-valor">@Formatos.Pesos(f.Gastos)</span><span class="kpi-titulo">Gastado</span><span class="kpi-detalle">@f.PorcentajeGastado % de lo que entró</span></div></div>
+        <div class="col-6 col-md-3"><div class="kpi"><span class="kpi-valor">@Formatos.Pesos(f.Saldo)</span><span class="kpi-titulo">Disponible</span></div></div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-12 col-lg-7">
+            <section class="mu-card p-4">
+                <h2 class="h5 mb-3">Movimientos</h2>
+                @{
+                    ViewData["Anular"] = Model.PuedeGestionar;
+                    ViewData["Clave"] = f.Clave;
+                }
+                <partial name="_MovimientosFondo" model="Model.Movimientos" view-data="ViewData" />
+            </section>
+        </div>
+
+        @if (Model.PuedeGestionar && f.Abierto)
+        {
+            <div class="col-12 col-lg-5">
+                <section class="mu-card p-4 mb-3">
+                    <h2 class="h5 mb-1">Registrar gasto</h2>
+                    <p class="small text-suave">El soporte se publica en la veeduría: tápale datos personales (cédulas, teléfonos) antes de subirlo.</p>
+                    <form asp-action="RegistrarGasto" asp-route-clave="@f.Clave" method="post" enctype="multipart/form-data" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small" role="alert"></div>
+                        <div class="mb-3">
+                            <label asp-for="Gasto.Valor" class="form-label"></label>
+                            <div class="input-icono">
+                                <i class="bi bi-currency-dollar" aria-hidden="true"></i>
+                                <input asp-for="Gasto.Valor" class="form-control" inputmode="numeric" placeholder="250.000" autocomplete="off" data-moneda />
+                            </div>
+                            <div class="form-text">Disponible: @Formatos.Pesos(f.Saldo)</div>
+                            <span asp-validation-for="Gasto.Valor"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Gasto.Concepto" class="form-label"></label>
+                            <input asp-for="Gasto.Concepto" class="form-control" maxlength="300" placeholder="Ej.: 4 bultos de concentrado para gatos adultos" />
+                            <span asp-validation-for="Gasto.Concepto"></span>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-sm-6">
+                                <label asp-for="Gasto.Fecha" class="form-label"></label>
+                                <input asp-for="Gasto.Fecha" type="date" class="form-control" max="@hoy.ToString("yyyy-MM-dd")" min="@hoy.AddDays(-366).ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="Gasto.Fecha"></span>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label asp-for="Gasto.Proveedor" class="form-label"></label>
+                                <input asp-for="Gasto.Proveedor" class="form-control" maxlength="150" placeholder="Ej.: Agropecuaria La Sabana" />
+                                <span asp-validation-for="Gasto.Proveedor"></span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Gasto.Soporte" class="form-label"></label>
+                            <input asp-for="Gasto.Soporte" type="file" class="form-control" accept="@ValidadorArchivos.Accept(TipoArchivo.Documento)" />
+                            <div class="form-text">@ValidadorArchivos.Ayuda(TipoArchivo.Documento)</div>
+                            <span asp-validation-for="Gasto.Soporte"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" disabled="@(f.Saldo <= 0)"><i class="bi bi-receipt me-1" aria-hidden="true"></i>Registrar gasto</button>
+                        @if (f.Saldo <= 0)
+                        {
+                            <div class="form-text">El fondo no tiene dinero disponible. Trasládale desde otro fondo.</div>
+                        }
+                    </form>
+                </section>
+
+                @if (Model.Destinos.Count > 0 && f.Saldo > 0)
+                {
+                    <section class="mu-card p-4 mb-3">
+                        <h2 class="h5 mb-1">Trasladar a otro fondo</h2>
+                        <p class="small text-suave">Por ejemplo, para pasar lo que sobró de una causa al fondo general.</p>
+                        <form asp-action="Trasladar" asp-route-clave="@f.Clave" method="post" novalidate
+                              data-confirmar="El traslado queda en los dos fondos y es público." data-confirmar-titulo="¿Hacer el traslado?" data-confirmar-boton="Sí, trasladar">
+                            <div class="mb-3">
+                                <label asp-for="Traslado.Destino" class="form-label"></label>
+                                <select asp-for="Traslado.Destino" class="form-select">
+                                    <option value="">Elige…</option>
+                                    @foreach (var d in Model.Destinos)
+                                    {
+                                        <option value="@d.Clave">@d.Nombre</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="Traslado.Destino"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="Traslado.Valor" class="form-label"></label>
+                                <div class="input-icono">
+                                    <i class="bi bi-currency-dollar" aria-hidden="true"></i>
+                                    <input asp-for="Traslado.Valor" class="form-control" inputmode="numeric" autocomplete="off" data-moneda />
+                                </div>
+                                <span asp-validation-for="Traslado.Valor"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="Traslado.Concepto" class="form-label"></label>
+                                <input asp-for="Traslado.Concepto" class="form-control" maxlength="300" placeholder="Ej.: sobrante de la causa" />
+                                <span asp-validation-for="Traslado.Concepto"></span>
+                            </div>
+                            <button type="submit" class="btn btn-suave w-100"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Trasladar</button>
+                        </form>
+                    </section>
+                }
+
+                @if (f.SePuedeCerrar)
+                {
+                    <section class="mu-card p-4">
+                        <h2 class="h6 mb-1">Cerrar el fondo</h2>
+                        <p class="small text-suave mb-2">Cuando ya se usó todo. Solo se puede con saldo en cero@(f.Tipo == TipoFondo.Causa ? " y con la causa cerrada" : "").</p>
+                        <form asp-action="Cerrar" asp-route-clave="@f.Clave" method="post"
+                              data-confirmar="Ya no recibirá gastos ni traslados." data-confirmar-titulo="¿Cerrar el fondo?" data-confirmar-boton="Sí, cerrar">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" disabled="@(f.Saldo != 0)"><i class="bi bi-lock me-1" aria-hidden="true"></i>Cerrar fondo</button>
+                        </form>
+                    </section>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

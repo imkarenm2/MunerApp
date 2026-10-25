@@ -1,0 +1,33 @@
+@model IReadOnlyList<MunerApp.Web.Models.Publico.UsoEspeciePublico>
+@* Qué hizo la fundación con una donación en especie. Lo ven el donante y la veeduría. ViewData["Unidad"]: unidad del lote. *@
+@{
+    var unidad = ViewData["Unidad"] as string ?? "";
+}
+@if (Model.Count == 0)
+{
+    <p class="small text-suave mb-0">La fundación aún no ha registrado en qué se usó.</p>
+}
+else
+{
+    <ul class="list-unstyled d-grid gap-2 mb-0">
+        @foreach (var u in Model)
+        {
+            <li class="movimiento-fondo @(u.Anulado ? "anulado" : "")">
+                <div class="d-flex gap-3">
+                    @if (u.FotoUrl is not null)
+                    {
+                        <a href="@u.FotoUrl" target="_blank" rel="noopener"><img src="@u.FotoUrl" alt="Foto del uso" class="salida-foto" loading="lazy" /></a>
+                    }
+                    <div class="min-w-0">
+                        <div class="fw-semibold text-break @(u.Anulado ? "text-decoration-line-through" : "")">@u.Cantidad @unidad · @u.Uso</div>
+                        <div class="small text-suave">@Formatos.Fecha(u.Fecha)</div>
+                        @if (u.Anulado)
+                        {
+                            <div class="small"><strong>Anulado:</strong> @u.MotivoAnulacion</div>
+                        }
+                    </div>
+                </div>
+            </li>
+        }
+    </ul>
+}

@@ -20,7 +20,9 @@ public class EsalActual : IEsalActual
     public int? EsalId =>
         int.TryParse(Usuario?.FindFirst(MunerAppClaims.EsalId)?.Value, out var id) ? id : null;
 
-    // Sin petición web = tarea interna (seed, revisión diaria)
+    // Sin petición web = tarea interna (seed, revisión diaria).
+    // El veedor no necesita ver todo: la veeduría consulta con IgnoreQueryFilters() solo lo público y el registro de
+    // cambios no tiene filtro. Así, como el veedor también es donante, en el resto del sitio ve lo mismo que cualquiera.
     public bool VeTodasLasFundaciones =>
-        _http.HttpContext is null || EsSuperAdmin || (Usuario?.IsInRole(Roles.Veedor) ?? false);
+        _http.HttpContext is null || EsSuperAdmin;
 }

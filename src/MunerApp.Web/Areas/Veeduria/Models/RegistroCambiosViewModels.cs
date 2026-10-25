@@ -34,7 +34,9 @@ public class RegistroCambiosViewModel
         ["EventoAgenda"] = "Cita de la agenda", ["EventoClinico"] = "Registro clínico", ["Apadrinamiento"] = "Apadrinamiento",
         ["PostulacionVoluntario"] = "Postulación de voluntario", ["SolicitudAdopcion"] = "Solicitud de adopción",
         ["Usuario"] = "Cuenta de usuario", ["RolDeUsuario"] = "Rol de usuario", ["FotoCausa"] = "Foto de causa",
-        ["FotoEsal"] = "Foto de la fundación", ["FotoProducto"] = "Foto de producto", ["HistorialEstadoBeneficiario"] = "Cambio de estado de beneficiario"
+        ["FotoEsal"] = "Foto de la fundación", ["FotoProducto"] = "Foto de producto", ["HistorialEstadoBeneficiario"] = "Cambio de estado de beneficiario",
+        ["Fondo"] = "Fondo", ["MovimientoFondo"] = "Gasto o traslado de un fondo", ["SalidaEspecie"] = "Uso de una donación en especie",
+        ["RegistroCambios"] = "Consulta del registro de cambios"
     };
 
     public static string NombreEntidad(string entidad) => NombresEntidad.GetValueOrDefault(entidad, entidad);

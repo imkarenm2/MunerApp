@@ -52,5 +52,8 @@ public class DonacionEspecie : IPerteneceAEsal
     public Esal? Esal { get; set; }
     public NecesidadEspecie? Necesidad { get; set; }
 
+    /// <summary>Qué se hizo con lo recibido (destinación del lote).</summary>
+    public ICollection<SalidaEspecie> Salidas { get; set; } = new List<SalidaEspecie>();
+
     public bool Pendiente => Estado == EstadoDonacionEspecie.Ofrecida;
 }

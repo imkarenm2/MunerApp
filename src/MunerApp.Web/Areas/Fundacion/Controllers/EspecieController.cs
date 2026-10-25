@@ -175,6 +175,134 @@ public class EspecieController : Controller
         return RedirectToAction(nameof(Index), new { estado = EstadoDonacionEspecie.NoRecibida });
     }
 
+    // ---------- Destinación: qué se hizo con lo recibido ----------
+
+    /// <summary>Lotes con unidades disponibles. Alerta los que vencen en 30 días o menos.</summary>
+    [HttpGet]
+    public async Task<IActionResult> Inventario()
+    {
+        var hoy = Formatos.Hoy();
+        var lotes = await _db.DonacionesEspecie.AsNoTracking()
+            .Where(d => d.Estado == EstadoDonacionEspecie.Recibida)
+            .Select(d => new
+            {
+                d.Id, d.Codigo, d.Articulo, d.Categoria, d.Unidad, Recibido = d.CantidadRecibida ?? 0, d.FechaRecepcion, d.FechaVencimiento,
+                Usado = d.Salidas.Where(s => !s.Anulado).Sum(s => (int?)s.Cantidad) ?? 0
+            })
+            .Where(d => d.Recibido > d.Usado)
+            .ToListAsync();
+
+        return View(new InventarioEspecieViewModel
+        {
+            Lotes = lotes
+                .Select(d => new LoteEspecieItem(d.Id, d.Codigo, d.Articulo, d.Categoria, d.Unidad, d.Recibido, d.Recibido - d.Usado,
+                    d.FechaRecepcion ?? DateTime.UtcNow, d.FechaVencimiento,
+                    PorVencer: d.FechaVencimiento is DateTime v && v.Date >= hoy && v.Date <= hoy.AddDays(30),
+                    Vencido: d.FechaVencimiento is DateTime v2 && v2.Date < hoy))
+                // Primero lo que vence antes (así se usa primero)
+                .OrderBy(l => l.Vence ?? DateTime.MaxValue).ThenBy(l => l.FechaRecepcion)
+                .ToList()
+        });
+    }
+
+    [HttpPost]
+    [RequestSizeLimit(ValidadorArchivos.LimitePeticionBytes)]
+    public async Task<IActionResult> RegistrarUso(int id, [Bind(Prefix = "Uso")] UsoEspecieViewModel model)
+    {
+        var d = await _db.DonacionesEspecie.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        if (d is null) return NotFound();
+        if (d.Estado != EstadoDonacionEspecie.Recibida)
+        {
+            TempData["Error"] = "Solo se registran usos de lo que ya se recibió.";
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
+
+        var hoy = Formatos.Hoy();
+        if (model.Fecha is DateTime f)
+        {
+            var recepcion = Formatos.Local(d.FechaRecepcion ?? DateTime.UtcNow).Date;
+            if (f.Date > hoy) ModelState.AddModelError("Uso.Fecha", "La fecha no puede ser futura.");
+            else if (f.Date < recepcion) ModelState.AddModelError("Uso.Fecha", "La fecha no puede ser anterior a la recepción.");
+        }
+
+        ArchivoValidado? foto = null;
+        if (model.Foto is { Length: > 0 })
+        {
+            foto = await ValidadorArchivos.ValidarAsync(model.Foto, TipoArchivo.Imagen);
+            if (!foto.Valido) ModelState.AddModelError("Uso.Foto", foto.Error!);
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var detalle = await CargarDetalleAsync(id);
+            detalle!.Uso = model;
+            return View(nameof(Detalle), detalle);
+        }
+
+        string? ruta = null;
+        await using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            // Un registro a la vez por fundación: dos personas no pueden usar las mismas unidades
+            await _db.Database.ExecuteSqlRawAsync(
+                "EXEC sp_getapplock @Resource = {0}, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 15000",
+                $"munerapp-especie-{d.EsalId}");
+            var usado = await _db.SalidasEspecie.Where(s => s.DonacionEspecieId == id && !s.Anulado).SumAsync(s => (int?)s.Cantidad) ?? 0;
+            var disponible = (d.CantidadRecibida ?? 0) - usado;
+            if (model.Cantidad > disponible)
+            {
+                TempData["Error"] = $"Solo quedan {disponible} {d.Unidad} de este lote.";
+                return RedirectToAction(nameof(Detalle), new { id });
+            }
+
+            if (foto is not null)
+            {
+                await using var stream = model.Foto!.OpenReadStream();
+                ruta = await _archivos.GuardarAsync(stream, $"esal/{d.EsalId}/especie", foto.Extension, publico: true);
+            }
+
+            _db.SalidasEspecie.Add(new SalidaEspecie
+            {
+                EsalId = d.EsalId, DonacionEspecieId = id, Cantidad = model.Cantidad!.Value, Uso = model.Uso.Trim(),
+                Fecha = model.Fecha!.Value.Date, FotoRuta = ruta, RegistradoPorId = UsuarioId
+            });
+            // El donante ve en su donación en qué se usó lo que dio
+            _notificaciones.Agregar(d.DonanteId, "Ya se usó parte de tu donación",
+                $"{model.Cantidad} {d.Unidad} de {d.Articulo}: {model.Uso.Trim()}", $"/mis-donaciones/especie/{d.Codigo}", "bi-box-seam");
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            if (ruta is not null) await _archivos.EliminarAsync(ruta);
+            throw;
+        }
+
+        TempData["Mensaje"] = $"Registraste el uso de {model.Cantidad} {d.Unidad}. Ya aparece en la veeduría y el donante lo ve en su donación.";
+        return RedirectToAction(nameof(Detalle), new { id });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AnularUso(int id, int salidaId, string? motivo)
+    {
+        motivo = motivo?.Trim();
+        var s = await _db.SalidasEspecie.FirstOrDefaultAsync(x => x.Id == salidaId && x.DonacionEspecieId == id);
+        if (s is null) return NotFound();
+        if (s.Anulado) TempData["Error"] = "Ese uso ya estaba anulado.";
+        else if (string.IsNullOrEmpty(motivo) || motivo.Length < 5) TempData["Error"] = "Escribe por qué anulas el uso.";
+        else
+        {
+            s.Anulado = true;
+            s.MotivoAnulacion = motivo.Length > 300 ? motivo[..300] : motivo;
+            s.AnuladoPorId = UsuarioId;
+            s.FechaAnulacion = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            TempData["Mensaje"] = "Anulaste el uso. Sigue visible, tachado, con el motivo, y las unidades vuelven a estar disponibles.";
+        }
+        return RedirectToAction(nameof(Detalle), new { id });
+    }
+
     // ---------- Necesidades (administrador principal) ----------
 
     [HttpGet]
@@ -278,6 +406,13 @@ public class EspecieController : Controller
         var donante = await _db.Users.AsNoTracking().Where(u => u.Id == d.DonanteId).Select(u => new { u.NombreCompleto, u.Email }).FirstAsync();
         var recibio = d.RecibidaPorId is null ? null
             : await _db.Users.AsNoTracking().Where(u => u.Id == d.RecibidaPorId).Select(u => u.NombreCompleto).FirstOrDefaultAsync();
+        var salidas = await (from s in _db.SalidasEspecie.AsNoTracking()
+                             where s.DonacionEspecieId == id
+                             join u in _db.Users on s.RegistradoPorId equals u.Id into us
+                             from u in us.DefaultIfEmpty()
+                             orderby s.Fecha descending, s.Id descending
+                             select new { s.Id, s.Cantidad, s.Uso, s.Fecha, s.FotoRuta, RegistradoPor = u != null ? u.NombreCompleto : null, s.Anulado, s.MotivoAnulacion })
+                            .ToListAsync();
 
         return new DonacionEspecieDetalleViewModel
         {
@@ -303,7 +438,10 @@ public class EspecieController : Controller
             FotoUrl = d.FotoRecepcionRuta is null ? null : _archivos.UrlPublica(d.FotoRecepcionRuta),
             MotivoNoRecibida = d.MotivoNoRecibida,
             RecibidaPor = recibio,
-            Recibir = new RecibirEspecieViewModel { CantidadRecibida = d.CantidadOfrecida }
+            Recibir = new RecibirEspecieViewModel { CantidadRecibida = d.CantidadOfrecida },
+            Salidas = salidas.Select(s => new SalidaEspecieItem(s.Id, s.Cantidad, s.Uso, s.Fecha,
+                s.FotoRuta is null ? null : _archivos.UrlPublica(s.FotoRuta), s.RegistradoPor, s.Anulado, s.MotivoAnulacion)).ToList(),
+            Uso = new UsoEspecieViewModel { Fecha = Formatos.Hoy() }
         };
     }
 }

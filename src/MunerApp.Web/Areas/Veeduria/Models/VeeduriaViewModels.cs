@@ -15,6 +15,12 @@ public class FundacionVeeduriaItem
     public int CausasCerradasSinRendicion { get; set; }
     public int DonacionesSinRevisar { get; set; }
     public int DocumentosPublicados { get; set; }
+
+    /// <summary>Gastos registrados en el libro de fondos (últimos 12 meses, sin anulados).</summary>
+    public decimal GastadoConSoporte { get; set; }
+
+    /// <summary>Recibió dinero pero no ha registrado en qué lo gastó.</summary>
+    public bool SinGastosRegistrados => DineroConfirmado > 0 && GastadoConSoporte == 0;
 }
 
 public class FundacionVeeduriaViewModel
@@ -40,9 +46,22 @@ public class FundacionVeeduriaViewModel
     public IReadOnlyList<DonacionVeeduria> Dinero { get; set; } = Array.Empty<DonacionVeeduria>();
     public IReadOnlyList<EspecieVeeduria> Especie { get; set; } = Array.Empty<EspecieVeeduria>();
     public IReadOnlyList<DocumentoVeeduria> Documentos { get; set; } = Array.Empty<DocumentoVeeduria>();
+
+    // ---- Libro de fondos: asignación, movimientos y destinación ----
+    /// <summary>Saldos acumulados desde el inicio (no solo del año).</summary>
+    public IReadOnlyList<MunerApp.Web.Servicios.ResumenFondo> Fondos { get; set; } = Array.Empty<MunerApp.Web.Servicios.ResumenFondo>();
+
+    /// <summary>Gastos y traslados del año, con su soporte.</summary>
+    public IReadOnlyList<MunerApp.Web.Servicios.MovimientoVista> Movimientos { get; set; } = Array.Empty<MunerApp.Web.Servicios.MovimientoVista>();
+    public decimal GastadoEnElAnio => Movimientos.Where(m => !m.Anulado && m.Tipo == TipoMovimientoFondo.Gasto).Sum(m => m.Valor);
 }
 
 public record CausaVeeduria(int Id, string Titulo, EstadoCausa Estado, bool Cerrada, decimal Meta, decimal Recaudado, DateTime FechaLimite, string? RendicionUrl);
 public record DonacionVeeduria(string Codigo, DateTime Fecha, decimal Valor, string Destino, string Medio);
-public record EspecieVeeduria(string Codigo, DateTime Fecha, string Articulo, string Categoria, int Cantidad, string Unidad, DateTime? Vence, string? FotoUrl);
+public record EspecieVeeduria(string Codigo, DateTime Fecha, string Articulo, string Categoria, int Cantidad, string Unidad, DateTime? Vence, string? FotoUrl,
+    IReadOnlyList<MunerApp.Web.Models.Publico.UsoEspeciePublico> Usos)
+{
+    public int Usado => Usos.Where(u => !u.Anulado).Sum(u => u.Cantidad);
+    public int Disponible => Math.Max(0, Cantidad - Usado);
+}
 public record DocumentoVeeduria(string Titulo, string Categoria, DateTime Fecha, string Url);

@@ -1,0 +1,73 @@
+@model IReadOnlyList<MunerApp.Web.Servicios.MovimientoVista>
+@* Lista de gastos y traslados de un fondo. La usan el panel de la fundación, la veeduría pública y el donante.
+   ViewData["MostrarFondo"] = true agrega el nombre del fondo; ViewData["Anular"] = true muestra el botón de anular (fundación). *@
+@{
+    var mostrarFondo = ViewData["MostrarFondo"] is true;
+    var anular = ViewData["Anular"] is true;
+}
+@if (Model.Count == 0)
+{
+    <p class="small text-suave mb-0">Todavía no hay gastos ni traslados registrados.</p>
+}
+else
+{
+    <ul class="list-unstyled d-grid gap-2 mb-0">
+        @foreach (var m in Model)
+        {
+            <li class="movimiento-fondo @(m.Anulado ? "anulado" : "")">
+                <div class="d-flex justify-content-between gap-3">
+                    <div class="min-w-0">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span class="mu-badge @(m.Tipo == TipoMovimientoFondo.Gasto ? "acento" : "")">
+                                <i class="bi @(m.Tipo switch { TipoMovimientoFondo.Gasto => "bi-receipt", TipoMovimientoFondo.TrasladoSalida => "bi-box-arrow-right", _ => "bi-box-arrow-in-left" })" aria-hidden="true"></i>@Textos.De(m.Tipo)
+                            </span>
+                            <span class="small text-suave">@Formatos.Fecha(m.Fecha)</span>
+                            @if (m.Anulado)
+                            {
+                                <span class="mu-badge"><i class="bi bi-x-circle" aria-hidden="true"></i>Anulado</span>
+                            }
+                        </div>
+                        <div class="fw-semibold mt-1 text-break @(m.Anulado ? "text-decoration-line-through" : "")">@m.Concepto</div>
+                        <div class="small text-suave">
+                            @if (mostrarFondo)
+                            {
+                                <span>@m.Fondo</span>
+                            }
+                            @if (m.FondoRelacionado is not null)
+                            {
+                                <span>@(m.Tipo == TipoMovimientoFondo.TrasladoSalida ? "Hacia" : "Desde"): @m.FondoRelacionado</span>
+                            }
+                            @if (!string.IsNullOrEmpty(m.Proveedor))
+                            {
+                                <span>· Proveedor: @m.Proveedor</span>
+                            }
+                        </div>
+                        @if (m.Anulado && !string.IsNullOrEmpty(m.MotivoAnulacion))
+                        {
+                            <div class="small mt-1"><strong>Motivo de la anulación:</strong> @m.MotivoAnulacion</div>
+                        }
+                        @if (m.SoporteUrl is not null)
+                        {
+                            <a class="small fw-semibold" href="@m.SoporteUrl" target="_blank" rel="noopener"><i class="bi bi-paperclip me-1" aria-hidden="true"></i>Ver soporte</a>
+                        }
+                    </div>
+                    <div class="text-end flex-shrink-0">
+                        <div class="fw-bold @(m.Anulado ? "text-suave text-decoration-line-through" : m.EsSalida ? "" : "text-principal")">@(m.EsSalida ? "−" : "+")@Formatos.Pesos(m.Valor)</div>
+                        @if (anular && !m.Anulado)
+                        {
+                            <details class="mt-1 text-start">
+                                <summary class="small text-danger">Anular</summary>
+                                <form asp-area="Fundacion" asp-controller="Fondos" asp-action="Anular" asp-route-id="@m.Id" asp-route-clave="@ViewData["Clave"]" method="post" class="mt-2"
+                                      data-confirmar="Quedará visible, tachado, con el motivo. No se puede deshacer." data-confirmar-titulo="¿Anular el movimiento?" data-confirmar-boton="Sí, anular" data-confirmar-tipo="peligro">
+                                    <label class="form-label small" for="motivo-@m.Id">Motivo</label>
+                                    <input id="motivo-@m.Id" name="motivo" class="form-control form-control-sm" maxlength="300" required placeholder="Ej.: el valor quedó mal" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger mt-2">Anular</button>
+                                </form>
+                            </details>
+                        }
+                    </div>
+                </div>
+            </li>
+        }
+    </ul>
+}

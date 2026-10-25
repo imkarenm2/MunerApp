@@ -3,7 +3,7 @@
     var esInicio = ViewContext.RouteData.Values["area"] is null or ""
         && ViewContext.RouteData.Values["controller"] as string == "Home"
         && ViewContext.RouteData.Values["action"] as string == "Index";
-    var esEquipoOAdmin = User.IsInRole(Roles.SuperAdministrador) || User.IsInRole(Roles.Veedor)
+    var esEquipoOAdmin = User.IsInRole(Roles.SuperAdministrador)
         || User.IsInRole(Roles.AdministradorESAL) || User.IsInRole(Roles.Voluntario);
     // Barra de abajo en el celular (visitantes y donantes): los botones principales siempre a la mano
     var barraInferior = ViewData["Panel"] is not true && !esEquipoOAdmin;
@@ -44,10 +44,6 @@
                         {
                             <li class="nav-item"><a class="nav-link active" asp-area="Plataforma" asp-controller="Resumen" asp-action="Index">Administración de MunerApp</a></li>
                         }
-                        else if (User.IsInRole(Roles.Veedor))
-                        {
-                            <li class="nav-item"><a class="nav-link active" asp-area="Veeduria" asp-controller="Consulta" asp-action="Index">Veeduría ciudadana</a></li>
-                        }
                         else if (User.IsInRole(Roles.AdministradorESAL) || User.IsInRole(Roles.Voluntario))
                         {
                             <li class="nav-item"><a class="nav-link active" asp-area="Fundacion" asp-controller="Panel" asp-action="Index">Mi fundación</a></li>
@@ -60,7 +56,7 @@
                             <li class="nav-item"><a class="nav-link @(nav == "Tienda" ? "active" : "")" href="/tienda"><i class="bi bi-shop" aria-hidden="true"></i>Tienda</a></li>
                             <li class="nav-item"><a class="nav-link @(nav == "Boletin" ? "active" : "")" href="/boletin"><i class="bi bi-newspaper" aria-hidden="true"></i>Boletín</a></li>
                             <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar"><i class="bi bi-hand-thumbs-up" aria-hidden="true"></i>Cómo ayudar</a></li>
-                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="transparencia"><i class="bi bi-shield-check" aria-hidden="true"></i>Transparencia</a></li>
+                            <li class="nav-item"><a class="nav-link @(nav == "Veeduria" ? "active" : "")" href="/veeduria"><i class="bi bi-binoculars" aria-hidden="true"></i>Veeduría</a></li>
                         }
                     </ul>
                     <partial name="_LoginPartial" />
@@ -96,7 +92,7 @@
                         <li><a href="/tienda">Tienda solidaria</a></li>
                         <li><a href="/boletin">Boletín</a></li>
                         <li><a asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="formas-de-ayudar">Cómo ayudar</a></li>
-                        <li><a asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="transparencia">Transparencia</a></li>
+                        <li><a href="/veeduria">Veeduría ciudadana</a></li>
                     </ul>
                 </div>
                 <div class="col-6 col-md-4">

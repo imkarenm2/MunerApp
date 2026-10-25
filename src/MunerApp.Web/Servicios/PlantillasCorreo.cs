@@ -16,10 +16,18 @@ public static class PlantillasCorreo
     public static string InvitacionVeedor(string nombre, string organizacion, string enlace) => Base(
         $"¡Hola, {Html(nombre)}!",
         $"Te dimos acceso a la <strong>veeduría de MunerApp</strong> en nombre de {Html(organizacion)}. " +
-        "Desde ahí podrás consultar lo que reciben las fundaciones, en dinero y en especie, sus causas y su rendición de cuentas. Crea tu contraseña para empezar.",
+        "Además de la veeduría pública, podrás revisar el registro de cambios de cada fundación. Con la misma cuenta también puedes donar si quieres. Crea tu contraseña para empezar.",
         "Crear mi contraseña",
         enlace,
         "Este enlace vence en 1 hora. Si vence, usa la opción \"¿Olvidaste tu contraseña?\" en la página de inicio de sesión.");
+
+    public static string AvisoVeedor(string nombre, string organizacion, string enlace) => Base(
+        $"¡Hola, {Html(nombre)}!",
+        $"Tu cuenta de MunerApp ahora tiene permiso de <strong>veedor</strong> en nombre de {Html(organizacion)}. " +
+        "Entras con el mismo correo y la misma contraseña de siempre. Además de la veeduría pública, podrás revisar el registro de cambios de cada fundación.",
+        "Ir al registro de cambios",
+        enlace,
+        "Si no reconoces este permiso, escríbenos y lo quitamos.");
 
     public static string Recuperacion(string nombre, string enlace) => Base(
         $"Hola, {Html(nombre)}",

@@ -45,6 +45,15 @@ public class InvitacionService
         return await EnviarAsync(usuario.Email!, "Tu acceso a la veeduría de MunerApp", html, enlace);
     }
 
+    /// <summary>Aviso a una cuenta que ya existía: desde ahora también es veedor. No cambia su contraseña.</summary>
+    public async Task<ResultadoEnvio> EnviarAvisoVeedorAsync(Usuario usuario)
+    {
+        var enlace = _links.GetUriByAction(_http.HttpContext!, action: "Index", controller: "RegistroCambios",
+            values: new { area = "Veeduria" }) ?? string.Empty;
+        var html = PlantillasCorreo.AvisoVeedor(usuario.NombreCompleto, usuario.Organizacion ?? "una veeduría ciudadana", enlace);
+        return await EnviarAsync(usuario.Email!, "Ahora eres veedor en MunerApp", html, enlace);
+    }
+
     public async Task<ResultadoEnvio> EnviarRecuperacionAsync(Usuario usuario)
     {
         var enlace = await GenerarEnlaceAsync(usuario, invitacion: false);

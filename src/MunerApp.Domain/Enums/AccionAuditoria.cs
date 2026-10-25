@@ -5,5 +5,8 @@ public enum AccionAuditoria
 {
     Creado,
     Modificado,
-    Eliminado
+    Eliminado,
+
+    /// <summary>Un veedor consultó el registro de cambios: quien vigila también deja rastro.</summary>
+    Consultado
 }

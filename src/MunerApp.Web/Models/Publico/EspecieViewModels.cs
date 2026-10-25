@@ -91,4 +91,11 @@ public class MiDonacionEspecieItem
     public string? MotivoNoRecibida { get; set; }
     public string? FotoUrl { get; set; }
     public string? DireccionEsal { get; set; }
+
+    /// <summary>Qué hizo la fundación con lo recibido (destinación del lote).</summary>
+    public IReadOnlyList<UsoEspeciePublico> Usos { get; set; } = Array.Empty<UsoEspeciePublico>();
+    public int Usado => Usos.Where(u => !u.Anulado).Sum(u => u.Cantidad);
 }
+
+/// <summary>Uso de una donación en especie, como lo ven el donante y la veeduría (sin datos de quién lo registró).</summary>
+public record UsoEspeciePublico(int Cantidad, string Uso, DateTime Fecha, string? FotoUrl, bool Anulado, string? MotivoAnulacion);

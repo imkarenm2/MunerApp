@@ -71,6 +71,42 @@
                 </li>
             </ol>
 
+            @if (Model.Fondo is { } fondo)
+            {
+                @* Recorrido de la donación: recepción → asignación → movimientos → destinación → veeduría *@
+                <section class="mb-4">
+                    <h2 class="h5 mb-3">El recorrido de tu aporte</h2>
+                    <ol class="recorrido">
+                        <li>
+                            <span class="recorrido-punto"><i class="bi bi-check-lg" aria-hidden="true"></i></span>
+                            <div class="fw-semibold">Llegó a la fundación</div>
+                            <div class="small text-suave">@(Model.FechaRevision is DateTime fr ? "Confirmada el " + Formatos.FechaHora(fr) : "Confirmada")</div>
+                        </li>
+                        <li>
+                            <span class="recorrido-punto"><i class="bi bi-wallet2" aria-hidden="true"></i></span>
+                            <div class="fw-semibold">Entró a: @fondo.Nombre</div>
+                            <div class="small text-suave">
+                                A este fondo han entrado @Formatos.Pesos(fondo.Entradas). Tu aporte es el @Model.PorcentajeDelFondo.ToString("0.#") %.
+                            </div>
+                        </li>
+                        <li class="@(fondo.Gastos > 0 ? "" : "pendiente")">
+                            <span class="recorrido-punto"><i class="bi bi-receipt" aria-hidden="true"></i></span>
+                            <div class="fw-semibold">@(fondo.Gastos > 0 ? $"Se han gastado {Formatos.Pesos(fondo.Gastos)} con soporte" : "Aún no hay gastos registrados en este fondo")</div>
+                            <div class="small text-suave mb-2">Quedan @Formatos.Pesos(fondo.Saldo) disponibles. El dinero se sigue por fondo: cada gasto sale del total, no de un aporte en particular.</div>
+                            @if (Model.GastosFondo.Count > 0)
+                            {
+                                <partial name="_MovimientosFondo" model="Model.GastosFondo" />
+                            }
+                        </li>
+                        <li>
+                            <span class="recorrido-punto"><i class="bi bi-binoculars" aria-hidden="true"></i></span>
+                            <div class="fw-semibold">Cualquiera lo puede verificar</div>
+                            <div class="small text-suave"><a href="/veeduria/@Model.EsalId">Ver el libro de fondos completo en la veeduría</a></div>
+                        </li>
+                    </ol>
+                </section>
+            }
+
             <dl class="row datos-detalle mb-4">
                 <dt class="col-sm-5">Código</dt><dd class="col-sm-7">@Model.Codigo</dd>
                 @if (Model.CausaId is int causaId && Model.Causa is not null)

@@ -1,18 +1,24 @@
 @model List<FundacionVeeduriaItem>
 @{
     ViewData["Title"] = "Veeduría ciudadana";
+    ViewData["Nav"] = "Veeduria";
+    ViewData["Descripcion"] = "Veeduría ciudadana de MunerApp: lo que reciben las fundaciones, en dinero y en especie, y en qué se usa. Sin cuenta.";
 }
 <section class="cabecera-pagina">
     <div class="container">
         <span class="sobretitulo">Veeduría ciudadana</span>
         <h1 class="mb-2">Lo que reciben las fundaciones, y en qué se usa</h1>
         <p class="lead text-suave mb-0" style="max-width: 760px">
-            Consulta de solo lectura para hacer seguimiento a las fundaciones de MunerApp (Ley 850 de 2003).
-            Ves donaciones, causas, rendición de cuentas y donaciones en especie, sin datos personales de los donantes.
+            Cualquier persona puede hacer seguimiento a las fundaciones de MunerApp, sin crear cuenta (Ley 850 de 2003).
+            Mira qué entra, a qué fondo se asigna, en qué se gasta con su soporte y qué se hizo con lo donado en especie.
+            Nunca mostramos datos personales de los donantes.
         </p>
-        <a class="btn btn-light mt-3" asp-controller="RegistroCambios" asp-action="Index">
-            <i class="bi bi-clock-history me-1" aria-hidden="true"></i>Registro de cambios
-        </a>
+        @if (User.IsInRole(Roles.Veedor) || User.IsInRole(Roles.SuperAdministrador))
+        {
+            <a class="btn btn-light mt-3" asp-controller="RegistroCambios" asp-action="Index">
+                <i class="bi bi-clock-history me-1" aria-hidden="true"></i>Registro de cambios
+            </a>
+        }
     </div>
 </section>
 
@@ -27,7 +33,7 @@
         <div class="row g-3">
             @foreach (var f in Model)
             {
-                var alertas = f.CausasCerradasSinRendicion + (f.DonacionesSinRevisar > 0 ? 1 : 0) + (f.DocumentosPublicados == 0 ? 1 : 0);
+                var alertas = f.CausasCerradasSinRendicion + (f.DonacionesSinRevisar > 0 ? 1 : 0) + (f.DocumentosPublicados == 0 ? 1 : 0) + (f.SinGastosRegistrados ? 1 : 0);
                 <div class="col-12 col-lg-6">
                     <a class="mu-card mu-card-hover p-4 d-block h-100 text-decoration-none text-body" asp-action="Fundacion" asp-route-id="@f.Id">
                         <div class="d-flex justify-content-between gap-2 mb-1">
@@ -41,6 +47,7 @@
                         <div class="row g-2 small">
                             <div class="col-6"><span class="d-block fw-bold text-principal">@Formatos.Pesos(f.DineroConfirmado)</span>en @f.DonacionesDinero donaciones</div>
                             <div class="col-6"><span class="d-block fw-bold text-principal">@f.DonacionesEspecie</span>donaciones en especie recibidas</div>
+                            <div class="col-6"><span class="d-block fw-bold">@Formatos.Pesos(f.GastadoConSoporte)</span>gastados con soporte</div>
                         </div>
                         @if (alertas > 0)
                         {
@@ -56,6 +63,10 @@
                                 @if (f.DocumentosPublicados == 0)
                                 {
                                     <li>No ha publicado documentos de transparencia</li>
+                                }
+                                @if (f.SinGastosRegistrados)
+                                {
+                                    <li>Recibió dinero y no ha registrado en qué lo gastó</li>
                                 }
                             </ul>
                         }

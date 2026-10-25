@@ -16,10 +16,13 @@
             <h1 class="h2 mb-1">Donaciones en especie</h1>
             <p class="text-suave mb-0">Concentrado, arena, medicamentos y demás artículos que los donantes ofrecen. Cuando lleguen, regístralos para que el donante reciba su comprobante.</p>
         </div>
-        @if (Model.PuedeGestionarNecesidades)
-        {
-            <a class="btn btn-primary" asp-action="CrearNecesidad"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Publicar una necesidad</a>
-        }
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-suave" asp-action="Inventario"><i class="bi bi-boxes me-1" aria-hidden="true"></i>Inventario</a>
+            @if (Model.PuedeGestionarNecesidades)
+            {
+                <a class="btn btn-primary" asp-action="CrearNecesidad"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Publicar una necesidad</a>
+            }
+        </div>
     </div>
 
     @* ---------- Lo que la fundación necesita ---------- *@

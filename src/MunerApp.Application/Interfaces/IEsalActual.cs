@@ -10,8 +10,8 @@ public interface IEsalActual
     int? EsalId { get; }
 
     /// <summary>
-    /// Puede leer los datos de todas las fundaciones: el superadministrador, el veedor (consulta de solo lectura)
-    /// y las tareas internas sin usuario (seed, migraciones, revisión diaria).
+    /// Puede leer los datos de todas las fundaciones: el superadministrador y las tareas internas sin usuario
+    /// (seed, migraciones, revisión diaria). El veedor no: la veeduría solo lee lo público con IgnoreQueryFilters().
     /// </summary>
     bool VeTodasLasFundaciones { get; }
 }
