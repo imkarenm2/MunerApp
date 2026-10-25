@@ -160,7 +160,9 @@ public class DonacionesEspecieController : Controller
     {
         var d = await BuscarPropiaAsync(codigo);
         if (d is null) return NotFound();
-        return View(Item(d));
+        var item = Item(d);
+        item.Usos = await UsosAsync(d.Id);
+        return View(item);
     }
 
     [Authorize]
@@ -269,6 +271,15 @@ public class DonacionesEspecieController : Controller
     private Task<DonacionEspecie?> BuscarPropiaAsync(string codigo)
         => _db.DonacionesEspecie.IgnoreQueryFilters().AsNoTracking().Include(d => d.Esal)
             .FirstOrDefaultAsync(d => d.Codigo == codigo && d.DonanteId == UsuarioId);
+
+    private async Task<IReadOnlyList<UsoEspeciePublico>> UsosAsync(int donacionEspecieId) =>
+        (await _db.SalidasEspecie.IgnoreQueryFilters().AsNoTracking()
+            .Where(s => s.DonacionEspecieId == donacionEspecieId)
+            .OrderByDescending(s => s.Fecha).ThenByDescending(s => s.Id)
+            .Select(s => new { s.Cantidad, s.Uso, s.Fecha, s.FotoRuta, s.Anulado, s.MotivoAnulacion })
+            .ToListAsync())
+        .Select(s => new UsoEspeciePublico(s.Cantidad, s.Uso, s.Fecha, UrlArchivo(s.FotoRuta), s.Anulado, s.MotivoAnulacion))
+        .ToList();
 
     private string? UrlArchivo(string? clave) => string.IsNullOrEmpty(clave) ? null : _archivos.UrlPublica(clave);
 }

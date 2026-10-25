@@ -35,6 +35,18 @@
 
     @if (Model.Estado == EstadoDonacionEspecie.Recibida)
     {
+        @* Destinación: qué se hizo con lo que donaste *@
+        <section class="mu-card p-4 mb-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <h2 class="h5 mb-0">¿En qué se usó?</h2>
+                @if (Model.CantidadRecibida is int recibida)
+                {
+                    <span class="small text-suave">@Model.Usado de @recibida @Model.Unidad usados</span>
+                }
+            </div>
+            @{ ViewData["Unidad"] = Model.Unidad; }
+            <partial name="_UsosEspecie" model="Model.Usos" view-data="ViewData" />
+        </section>
         <a class="btn btn-primary" href="/mis-donaciones/especie/@Model.Codigo/comprobante"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i>Descargar comprobante</a>
     }
     else if (Model.Estado == EstadoDonacionEspecie.Ofrecida)

@@ -320,6 +320,23 @@ public static class Textos
         _ => t.ToString()
     };
 
+    public static string De(TipoFondo t) => t switch
+    {
+        TipoFondo.General => "Fondo general",
+        TipoFondo.Causa => "Causa",
+        TipoFondo.Apadrinamiento => "Apadrinamientos",
+        TipoFondo.Proyecto => "Proyecto",
+        _ => t.ToString()
+    };
+
+    public static string De(TipoMovimientoFondo t) => t switch
+    {
+        TipoMovimientoFondo.Gasto => "Gasto",
+        TipoMovimientoFondo.TrasladoSalida => "Traslado a otro fondo",
+        TipoMovimientoFondo.TrasladoEntrada => "Traslado desde otro fondo",
+        _ => t.ToString()
+    };
+
     public static string De(MotivoCierreCausa m) => m switch
     {
         MotivoCierreCausa.MetaAlcanzada => "Alcanzó la meta",

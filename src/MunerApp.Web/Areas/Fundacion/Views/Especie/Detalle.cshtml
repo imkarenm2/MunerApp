@@ -58,12 +58,96 @@
                         <img src="@Model.FotoUrl" alt="Foto de lo recibido" class="img-fluid rounded mt-3" loading="lazy" />
                     }
                 </section>
+
+                @* Destinación del lote: qué se hizo con lo recibido. Es público en la veeduría y lo ve el donante. *@
+                <section class="mu-card p-4 mt-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <h2 class="h5 mb-0">¿En qué se usó?</h2>
+                        <span class="mu-badge @(Model.Disponible == 0 ? "" : "exito")">@(Model.Disponible == 0 ? "Agotada" : $"Quedan {Model.Disponible} {Model.Unidad}")</span>
+                    </div>
+                    @if (Model.Salidas.Count == 0)
+                    {
+                        <p class="small text-suave mb-0">Aún no han registrado usos de este lote.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-unstyled d-grid gap-2 mb-0">
+                            @foreach (var s in Model.Salidas)
+                            {
+                                <li class="movimiento-fondo @(s.Anulado ? "anulado" : "")">
+                                    <div class="d-flex gap-3">
+                                        @if (s.FotoUrl is not null)
+                                        {
+                                            <a href="@s.FotoUrl" target="_blank" rel="noopener"><img src="@s.FotoUrl" alt="Foto del uso" class="salida-foto" loading="lazy" /></a>
+                                        }
+                                        <div class="flex-grow-1 min-w-0">
+                                            <div class="fw-semibold text-break @(s.Anulado ? "text-decoration-line-through" : "")">@s.Cantidad @Model.Unidad · @s.Uso</div>
+                                            <div class="small text-suave">@Formatos.Fecha(s.Fecha)@(s.RegistradoPor is null ? "" : " · " + s.RegistradoPor)</div>
+                                            @if (s.Anulado)
+                                            {
+                                                <div class="small"><strong>Anulado:</strong> @s.MotivoAnulacion</div>
+                                            }
+                                            else
+                                            {
+                                                <details class="mt-1">
+                                                    <summary class="small text-danger">Anular</summary>
+                                                    <form asp-action="AnularUso" asp-route-id="@Model.Id" asp-route-salidaId="@s.Id" method="post" class="mt-2"
+                                                          data-confirmar="Quedará visible, tachado, con el motivo." data-confirmar-titulo="¿Anular este uso?" data-confirmar-boton="Sí, anular" data-confirmar-tipo="peligro">
+                                                        <input name="motivo" class="form-control form-control-sm" maxlength="300" required placeholder="Motivo" aria-label="Motivo de la anulación" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger mt-2">Anular</button>
+                                                    </form>
+                                                </details>
+                                            }
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
             }
             else if (Model.Estado is EstadoDonacionEspecie.NoRecibida or EstadoDonacionEspecie.Cancelada)
             {
                 <div class="alert alert-secondary"><i class="bi bi-info-circle" aria-hidden="true"></i><div><strong>@Textos.De(Model.Estado):</strong> @Model.MotivoNoRecibida</div></div>
             }
         </div>
+
+        @if (Model.Estado == EstadoDonacionEspecie.Recibida && Model.Disponible > 0)
+        {
+            <div class="col-12 col-lg-5">
+                <section class="mu-card p-4">
+                    <h2 class="h5 mb-1">Registrar uso</h2>
+                    <p class="small text-suave">Cuenta qué se hizo con lo recibido. Lo verán el donante y la veeduría. La foto no debe mostrar personas.</p>
+                    <form asp-action="RegistrarUso" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small" role="alert"></div>
+                        <div class="mb-3">
+                            <label asp-for="Uso.Cantidad" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="Uso.Cantidad" class="form-control" type="number" min="1" max="@Model.Disponible" />
+                                <span class="input-group-text">de @Model.Disponible @Model.Unidad</span>
+                            </div>
+                            <span asp-validation-for="Uso.Cantidad"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Uso.Uso" class="form-label"></label>
+                            <input asp-for="Uso.Uso" class="form-control" maxlength="300" placeholder="Ej.: alimentación del refugio durante la semana" />
+                            <span asp-validation-for="Uso.Uso"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Uso.Fecha" class="form-label"></label>
+                            <input asp-for="Uso.Fecha" type="date" class="form-control" max="@hoy" />
+                            <span asp-validation-for="Uso.Fecha"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Uso.Foto" class="form-label"></label>
+                            <input asp-for="Uso.Foto" class="form-control" type="file" accept="@ValidadorArchivos.Accept(TipoArchivo.Imagen)" />
+                            <span asp-validation-for="Uso.Foto"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check2-square me-1" aria-hidden="true"></i>Registrar uso</button>
+                    </form>
+                </section>
+            </div>
+        }
 
         @if (Model.Estado == EstadoDonacionEspecie.Ofrecida)
         {

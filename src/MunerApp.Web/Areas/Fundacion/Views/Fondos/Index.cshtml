@@ -1,0 +1,83 @@
+@model FondosIndexViewModel
+@{
+    ViewData["Title"] = "Libro de fondos";
+}
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Libro de fondos</h1>
+            <p class="text-suave mb-0" style="max-width: 760px">
+                Cada donación confirmada entra sola a un fondo: la de una causa, al fondo de esa causa; la de un padrino, a apadrinamientos; las demás, al fondo general.
+                Aquí registras en qué se gasta, con su soporte. Todo es público en la <a href="/veeduria">veeduría</a>.
+            </p>
+        </div>
+    </div>
+
+    @if (!Model.PuedeGestionar)
+    {
+        <div class="alert alert-info small"><i class="bi bi-info-circle" aria-hidden="true"></i><div>Solo el administrador principal registra gastos y traslados.</div></div>
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4"><div class="kpi exito"><span class="kpi-icono"><i class="bi bi-cash-coin" aria-hidden="true"></i></span><span class="kpi-valor">@Formatos.Pesos(Model.RecibidoTotal)</span><span class="kpi-titulo">Donaciones recibidas</span><span class="kpi-detalle">Confirmadas, desde el inicio</span></div></div>
+        <div class="col-6 col-md-4"><div class="kpi"><span class="kpi-icono"><i class="bi bi-receipt" aria-hidden="true"></i></span><span class="kpi-valor">@Formatos.Pesos(Model.GastadoTotal)</span><span class="kpi-titulo">Gastado con soporte</span></div></div>
+        <div class="col-6 col-md-4"><div class="kpi"><span class="kpi-icono"><i class="bi bi-wallet2" aria-hidden="true"></i></span><span class="kpi-valor">@Formatos.Pesos(Model.SaldoTotal)</span><span class="kpi-titulo">Disponible</span></div></div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        @foreach (var f in Model.Fondos)
+        {
+            <div class="col-12 col-md-6 col-xl-4">
+                <a class="mu-card mu-card-hover p-4 d-block text-decoration-none text-body fondo-tarjeta @(f.Abierto ? "" : "documento-oculto")" asp-action="Detalle" asp-route-clave="@f.Clave">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span class="mu-badge">@Textos.De(f.Tipo)</span>
+                        @if (!f.Abierto)
+                        {
+                            <span class="mu-badge"><i class="bi bi-lock" aria-hidden="true"></i>Cerrado</span>
+                        }
+                    </div>
+                    <h2 class="h5 mb-0">@f.Nombre</h2>
+                    <div class="mu-progreso" role="progressbar" aria-valuenow="@f.PorcentajeGastado" aria-valuemin="0" aria-valuemax="100" aria-label="Parte gastada del fondo">
+                        <span style="width: @(f.PorcentajeGastado)%"></span>
+                    </div>
+                    <div class="fondo-cifras">
+                        <div><strong>@Formatos.Pesos(f.Entradas)</strong>entró</div>
+                        <div><strong>@Formatos.Pesos(f.Gastos)</strong>gastado</div>
+                        <div><strong>@Formatos.Pesos(f.Saldo)</strong>queda</div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            <section class="mu-card p-4">
+                <h2 class="h5 mb-3">Últimos movimientos</h2>
+                @{ ViewData["MostrarFondo"] = true; }
+                <partial name="_MovimientosFondo" model="Model.Recientes" view-data="ViewData" />
+            </section>
+        </div>
+        @if (Model.PuedeGestionar)
+        {
+            <div class="col-12 col-lg-5">
+                <section class="mu-card p-4">
+                    <h2 class="h5 mb-1">Nuevo proyecto</h2>
+                    <p class="small text-suave">Para separar dinero con un fin concreto, por ejemplo "Jornada de esterilización de marzo". Empieza en cero: le trasladas dinero desde otro fondo.</p>
+                    <form asp-action="CrearProyecto" method="post" novalidate>
+                        <div class="mb-3">
+                            <label asp-for="Proyecto.Nombre" class="form-label"></label>
+                            <input asp-for="Proyecto.Nombre" class="form-control" maxlength="120" />
+                            <span asp-validation-for="Proyecto.Nombre"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Proyecto.Descripcion" class="form-label"></label>
+                            <textarea asp-for="Proyecto.Descripcion" class="form-control" rows="2" maxlength="500"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Crear proyecto</button>
+                    </form>
+                </section>
+            </div>
+        }
+    </div>
+</div>

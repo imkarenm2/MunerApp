@@ -446,12 +446,6 @@ public class CuentaController : Controller
             TempData["Mensaje"] = string.IsNullOrEmpty(nombre) ? "Iniciaste sesión." : $"Hola, {nombre}. Iniciaste sesión.";
         }
 
-        // La veeduría ciudadana entra directo a su consulta
-        if (await _userManager.IsInRoleAsync(usuario, Roles.Veedor))
-            return !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl.StartsWith("/Veeduria", StringComparison.OrdinalIgnoreCase)
-                ? LocalRedirect(returnUrl)
-                : RedirectToAction("Index", "Consulta", new { area = "Veeduria" });
-
         var esSuperAdmin = await _userManager.IsInRoleAsync(usuario, Roles.SuperAdministrador);
         var esEquipo = await _userManager.IsInRoleAsync(usuario, Roles.AdministradorESAL)
             || await _userManager.IsInRoleAsync(usuario, Roles.Voluntario);

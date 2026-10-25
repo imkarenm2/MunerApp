@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using MunerApp.Domain.Constantes;
 using MunerApp.Infrastructure.Identity;
 using MunerApp.Web.Areas.Plataforma.Models;
@@ -10,8 +9,10 @@ using MunerApp.Web.Servicios;
 namespace MunerApp.Web.Areas.Plataforma.Controllers;
 
 /// <summary>
-/// Cuentas de veeduría ciudadana. Las crea el superadministrador: el veedor recibe un correo para crear su contraseña
-/// y solo puede consultar la información de transparencia de las fundaciones (sin datos personales de donantes).
+/// Veeduría ciudadana. La veeduría pública (/veeduria) la ve cualquiera sin cuenta. Ser veedor es un permiso extra
+/// sobre una cuenta normal: el superadministrador lo da por correo y el veedor sigue pudiendo donar. El permiso solo
+/// agrega el registro de cambios de cada fundación (sin datos personales de donantes) y cada consulta queda anotada.
+/// El equipo de una fundación no puede ser veedor: nadie se vigila a sí mismo.
 /// </summary>
 [Area("Plataforma")]
 [Authorize(Roles = Roles.SuperAdministrador)]
@@ -42,13 +43,51 @@ public class VeedoresController : Controller
     [HttpGet]
     public IActionResult Crear() => View(new VeedorFormViewModel());
 
+    /// <summary>
+    /// Si el correo ya tiene cuenta, le agrega el permiso de veedor (y se le avisa). Si no, crea la cuenta y le llega
+    /// un correo para crear su contraseña.
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> Crear(VeedorFormViewModel model)
     {
         model.Correo = model.Correo?.Trim() ?? "";
-        if (!string.IsNullOrEmpty(model.Correo) && await _usuarios.FindByEmailAsync(model.Correo) is not null)
-            ModelState.AddModelError(nameof(model.Correo), "Ya existe una cuenta con este correo en la plataforma.");
         if (!ModelState.IsValid) return View(model);
+
+        var existente = await _usuarios.FindByEmailAsync(model.Correo);
+        if (existente is not null)
+        {
+            if (existente.EsalId is not null
+                || await _usuarios.IsInRoleAsync(existente, Roles.AdministradorESAL)
+                || await _usuarios.IsInRoleAsync(existente, Roles.Voluntario)
+                || await _usuarios.IsInRoleAsync(existente, Roles.SuperAdministrador))
+            {
+                ModelState.AddModelError(nameof(model.Correo),
+                    "Este correo pertenece al equipo de una fundación o de la plataforma. Un veedor no puede vigilar a su propia organización: usa un correo personal.");
+                return View(model);
+            }
+            if (await _usuarios.IsInRoleAsync(existente, Roles.Veedor))
+            {
+                ModelState.AddModelError(nameof(model.Correo), "Esta cuenta ya es veedor.");
+                return View(model);
+            }
+            if (!existente.Activo)
+            {
+                ModelState.AddModelError(nameof(model.Correo), "Esta cuenta está desactivada. Actívala primero.");
+                return View(model);
+            }
+
+            existente.Organizacion = model.Organizacion.Trim();
+            await _usuarios.UpdateAsync(existente);
+            await _usuarios.AddToRoleAsync(existente, Roles.Veedor);
+            // Así la sesión abierta toma el permiso nuevo en máximo 1 minuto
+            await _usuarios.UpdateSecurityStampAsync(existente);
+
+            var aviso = await _invitaciones.EnviarAvisoVeedorAsync(existente);
+            TempData["Mensaje"] = aviso.Enviado
+                ? $"{existente.NombreCompleto} ya tenía cuenta: ahora también es veedor. Le avisamos por correo."
+                : $"{existente.NombreCompleto} ya tenía cuenta: ahora también es veedor.";
+            return RedirectToAction(nameof(Index));
+        }
 
         var veedor = new Usuario
         {
@@ -68,8 +107,8 @@ public class VeedoresController : Controller
 
         var envio = await _invitaciones.EnviarInvitacionVeedorAsync(veedor);
         TempData["Mensaje"] = envio.Enviado
-            ? $"Creaste el acceso de {veedor.NombreCompleto}. Le enviamos un correo para crear su contraseña."
-            : $"Creaste el acceso de {veedor.NombreCompleto}.";
+            ? $"Creaste la cuenta de {veedor.NombreCompleto} con permiso de veedor. Le enviamos un correo para crear su contraseña."
+            : $"Creaste la cuenta de {veedor.NombreCompleto} con permiso de veedor.";
         if (!envio.Enviado)
             TempData["Error"] = _entorno.IsDevelopment()
                 ? $"[Solo en desarrollo] No se pudo enviar el correo; revisa la configuración SMTP. Enlace para crear la contraseña: {envio.Enlace}"
@@ -77,20 +116,17 @@ public class VeedoresController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    /// <summary>Activa o desactiva el acceso. Al desactivarlo, su sesión se cierra en máximo 1 minuto.</summary>
+    /// <summary>Quita el permiso de veedor. La cuenta sigue existiendo (puede seguir donando). Aplica en máximo 1 minuto.</summary>
     [HttpPost]
-    public async Task<IActionResult> CambiarEstado(string id)
+    public async Task<IActionResult> QuitarPermiso(string id)
     {
         var veedor = await _usuarios.FindByIdAsync(id);
         if (veedor is null || !await _usuarios.IsInRoleAsync(veedor, Roles.Veedor)) return NotFound();
 
-        veedor.Activo = !veedor.Activo;
-        await _usuarios.UpdateAsync(veedor);
+        await _usuarios.RemoveFromRoleAsync(veedor, Roles.Veedor);
         await _usuarios.UpdateSecurityStampAsync(veedor);
 
-        TempData["Mensaje"] = veedor.Activo
-            ? $"{veedor.NombreCompleto} vuelve a tener acceso a la veeduría."
-            : $"Desactivaste el acceso de {veedor.NombreCompleto}.";
+        TempData["Mensaje"] = $"{veedor.NombreCompleto} ya no es veedor. Su cuenta sigue activa.";
         return RedirectToAction(nameof(Index));
     }
 }

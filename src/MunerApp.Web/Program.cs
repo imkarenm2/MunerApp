@@ -41,6 +41,7 @@ builder.Services.AddScoped<ITareaDiaria>(sp => sp.GetRequiredService<AlertasSalu
 builder.Services.AddScoped<CierreCausas>();
 builder.Services.AddScoped<ITareaDiaria>(sp => sp.GetRequiredService<CierreCausas>());
 builder.Services.AddScoped<RendicionCuentas>();
+builder.Services.AddScoped<LibroFondos>();
 builder.Services.AddHostedService<RevisionDiariaService>();
 builder.Services.AddScoped<ConfirmacionPagosWompi>();
 builder.Services.AddScoped<PeriodicoMunerApp>();

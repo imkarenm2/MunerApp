@@ -7,7 +7,8 @@ namespace MunerApp.Tests;
 
 /// <summary>
 /// Filtro global por fundación (multi-ESAL): cada usuario ve solo lo de su fundación,
-/// y quien no pertenece a ninguna no ve nada salvo que pueda ver todas (superadmin, veedor, tareas internas).
+/// y quien no pertenece a ninguna no ve nada salvo que pueda ver todas (superadmin y tareas internas).
+/// El veedor no ve todo: es una cuenta de donante con un permiso extra; la veeduría lee lo público con IgnoreQueryFilters().
 /// </summary>
 public class FiltroEsalTests
 {
@@ -50,12 +51,27 @@ public class FiltroEsalTests
         => Assert.Empty(Contexto(new UsuarioDePrueba(esalId: null)).Causas.ToList());
 
     [Fact]
-    public void ElVeedor_VeTodasLasFundaciones()
+    public void ElSuperadministrador_VeTodasLasFundaciones()
         => Assert.Equal(3, Contexto(new UsuarioDePrueba(esalId: null, veTodas: true)).Causas.Count());
 
     [Fact]
     public void LasTareasInternasSinUsuario_VenTodo()
         => Assert.Equal(3, Contexto(usuario: null).Causas.Count());
+
+    [Fact]
+    public void ElLibroDeFondos_TambienSeFiltraPorFundacion()
+    {
+        var opciones = new DbContextOptionsBuilder<MunerAppDbContext>().UseInMemoryDatabase("fondos-" + Guid.NewGuid()).Options;
+        using (var semilla = new MunerAppDbContext(opciones))
+        {
+            semilla.Fondos.AddRange(
+                new Fondo { EsalId = 1, Nombre = "Fondo general", Tipo = MunerApp.Domain.Enums.TipoFondo.General },
+                new Fondo { EsalId = 2, Nombre = "Fondo general", Tipo = MunerApp.Domain.Enums.TipoFondo.General });
+            semilla.SaveChanges();
+        }
+        using var db = new MunerAppDbContext(opciones, new UsuarioDePrueba(esalId: 2));
+        Assert.Equal(2, Assert.Single(db.Fondos.ToList()).EsalId);
+    }
 
     [Fact]
     public void LasPaginasPublicas_IgnoranElFiltro()

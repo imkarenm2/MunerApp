@@ -1,0 +1,62 @@
+@model InventarioEspecieViewModel
+@{
+    ViewData["Title"] = "Inventario de especie";
+}
+<div class="container py-4 py-md-5">
+    <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Donaciones en especie</a>
+    <h1 class="h2 mt-2 mb-1">Inventario</h1>
+    <p class="text-suave mb-4" style="max-width: 760px">Cada donación recibida es un lote. Aquí ves lo que todavía queda, primero lo que vence antes. Cuando uses algo, entra al lote y registra el uso: así el donante y la veeduría ven a dónde fue.</p>
+
+    @if (Model.PorVencer > 0)
+    {
+        <div class="alert alert-warning"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i><div>@Model.PorVencer @(Model.PorVencer == 1 ? "lote vence" : "lotes vencen") en los próximos 30 días o ya @(Model.PorVencer == 1 ? "venció" : "vencieron"). Úsalos primero o regístralos como desechados.</div></div>
+    }
+
+    @if (Model.Lotes.Count == 0)
+    {
+        <div class="estado-vacio">
+            <div class="icono-circulo mb-3"><i class="bi bi-boxes" aria-hidden="true"></i></div>
+            <h2 class="h5">No hay unidades disponibles</h2>
+            <p class="text-suave">Lo que reciban aparecerá aquí hasta que registren su uso.</p>
+        </div>
+    }
+    else
+    {
+        <div class="mu-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="table tabla-mu align-middle mb-0">
+                    <thead><tr><th scope="col">Artículo</th><th scope="col">Disponible</th><th scope="col">Recibido</th><th scope="col">Vence</th><th scope="col"></th></tr></thead>
+                    <tbody>
+                        @foreach (var l in Model.Lotes)
+                        {
+                            <tr>
+                                <td><span class="fw-semibold">@l.Articulo</span><div class="small text-suave">@l.Codigo · @Textos.De(l.Categoria)</div></td>
+                                <td><strong>@l.Disponible</strong> de @l.Recibido @l.Unidad</td>
+                                <td class="small">@Formatos.FechaCorta(l.FechaRecepcion)</td>
+                                <td class="small">
+                                    @if (l.Vence is DateTime v)
+                                    {
+                                        @Formatos.Fecha(v)
+                                        @if (l.Vencido)
+                                        {
+                                            <span class="mu-badge error ms-1">Vencido</span>
+                                        }
+                                        else if (l.PorVencer)
+                                        {
+                                            <span class="mu-badge alerta ms-1">Por vencer</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-suave">—</span>
+                                    }
+                                </td>
+                                <td class="text-end"><a class="btn btn-sm btn-suave" asp-action="Detalle" asp-route-id="@l.Id">Registrar uso</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

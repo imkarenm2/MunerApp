@@ -35,7 +35,7 @@
     {
         "Panel" => "Inicio", "Beneficiarios" => "Gatos", "Donaciones" => "Donaciones", "Causas" => "Causas",
         "DatosDonacion" => "Datos para donar", "Pasarela" => "Pagos en línea", "Postulaciones" => "Voluntarios",
-        "Usuarios" => "Equipo", "Agenda" => "Agenda de salud", "Medicamentos" => "Medicamentos", "Especie" => "Donaciones en especie", "Adopciones" => "Adopción", "Tienda" => "Tienda", "Boletin" => "Boletín", "Perfil" => "Perfil", "Documentos" => "Transparencia", "Redes" => "Redes sociales", _ => ""
+        "Usuarios" => "Equipo", "Agenda" => "Agenda de salud", "Medicamentos" => "Medicamentos", "Especie" => "Donaciones en especie", "Fondos" => "Libro de fondos", "Adopciones" => "Adopción", "Tienda" => "Tienda", "Boletin" => "Boletín", "Perfil" => "Perfil", "Documentos" => "Transparencia", "Redes" => "Redes sociales", _ => ""
     };
     var iniciales = string.Concat((esal?.Nombre ?? "M").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
 }
@@ -104,6 +104,7 @@
                 }
             </a>
             <a class="panel-enlace @Activa("Causas")" aria-current="@Actual("Causas")" asp-area="Fundacion" asp-controller="Causas" asp-action="Index"><i class="bi bi-bullseye" aria-hidden="true"></i>Causas</a>
+            <a class="panel-enlace @Activa("Fondos")" aria-current="@Actual("Fondos")" asp-area="Fundacion" asp-controller="Fondos" asp-action="Index"><i class="bi bi-journal-text" aria-hidden="true"></i>Libro de fondos</a>
             @if (moduloTienda)
             {
                 <a class="panel-enlace @Activa("Tienda")" aria-current="@Actual("Tienda")" asp-area="Fundacion" asp-controller="Productos" asp-action="Index"><i class="bi bi-bag-heart" aria-hidden="true"></i>Tienda</a>

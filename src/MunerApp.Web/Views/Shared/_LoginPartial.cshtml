@@ -10,7 +10,7 @@
     var rol = esSuperAdmin ? "Superadministrador de MunerApp"
         : User.IsInRole(Roles.AdministradorESAL) ? "Administrador de fundación"
         : User.IsInRole(Roles.Voluntario) ? "Voluntario de fundación"
-        : User.IsInRole(Roles.Veedor) ? "Veeduría ciudadana" : "Donante";
+        : User.IsInRole(Roles.Veedor) ? "Donante · Veedor" : "Donante";
     var iniciales = string.Concat(nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
 }
 
@@ -39,10 +39,6 @@
                 <li><a class="dropdown-item rounded-2" asp-area="Plataforma" asp-controller="Informes" asp-action="Donaciones"><i class="bi bi-graph-up-arrow me-2" aria-hidden="true"></i>Informes</a></li>
                 <li><a class="dropdown-item rounded-2" asp-area="Veeduria" asp-controller="RegistroCambios" asp-action="Index"><i class="bi bi-clock-history me-2" aria-hidden="true"></i>Registro de cambios</a></li>
             }
-            else if (User.IsInRole(Roles.Veedor))
-            {
-                <li><a class="dropdown-item rounded-2" asp-area="Veeduria" asp-controller="Consulta" asp-action="Index"><i class="bi bi-binoculars me-2" aria-hidden="true"></i>Veeduría</a></li>
-            }
             else if (esEquipo)
             {
                 <li><a class="dropdown-item rounded-2" asp-area="Fundacion" asp-controller="Panel" asp-action="Index"><i class="bi bi-grid me-2" aria-hidden="true"></i>Panel de mi fundación</a></li>
@@ -59,6 +55,12 @@
                 <li><a class="dropdown-item rounded-2" href="/mis-adopciones"><i class="bi bi-house-heart me-2" aria-hidden="true"></i>Mis adopciones</a></li>
                 <li><a class="dropdown-item rounded-2" href="/mis-chats"><i class="bi bi-chat-heart me-2" aria-hidden="true"></i>Mis chats</a></li>
                 <li><a class="dropdown-item rounded-2" href="/mis-postulaciones"><i class="bi bi-person-raised-hand me-2" aria-hidden="true"></i>Mis postulaciones</a></li>
+                @if (User.IsInRole(Roles.Veedor))
+                {
+                    @* Ser veedor es un permiso extra sobre la cuenta de donante *@
+                    <li><hr class="dropdown-divider" /></li>
+                    <li><a class="dropdown-item rounded-2" asp-area="Veeduria" asp-controller="RegistroCambios" asp-action="Index"><i class="bi bi-clock-history me-2" aria-hidden="true"></i>Registro de cambios</a></li>
+                }
             }
             <li><a class="dropdown-item rounded-2" href="/notificaciones"><i class="bi bi-bell me-2" aria-hidden="true"></i>Notificaciones</a></li>
             <li><hr class="dropdown-divider" /></li>

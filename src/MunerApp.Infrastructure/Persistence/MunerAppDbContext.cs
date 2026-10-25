@@ -73,9 +73,14 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     /// <summary>Trazabilidad: lo escribe AuditoriaInterceptor; lo consultan el veedor y el superadministrador.</summary>
     public DbSet<RegistroAuditoria> RegistrosAuditoria => Set<RegistroAuditoria>();
 
+    // Libro de fondos y destinación de la especie (ciclo de vida de la donación)
+    public DbSet<Fondo> Fondos => Set<Fondo>();
+    public DbSet<MovimientoFondo> MovimientosFondo => Set<MovimientoFondo>();
+    public DbSet<SalidaEspecie> SalidasEspecie => Set<SalidaEspecie>();
+
     // ---- Filtro multi-entidad (documento de diseño, sección 3) ----
     // Usuarios de una ESAL (administradores y voluntarios) solo ven datos de su fundación.
-    // Solo el superadministrador, el veedor y las tareas internas (seed, migraciones, revisión diaria) ven todo.
+    // Solo el superadministrador y las tareas internas (seed, migraciones, revisión diaria) ven todo.
     // Cualquier otro usuario sin ESAL (visitante, donante) no ve nada por defecto: las páginas públicas y las
     // de donantes consultan con IgnoreQueryFilters() y filtran explícitamente por la ESAL o por el usuario.
     // Así, si un administrador queda sin ESAL por error, no ve los datos de todas las fundaciones.
@@ -735,6 +740,51 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasIndex(x => new { x.Entidad, x.EntidadId });
         });
 
+        // ---- Libro de fondos ----
+        builder.Entity<Fondo>(e =>
+        {
+            e.ToTable("Fondo");
+            e.Property(x => x.Nombre).HasMaxLength(120).IsRequired();
+            e.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(15);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Descripcion).HasMaxLength(500);
+            e.Property(x => x.CreadoPorId).HasMaxLength(450);
+            e.HasIndex(x => x.CausaId).IsUnique(); // una causa, un fondo (EF agrega "CausaId IS NOT NULL")
+            // Un solo fondo general y uno de apadrinamientos por fundación
+            e.HasIndex(x => new { x.EsalId, x.Tipo }).IsUnique().HasFilter("[Tipo] IN (N'General', N'Apadrinamiento')");
+            e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Causa).WithMany().HasForeignKey(x => x.CausaId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<MovimientoFondo>(e =>
+        {
+            e.ToTable("MovimientoFondo");
+            e.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Valor).HasPrecision(14, 2);
+            e.Property(x => x.Concepto).HasMaxLength(300).IsRequired();
+            e.Property(x => x.Proveedor).HasMaxLength(150);
+            e.Property(x => x.SoporteRuta).HasMaxLength(300);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.Property(x => x.MotivoAnulacion).HasMaxLength(300);
+            e.Property(x => x.AnuladoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.FondoId, x.Fecha });
+            e.HasIndex(x => new { x.EsalId, x.Fecha });
+            e.HasOne(x => x.Fondo).WithMany(x => x.Movimientos).HasForeignKey(x => x.FondoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.FondoRelacionado).WithMany().HasForeignKey(x => x.FondoRelacionadoId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<SalidaEspecie>(e =>
+        {
+            e.ToTable("SalidaEspecie");
+            e.Property(x => x.Uso).HasMaxLength(300).IsRequired();
+            e.Property(x => x.FotoRuta).HasMaxLength(300);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.Property(x => x.MotivoAnulacion).HasMaxLength(300);
+            e.Property(x => x.AnuladoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.DonacionEspecieId, x.Fecha });
+            e.HasOne(x => x.DonacionEspecie).WithMany(x => x.Salidas).HasForeignKey(x => x.DonacionEspecieId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Filtro por ESAL en cada entidad que pertenece a una fundación.
         // Al crear una entidad nueva con EsalId, agréguenla aquí.
         AplicarFiltroEsal<EsalModulo>(builder);
@@ -772,6 +822,9 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<FotoNovedad>(builder);
         AplicarFiltroEsal<RendicionCausa>(builder);
         AplicarFiltroEsal<ArchivoRendicion>(builder);
+        AplicarFiltroEsal<Fondo>(builder);
+        AplicarFiltroEsal<MovimientoFondo>(builder);
+        AplicarFiltroEsal<SalidaEspecie>(builder);
     }
 
     private void AplicarFiltroEsal<T>(ModelBuilder builder) where T : class, IPerteneceAEsal

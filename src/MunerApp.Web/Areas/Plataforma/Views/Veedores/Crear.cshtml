@@ -1,16 +1,17 @@
 @model VeedorFormViewModel
 @{
-    ViewData["Title"] = "Dar acceso a un veedor";
+    ViewData["Title"] = "Dar permiso de veedor";
 }
 <div class="container py-4 py-md-5" style="max-width: 640px">
     <a asp-action="Index" class="small fw-semibold text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Veedores</a>
-    <h1 class="h2 mt-2 mb-1">Dar acceso a un veedor</h1>
-    <p class="text-suave mb-4">Le llegará un correo para crear su contraseña. Solo podrá consultar.</p>
+    <h1 class="h2 mt-2 mb-1">Dar permiso de veedor</h1>
+    <p class="text-suave mb-4">Si el correo ya tiene cuenta en MunerApp, le agregamos el permiso y le avisamos; entra con su misma contraseña. Si no, creamos la cuenta y le llega un correo para crear su contraseña. El equipo de una fundación no puede ser veedor.</p>
     <form asp-action="Crear" method="post" novalidate class="mu-card p-4 p-md-5">
         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
         <div class="mb-3">
             <label asp-for="Nombre" class="form-label"></label>
             <input asp-for="Nombre" class="form-control" maxlength="150" />
+            <div class="form-text">Si ya tiene cuenta, se conserva el nombre que tiene.</div>
             <span asp-validation-for="Nombre"></span>
         </div>
         <div class="mb-3">
@@ -23,7 +24,7 @@
             <input asp-for="Organizacion" class="form-control" maxlength="150" placeholder="Ej.: Veeduría Ciudadana de Facatativá" />
             <span asp-validation-for="Organizacion"></span>
         </div>
-        <button type="submit" class="btn btn-primary">Crear acceso</button>
+        <button type="submit" class="btn btn-primary">Dar permiso</button>
     </form>
 </div>
 

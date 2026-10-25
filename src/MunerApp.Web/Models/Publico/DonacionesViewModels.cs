@@ -73,6 +73,18 @@ public class DonacionDetalleViewModel : DonacionItem
     /// <summary>Pagada en línea con Wompi (HU-043): no tiene soporte y la confirma el aviso de Wompi (HU-044).</summary>
     public bool EnLinea { get; set; }
     public string? ReferenciaPasarela { get; set; }
+
+    // ---- Recorrido de la donación (libro de fondos): solo cuando está confirmada ----
+    public int EsalId { get; set; }
+
+    /// <summary>Fondo al que quedó asignada la donación, con su saldo.</summary>
+    public MunerApp.Web.Servicios.ResumenFondo? Fondo { get; set; }
+
+    /// <summary>Últimos gastos de ese fondo, con su soporte público.</summary>
+    public IReadOnlyList<MunerApp.Web.Servicios.MovimientoVista> GastosFondo { get; set; } = Array.Empty<MunerApp.Web.Servicios.MovimientoVista>();
+
+    /// <summary>Qué parte de lo que ha entrado al fondo es este aporte (0 a 100, con un decimal).</summary>
+    public decimal PorcentajeDelFondo => Fondo is null || Fondo.Entradas <= 0 ? 0 : Math.Round(Valor * 100 / Fondo.Entradas, 1);
 }
 
 public class PostulacionViewModel

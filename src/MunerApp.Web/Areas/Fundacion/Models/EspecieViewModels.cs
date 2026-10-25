@@ -100,6 +100,12 @@ public class DonacionEspecieDetalleViewModel
 
     // Formulario de recepción
     public RecibirEspecieViewModel Recibir { get; set; } = new();
+
+    // ---- Destinación del lote (qué se hizo con lo recibido) ----
+    public IReadOnlyList<SalidaEspecieItem> Salidas { get; set; } = Array.Empty<SalidaEspecieItem>();
+    public int Usado => Salidas.Where(s => !s.Anulado).Sum(s => s.Cantidad);
+    public int Disponible => Math.Max(0, (CantidadRecibida ?? 0) - Usado);
+    public UsoEspecieViewModel Uso { get; set; } = new();
 }
 
 public class RecibirEspecieViewModel
@@ -120,3 +126,38 @@ public class RecibirEspecieViewModel
     [Display(Name = "Foto de lo recibido (opcional)")]
     public IFormFile? Foto { get; set; }
 }
+
+/// <summary>Un uso registrado de un lote de especie. La foto es pública.</summary>
+public record SalidaEspecieItem(int Id, int Cantidad, string Uso, DateTime Fecha, string? FotoUrl, string? RegistradoPor,
+    bool Anulado, string? MotivoAnulacion);
+
+public class UsoEspecieViewModel
+{
+    [Required(ErrorMessage = "Escribe cuántas unidades se usaron.")]
+    [Range(1, 100000, ErrorMessage = "Escribe un número entre {1} y {2}.")]
+    [Display(Name = "¿Cuántas se usaron?")]
+    public int? Cantidad { get; set; }
+
+    [Required(ErrorMessage = "Escribe en qué se usó.")]
+    [StringLength(300, MinimumLength = 5, ErrorMessage = "Entre {2} y {1} caracteres.")]
+    [Display(Name = "¿En qué se usó?")]
+    public string Uso { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Escribe la fecha.")]
+    [DataType(DataType.Date)]
+    [Display(Name = "Fecha")]
+    public DateTime? Fecha { get; set; }
+
+    [Display(Name = "Foto (opcional)")]
+    public IFormFile? Foto { get; set; }
+}
+
+/// <summary>Inventario: lotes recibidos que todavía tienen unidades disponibles.</summary>
+public class InventarioEspecieViewModel
+{
+    public IReadOnlyList<LoteEspecieItem> Lotes { get; set; } = Array.Empty<LoteEspecieItem>();
+    public int PorVencer => Lotes.Count(l => l.PorVencer || l.Vencido);
+}
+
+public record LoteEspecieItem(int Id, string Codigo, string Articulo, CategoriaEspecie Categoria, string Unidad, int Recibido, int Disponible,
+    DateTime FechaRecepcion, DateTime? Vence, bool PorVencer, bool Vencido);

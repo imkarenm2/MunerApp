@@ -159,6 +159,7 @@ Las páginas públicas (`/fundaciones/...`), "Mis donaciones" y "Mis postulacion
 | Administrador de consulta | Del equipo de la fundación: consulta y aprueba, no configura |
 | Administrador principal | Responsable de la fundación en la plataforma |
 | Superadministrador | Equipo de MunerApp |
+| Veedor (permiso) | Donante o persona de una veeduría ciudadana a quien el superadmin le da el permiso por correo |
 
 | Acción | Visitante | Donante | Vol. general | Vol. salud | Admin consulta | Admin principal | Superadmin |
 |---|---|---|---|---|---|---|---|
@@ -178,11 +179,17 @@ Las páginas públicas (`/fundaciones/...`), "Mis donaciones" y "Mis postulacion
 | Ver el equipo | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
 | Crear, editar y desactivar usuarios del equipo | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | Registrar fundaciones, activarlas y elegir módulos | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Ver el libro de fondos e inventario de especie | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Registrar gastos, traslados, proyectos y cerrar fondos | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Registrar usos de la especie | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Veeduría pública (`/veeduria`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Registro de cambios | ❌ | Solo con permiso de veedor | ❌ | ❌ | ❌ | ❌ | ✅ |
 
 Reglas adicionales:
 
 - Nadie confirma ni rechaza una donación que reportó él mismo.
 - Las cuentas de fundación y el superadministrador no donan, no apadrinan y no se postulan: así una fundación no se puede reportar y confirmar donaciones a sí misma. Para apoyar a título personal se usa otra cuenta.
+- Ser veedor es un permiso sobre una cuenta normal, no una cuenta aparte: el veedor sigue pudiendo donar. El equipo de una fundación y el superadmin no pueden ser veedores.
 - Cada usuario de una fundación solo ve datos de su fundación (filtro global por ESAL).
 - Si se desactiva un usuario, se le cambia el rol o se desactiva su fundación, su sesión se cierra en máximo 1 minuto.
 - Los permisos están en `src/MunerApp.Web/Seguridad/Politicas.cs`. Antes de crear una pantalla nueva, revisen esta tabla y protejan la acción con `[Authorize(...)]`.
@@ -317,10 +324,26 @@ Migraciones, en orden: `HU023_Productos`, `HU025_ChatTienda`, `HU026_Pedidos`, `
 
 ## Veeduría ciudadana
 
-- Rol nuevo **Veedor**. El superadmin crea la cuenta en **Veeduría** y le llega un correo para poner su clave. También la puede desactivar.
-- El veedor solo consulta, no puede donar ni cambiar nada. Ve por fundación: causas y su rendición de cuentas, dinero recibido sin datos del donante, lo recibido en especie con foto y los documentos publicados.
-- Alertas: causas cerradas sin rendición, donaciones sin revisar por más de 7 días y fundaciones sin documentos.
-- Puede descargar CSV de dinero, especie y causas.
+- **Pública:** `/veeduria` la ve cualquiera, sin cuenta. Por fundación muestra el libro de fondos (saldos, gastos y traslados con su soporte), causas y su rendición de cuentas, dinero recibido sin datos del donante, lo recibido en especie con foto y en qué se usó, y los documentos publicados.
+- Alertas: causas cerradas sin rendición, donaciones sin revisar por más de 7 días, fundaciones sin documentos y fundaciones que recibieron dinero y no registraron gastos.
+- CSV de dinero, especie (con usado y disponible), causas y movimientos de los fondos.
+- **Permiso de veedor:** el superadmin lo da en **Veeduría** con el correo. Si la cuenta ya existe se le agrega el permiso y se le avisa; si no, se crea y le llega el correo para poner su clave. No se le puede dar a cuentas de una fundación ni al superadmin. Quitar el permiso no desactiva la cuenta.
+- El permiso solo agrega el **registro de cambios** (`/Veeduria/RegistroCambios`), sin datos personales de donantes. Cada consulta del veedor queda anotada en el mismo registro (acción *Consultado*): quien vigila también deja rastro.
+- El veedor no ve los datos internos de las fundaciones: el filtro por ESAL lo trata como a cualquier donante.
+
+## Libro de fondos (ciclo de vida de la donación)
+
+Recepción → Asignación → Movimientos → Destinación → Veeduría.
+
+- **Recepción:** la donación confirmada (dinero) o recibida (especie).
+- **Asignación:** cada donación confirmada entra sola a un fondo, sin guardar nada extra: la de una causa al fondo de esa causa, la de un padrino a *Apadrinamientos*, las demás al *Fondo general*. La fundación también crea fondos de **proyecto** (empiezan en cero).
+- **Movimientos:** traslados entre fondos (dos movimientos, uno en cada fondo, que se anulan juntos).
+- **Destinación:** gastos con valor, concepto, fecha, proveedor y soporte público (factura, recibo o foto). No se puede gastar más del saldo. El saldo no se guarda: donaciones + traslados que llegan − gastos − traslados que salen.
+- Nada se edita ni se borra: se **anula** con un motivo y sigue visible tachado. Un fondo de causa o de proyecto se cierra solo con saldo en cero.
+- El dinero se sigue **por fondo**, no peso por peso. El donante ve en su donación el **recorrido**: a qué fondo entró, qué parte del fondo es su aporte y los últimos gastos.
+- **Especie:** cada donación recibida es un **lote**. En el detalle se registran los usos (cantidad, en qué, fecha, foto). Disponible = recibido − usos. **Inventario** muestra lo que queda y alerta lo que vence en 30 días. El donante ve los usos en su donación.
+- Dos personas no pueden gastar el mismo saldo a la vez: cada movimiento toma un bloqueo por fundación (`sp_getapplock`).
+- Código: `Servicios/LibroFondos.cs`, `Areas/Fundacion/Controllers/FondosController.cs`, `EspecieController` (`RegistrarUso`, `AnularUso`, `Inventario`). Migración `LibroDeFondos`: tablas `Fondo`, `MovimientoFondo` y `SalidaEspecie`.
 
 ## Pruebas automatizadas
 
@@ -427,7 +450,7 @@ Toda entidad nueva que pertenezca a una fundación debe:
 1. Implementar `IPerteneceAEsal` (propiedad `EsalId`).
 2. Registrarse en `MunerAppDbContext.OnModelCreating` con `AplicarFiltroEsal<Entidad>(builder);`.
 
-Los usuarios de una ESAL (administradores y voluntarios) solo ven los datos de su fundación. Las páginas públicas filtran explícitamente por la ESAL que se consulta. El superadministrador puede usar `IgnoreQueryFilters()` en el panel de plataforma; las páginas públicas también, filtrando siempre de forma explícita (ver Sprint 2).
+Los usuarios de una ESAL (administradores y voluntarios) solo ven los datos de su fundación. Las páginas públicas (incluida la veeduría) filtran explícitamente por la ESAL que se consulta. El superadministrador puede usar `IgnoreQueryFilters()` en el panel de plataforma; las páginas públicas también, filtrando siempre de forma explícita (ver Sprint 2).
 
 ## Despliegue en Azure
 

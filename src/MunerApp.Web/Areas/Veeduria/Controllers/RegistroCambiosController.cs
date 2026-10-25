@@ -1,8 +1,11 @@
+using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MunerApp.Application.Seguridad;
 using MunerApp.Domain.Constantes;
+using MunerApp.Domain.Entities;
 using MunerApp.Domain.Enums;
 using MunerApp.Infrastructure.Persistence;
 using MunerApp.Web.Areas.Veeduria.Models;
@@ -48,6 +51,10 @@ public class RegistroCambiosController : Controller
         if (desde is not null) { var inicio = Formatos.Utc(desde.Value.Date); consulta = consulta.Where(r => r.Fecha >= inicio); }
         if (hasta is not null) { var fin = Formatos.Utc(hasta.Value.Date.AddDays(1)); consulta = consulta.Where(r => r.Fecha < fin); }
 
+        // Quien vigila también deja rastro: cada consulta nueva de un veedor queda en el registro (no las de cambio de página)
+        if (ocultar && pagina == 1)
+            await RegistrarConsultaAsync(esalId, entidad, accion, desde, hasta);
+
         var total = await consulta.CountAsync();
         var totalPaginas = Math.Max(1, (int)Math.Ceiling(total / (double)PorPagina));
         pagina = Math.Clamp(pagina, 1, totalPaginas);
@@ -75,7 +82,8 @@ public class RegistroCambiosController : Controller
             Registros = registros.Select(r => new RegistroCambioItem
             {
                 Fecha = r.Fecha,
-                Usuario = r.UsuarioId is null ? "Sistema" : equipo.Contains(r.UsuarioId) ? r.UsuarioNombre : "Un donante",
+                Usuario = r.UsuarioId is null ? "Sistema"
+                    : equipo.Contains(r.UsuarioId) || r.Accion == AccionAuditoria.Consultado ? r.UsuarioNombre : "Un donante",
                 Fundacion = r.EsalId is int id ? nombresEsal.GetValueOrDefault(id) : null,
                 Entidad = r.Entidad,
                 EntidadId = r.EntidadId,
@@ -83,6 +91,30 @@ public class RegistroCambiosController : Controller
                 Campos = Campos(r.Cambios, r.Accion, ocultar)
             }).ToList()
         });
+    }
+
+    private async Task RegistrarConsultaAsync(int? esalId, string? entidad, AccionAuditoria? accion, DateTime? desde, DateTime? hasta)
+    {
+        var filtros = new Dictionary<string, string?>
+        {
+            ["Fundacion"] = esalId?.ToString(),
+            ["Tipo"] = entidad,
+            ["Accion"] = accion?.ToString(),
+            ["Desde"] = desde?.ToString("yyyy-MM-dd"),
+            ["Hasta"] = hasta?.ToString("yyyy-MM-dd")
+        }.Where(f => f.Value is not null).ToDictionary(f => f.Key, f => f.Value);
+
+        _db.RegistrosAuditoria.Add(new RegistroAuditoria
+        {
+            UsuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+            UsuarioNombre = "Veedor: " + (User.FindFirst(MunerAppClaims.NombreCompleto)?.Value ?? User.Identity?.Name ?? ""),
+            EsalId = esalId,
+            Entidad = "RegistroCambios",
+            EntidadId = "consulta",
+            Accion = AccionAuditoria.Consultado,
+            Cambios = JsonSerializer.Serialize(filtros)
+        });
+        await _db.SaveChangesAsync();
     }
 
     /// <summary>Convierte el JSON de cambios en filas de campo, antes y después.</summary>

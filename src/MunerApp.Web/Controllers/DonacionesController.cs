@@ -30,10 +30,12 @@ public class DonacionesController : Controller
     private readonly INotificacionService _notificaciones;
     private readonly IComprobanteService _comprobantes;
     private readonly CausasPublicas _causas;
+    private readonly LibroFondos _libro;
 
     public DonacionesController(MunerAppDbContext db, IAlmacenamientoArchivos archivos,
-        INotificacionService notificaciones, IComprobanteService comprobantes, CausasPublicas causas)
+        INotificacionService notificaciones, IComprobanteService comprobantes, CausasPublicas causas, LibroFondos libro)
     {
+        _libro = libro;
         _db = db;
         _archivos = archivos;
         _notificaciones = notificaciones;
@@ -239,8 +241,22 @@ public class DonacionesController : Controller
         var d = await BuscarPropiaAsync(codigo);
         if (d is null) return NotFound();
 
+        // Recorrido: a qué fondo entró y en qué se ha gastado ese fondo
+        ResumenFondo? fondo = null;
+        IReadOnlyList<MovimientoVista> gastos = Array.Empty<MovimientoVista>();
+        if (d.Estado == EstadoDonacion.Confirmada)
+        {
+            var clave = LibroFondos.ClaveDe(d);
+            fondo = await _libro.ResumenAsync(d.EsalId, clave);
+            if (fondo?.FondoId is not null)
+                gastos = await _libro.MovimientosAsync(d.EsalId, clave, soloGastos: true, maximo: 5);
+        }
+
         return View(new DonacionDetalleViewModel
         {
+            EsalId = d.EsalId,
+            Fondo = fondo,
+            GastosFondo = gastos,
             Codigo = d.Codigo,
             NombreEsal = d.Esal!.Nombre,
             SlugEsal = d.Esal.Slug,

@@ -1600,3 +1600,29 @@ a.kpi:hover { border-color: #CFCEC6; box-shadow: var(--mu-sombra-hover); color: 
     .hero-video { min-height: 0; }
 }
 .hero-video + .cifras { padding-top: 2.5rem; }
+
+/* ---------- Libro de fondos y recorrido de la donación ---------- */
+.movimiento-fondo {
+    padding: .75rem 1rem;
+    border: 1px solid var(--mu-borde);
+    border-radius: var(--mu-radio-sm);
+    background: var(--mu-superficie);
+}
+.movimiento-fondo.anulado { background: #FBFAF8; }
+.fondo-tarjeta { display: flex; flex-direction: column; gap: .5rem; height: 100%; }
+.fondo-cifras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; font-size: .875rem; }
+.fondo-cifras strong { display: block; font-size: 1rem; }
+.recorrido { list-style: none; margin: 0; padding: 0; position: relative; }
+.recorrido > li { position: relative; padding: 0 0 1.25rem 2.25rem; }
+.recorrido > li:last-child { padding-bottom: 0; }
+.recorrido > li::before {
+    content: ""; position: absolute; left: .7rem; top: 1.6rem; bottom: 0; width: 2px; background: var(--mu-borde);
+}
+.recorrido > li:last-child::before { display: none; }
+.recorrido-punto {
+    position: absolute; left: 0; top: 0; width: 1.5rem; height: 1.5rem; border-radius: 50%;
+    display: grid; place-items: center; font-size: .75rem;
+    background: var(--mu-principal-suave); color: var(--mu-principal);
+}
+.recorrido > li.pendiente .recorrido-punto { background: var(--mu-acento-suave); color: var(--mu-texto-suave); }
+.salida-foto { width: 72px; height: 72px; object-fit: cover; border-radius: var(--mu-radio-sm); }

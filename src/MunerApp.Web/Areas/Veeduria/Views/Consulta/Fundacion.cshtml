@@ -1,6 +1,7 @@
 @model FundacionVeeduriaViewModel
 @{
     ViewData["Title"] = "Veeduría · " + Model.Nombre;
+    ViewData["Nav"] = "Veeduria";
     var sinRendicion = Model.Causas.Count(c => c.Cerrada && c.RendicionUrl is null);
 }
 <div class="container py-4 py-md-5">
@@ -32,6 +33,45 @@
         <div class="col-6 col-xl-3"><div class="kpi @(Model.PendientesMasDeUnaSemana > 0 ? "alerta" : "")"><span class="kpi-icono"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span><span class="kpi-valor">@Model.DonacionesPendientes</span><span class="kpi-titulo">Sin revisar hoy</span><span class="kpi-detalle">@Model.PendientesMasDeUnaSemana con más de una semana</span></div></div>
         <div class="col-6 col-xl-3"><div class="kpi acento"><span class="kpi-icono"><i class="bi bi-stopwatch" aria-hidden="true"></i></span><span class="kpi-valor">@(Model.DiasPromedioRevision is double dias ? $"{dias:0.#} días" : "—")</span><span class="kpi-titulo">Tiempo de revisión</span><span class="kpi-detalle">promedio para confirmar una donación</span></div></div>
     </div>
+
+    @* ---------- Libro de fondos: asignación, movimientos y destinación ---------- *@
+    <section class="mu-card p-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
+            <h2 class="h5 mb-0">Libro de fondos</h2>
+            <a class="small" asp-action="Csv" asp-route-id="@Model.Id" asp-route-anio="@Model.Anio" asp-route-tipo="movimientos"><i class="bi bi-download me-1" aria-hidden="true"></i>Descargar movimientos (CSV)</a>
+        </div>
+        <p class="small text-suave mb-3">Cada donación confirmada entra a un fondo: la de una causa, al de esa causa; la de un padrino, a apadrinamientos; las demás, al fondo general. De ahí salen los gastos, cada uno con su soporte. Saldos acumulados desde el inicio.</p>
+        <div class="row g-3 mb-4">
+            @foreach (var f in Model.Fondos)
+            {
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="mu-card p-3 fondo-tarjeta @(f.Abierto ? "" : "documento-oculto")">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span class="mu-badge">@Textos.De(f.Tipo)</span>
+                            @if (!f.Abierto)
+                            {
+                                <span class="mu-badge"><i class="bi bi-lock" aria-hidden="true"></i>Cerrado</span>
+                            }
+                        </div>
+                        <div class="fw-semibold">@f.Nombre</div>
+                        <div class="mu-progreso" role="progressbar" aria-valuenow="@f.PorcentajeGastado" aria-valuemin="0" aria-valuemax="100" aria-label="Parte gastada de @f.Nombre">
+                            <span style="width: @(f.PorcentajeGastado)%"></span>
+                        </div>
+                        <div class="fondo-cifras">
+                            <div><strong>@Formatos.Pesos(f.Entradas)</strong>entró</div>
+                            <div><strong>@Formatos.Pesos(f.Gastos)</strong>gastado</div>
+                            <div><strong>@Formatos.Pesos(f.Saldo)</strong>queda</div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <h3 class="h6 mb-2">Gastos y traslados de @Model.Anio @(Model.GastadoEnElAnio > 0 ? $"· {Formatos.Pesos(Model.GastadoEnElAnio)} gastados" : "")</h3>
+        @{ ViewData["MostrarFondo"] = true; }
+        <div style="max-height: 520px; overflow-y: auto">
+            <partial name="_MovimientosFondo" model="Model.Movimientos" view-data="ViewData" />
+        </div>
+    </section>
 
     @* ---------- Causas y rendición de cuentas ---------- *@
     <section class="mu-card overflow-hidden mb-4">
@@ -124,7 +164,7 @@
         <div class="col-12 col-xl-6">
             <section class="mu-card overflow-hidden h-100">
                 <div class="p-4 pb-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
-                    <h2 class="h5 mb-0">Donaciones en especie recibidas</h2>
+                    <h2 class="h5 mb-0">Donaciones en especie: qué llegó y en qué se usó</h2>
                     <a class="small" asp-action="Csv" asp-route-id="@Model.Id" asp-route-anio="@Model.Anio" asp-route-tipo="especie"><i class="bi bi-download me-1" aria-hidden="true"></i>Descargar CSV</a>
                 </div>
                 @if (Model.Especie.Count == 0)
@@ -135,7 +175,7 @@
                 {
                     <div class="table-responsive" style="max-height: 420px">
                         <table class="table tabla-mu align-middle mb-0">
-                            <thead><tr><th scope="col">Fecha</th><th scope="col">Qué</th><th scope="col" class="text-end">Cantidad</th><th scope="col">Evidencia</th></tr></thead>
+                            <thead><tr><th scope="col">Fecha</th><th scope="col">Qué</th><th scope="col" class="text-end">Cantidad</th><th scope="col">Uso</th><th scope="col">Evidencia</th></tr></thead>
                             <tbody>
                                 @foreach (var e in Model.Especie)
                                 {
@@ -143,6 +183,20 @@
                                         <td class="small">@Formatos.Fecha(e.Fecha)<div class="font-monospace text-suave">@e.Codigo</div></td>
                                         <td class="small">@e.Articulo<div class="text-suave">@e.Categoria@(e.Vence is DateTime v ? " · vence " + Formatos.Fecha(v) : "")</div></td>
                                         <td class="text-end small">@e.Cantidad @e.Unidad</td>
+                                        <td class="small">
+                                            @if (e.Usos.Count == 0)
+                                            {
+                                                <span class="text-suave">Sin registrar</span>
+                                            }
+                                            else
+                                            {
+                                                <details>
+                                                    <summary>@e.Usado de @e.Cantidad usados</summary>
+                                                    @{ ViewData["Unidad"] = e.Unidad; }
+                                                    <div class="mt-2" style="min-width: 220px"><partial name="_UsosEspecie" model="e.Usos" view-data="ViewData" /></div>
+                                                </details>
+                                            }
+                                        </td>
                                         <td>@if (e.FotoUrl is not null) { <a class="small" href="@e.FotoUrl" target="_blank" rel="noopener"><i class="bi bi-image me-1" aria-hidden="true"></i>Foto</a> } else { <span class="small text-suave">Sin foto</span> }</td>
                                     </tr>
                                 }

@@ -38,15 +38,15 @@ public static class Politicas
 
     /// <summary>
     /// Donar, apadrinar, reportar aportes y postularse como voluntario: solo cuentas de donante.
-    /// Las cuentas de una fundación (administradores y voluntarios), los veedores y el superadministrador no pueden,
+    /// Las cuentas de una fundación (administradores y voluntarios) y el superadministrador no pueden,
     /// para evitar que una fundación se reporte y se confirme donaciones a sí misma.
+    /// El veedor sí puede: ser veedor es un permiso extra sobre una cuenta de donante, no una cuenta aparte.
     /// </summary>
     public static bool PuedeApoyar(ClaimsPrincipal usuario) =>
         usuario.Identity?.IsAuthenticated == true
         && !usuario.IsInRole(Roles.AdministradorESAL)
         && !usuario.IsInRole(Roles.Voluntario)
-        && !usuario.IsInRole(Roles.SuperAdministrador)
-        && !usuario.IsInRole(Roles.Veedor);
+        && !usuario.IsInRole(Roles.SuperAdministrador);
 
     /// <summary>Cuenta de una fundación o de la plataforma (no es donante).</summary>
     public static bool EsCuentaInstitucional(ClaimsPrincipal usuario) =>
