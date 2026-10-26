@@ -16,6 +16,10 @@
     <meta name="description" content="@(ViewData["Descripcion"] as string ?? "MunerApp: conoce fundaciones, mira en qué se usan las donaciones y elige cómo ayudar.")" />
     <meta name="theme-color" content="#1F4D3A" />
     <title>@ViewData["Title"] · MunerApp</title>
+    @* Ícono de la pestaña: el mismo logo del encabezado (el .ico es para navegadores viejos, el PNG para la pantalla de inicio del celular) *@
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" />
