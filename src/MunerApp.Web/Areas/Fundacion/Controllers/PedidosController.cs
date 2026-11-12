@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ namespace MunerApp.Web.Areas.Fundacion.Controllers;
 /// <summary>
 /// HU-026: seguimiento de los pedidos acordados por chat. Un pedido pasa de Acordado a Pagado y a Entregado;
 /// antes de entregarse se puede cancelar. Cada cambio se le notifica al donante.
+/// Si el producto lleva inventario, al pasar a Pagado se descuentan las unidades y al cancelar un pedido pagado vuelven.
 /// </summary>
 [Area("Fundacion")]
 [Authorize(Roles = Roles.AdministradorESAL)]
@@ -23,11 +25,13 @@ public class PedidosController : Controller
 {
     private readonly MunerAppDbContext _db;
     private readonly INotificacionService _notificaciones;
+    private readonly InventarioTienda _inventario;
 
-    public PedidosController(MunerAppDbContext db, INotificacionService notificaciones)
+    public PedidosController(MunerAppDbContext db, INotificacionService notificaciones, InventarioTienda inventario)
     {
         _db = db;
         _notificaciones = notificaciones;
+        _inventario = inventario;
     }
 
     [HttpGet]
@@ -66,6 +70,25 @@ public class PedidosController : Controller
         }
         else
         {
+            await using var transaccion = await _db.Database.BeginTransactionAsync();
+
+            // Inventario: se descuenta al pagar y vuelve si se cancela un pedido ya pagado
+            var efecto = Pedido.EfectoEnInventario(p.Estado, estado);
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var inventario = efecto switch
+            {
+                < 0 => await _inventario.VenderAsync(p.Producto!, p.Cantidad, p, usuarioId),
+                > 0 => await _inventario.DevolverAsync(p.Producto!, p.Cantidad, p, usuarioId),
+                _ => new MovimientoInventario(ResultadoInventario.SinInventario, null)
+            };
+            if (inventario.Resultado is ResultadoInventario.Insuficiente or ResultadoInventario.SuperaMaximo)
+            {
+                TempData["Error"] = inventario.Resultado == ResultadoInventario.Insuficiente
+                    ? $"No se pudo marcar como pagado el pedido {p.Codigo}: pide {p.Cantidad} y solo quedan {inventario.Cantidad} de «{p.Producto!.Nombre}». Actualiza el inventario del producto o ajusta el pedido."
+                    : $"No se pudo cancelar el pedido {p.Codigo}: al devolver las unidades «{p.Producto!.Nombre}» superaría el tope de {InventarioTienda.CantidadMaxima:N0} unidades.";
+                return Volver(volverA, p.ConversacionId);
+            }
+
             p.Estado = estado;
             p.FechaActualizacion = DateTime.UtcNow;
             var esal = p.Conversacion!.Esal!.Nombre;
@@ -77,12 +100,20 @@ public class PedidosController : Controller
             };
             _notificaciones.Agregar(p.DonanteId, titulo, mensaje, $"/mis-chats/{p.ConversacionId}", estado == EstadoPedido.Cancelado ? "bi-x-circle" : "bi-bag-check");
             await _db.SaveChangesAsync();
-            TempData["Mensaje"] = $"El pedido {p.Codigo} quedó {Textos.De(estado).ToLower()}.";
+            await transaccion.CommitAsync();
+            TempData["Mensaje"] = $"El pedido {p.Codigo} quedó {Textos.De(estado).ToLower()}." + inventario switch
+            {
+                { Resultado: ResultadoInventario.Hecho, Cantidad: 0 } => $" «{p.Producto!.Nombre}» se quedó sin unidades y quedó agotado en la tienda.",
+                { Resultado: ResultadoInventario.Hecho, Cantidad: int quedan } => $" Quedan {quedan} unidades de «{p.Producto!.Nombre}».",
+                _ => ""
+            };
         }
 
-        // Se puede cambiar desde la lista de pedidos o desde el chat
-        return volverA == "chat"
-            ? RedirectToAction("Detalle", "ChatsTienda", new { id = p.ConversacionId })
-            : RedirectToAction(nameof(Index));
+        return Volver(volverA, p.ConversacionId);
     }
+
+    /// <summary>Se puede cambiar desde la lista de pedidos o desde el chat.</summary>
+    private IActionResult Volver(string? volverA, int conversacionId) => volverA == "chat"
+        ? RedirectToAction("Detalle", "ChatsTienda", new { id = conversacionId })
+        : RedirectToAction(nameof(Index));
 }

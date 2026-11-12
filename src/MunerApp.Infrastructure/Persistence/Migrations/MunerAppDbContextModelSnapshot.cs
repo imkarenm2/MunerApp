@@ -1925,6 +1925,54 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.ToTable("MovimientoMedicamento", (string)null);
                 });
 
+            modelBuilder.Entity("MunerApp.Domain.Entities.MovimientoProducto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Cantidad")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CantidadResultante")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EsalId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Nota")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int?>("PedidoId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RegistradoPorId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PedidoId");
+
+                    b.HasIndex("ProductoId", "Fecha");
+
+                    b.ToTable("MovimientoProducto", (string)null);
+                });
+
             modelBuilder.Entity("MunerApp.Domain.Entities.NecesidadEspecie", b =>
                 {
                     b.Property<int>("Id")
@@ -2217,6 +2265,9 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("Cantidad")
+                        .HasColumnType("int");
 
                     b.Property<string>("Categoria")
                         .HasMaxLength(60)
@@ -3399,6 +3450,24 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
                     b.Navigation("Medicamento");
                 });
 
+            modelBuilder.Entity("MunerApp.Domain.Entities.MovimientoProducto", b =>
+                {
+                    b.HasOne("MunerApp.Domain.Entities.Pedido", "Pedido")
+                        .WithMany()
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MunerApp.Domain.Entities.Producto", "Producto")
+                        .WithMany("Movimientos")
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Pedido");
+
+                    b.Navigation("Producto");
+                });
+
             modelBuilder.Entity("MunerApp.Domain.Entities.NecesidadEspecie", b =>
                 {
                     b.HasOne("MunerApp.Domain.Entities.Esal", "Esal")
@@ -3638,6 +3707,8 @@ namespace MunerApp.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("MunerApp.Domain.Entities.Producto", b =>
                 {
                     b.Navigation("Fotos");
+
+                    b.Navigation("Movimientos");
                 });
 
             modelBuilder.Entity("MunerApp.Domain.Entities.RendicionCausa", b =>

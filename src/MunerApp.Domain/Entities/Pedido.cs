@@ -43,4 +43,15 @@ public class Pedido : IPerteneceAEsal
         EstadoPedido.Pagado => new[] { EstadoPedido.Entregado, EstadoPedido.Cancelado },
         _ => Array.Empty<EstadoPedido>()
     };
+
+    /// <summary>
+    /// Qué le pasa al inventario del producto con un cambio de estado: -1 descuenta (el pedido se pagó),
+    /// +1 devuelve (se canceló un pedido ya pagado) y 0 no lo toca. Acordar un pedido no aparta unidades.
+    /// </summary>
+    public static int EfectoEnInventario(EstadoPedido antes, EstadoPedido despues) => (antes, despues) switch
+    {
+        (EstadoPedido.Acordado, EstadoPedido.Pagado) => -1,
+        (EstadoPedido.Pagado, EstadoPedido.Cancelado) => 1,
+        _ => 0
+    };
 }

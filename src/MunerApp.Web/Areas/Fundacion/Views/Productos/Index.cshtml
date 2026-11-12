@@ -84,7 +84,13 @@
                                 }
                             </div>
                             <h2 class="h6 mb-1">@p.Nombre</h2>
-                            <div class="fw-bold text-principal mb-3">@Formatos.Pesos(p.Precio)</div>
+                            <div class="fw-bold text-principal @(p.Cantidad is null ? "mb-3" : "")">@Formatos.Pesos(p.Precio)</div>
+                            @if (p.Cantidad is int unidades)
+                            {
+                                <div class="small mb-3 @(unidades == 0 ? "text-danger fw-semibold" : "text-suave")">
+                                    <i class="bi bi-box-seam me-1" aria-hidden="true"></i>@(unidades == 0 ? "Sin unidades" : unidades == 1 ? "1 unidad" : $"{unidades} unidades")
+                                </div>
+                            }
                             <div class="d-flex flex-wrap gap-2 mt-auto">
                                 @if (Model.Slug is not null && p.Estado != EstadoProducto.Oculto)
                                 {

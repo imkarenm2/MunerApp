@@ -57,6 +57,7 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
     public DbSet<ConversacionTienda> ConversacionesTienda => Set<ConversacionTienda>();
     public DbSet<MensajeTienda> MensajesTienda => Set<MensajeTienda>();
     public DbSet<Pedido> Pedidos => Set<Pedido>();
+    public DbSet<MovimientoProducto> MovimientosProducto => Set<MovimientoProducto>();
     public DbSet<Publicacion> Publicaciones => Set<Publicacion>();
 
     // Sprint 6
@@ -638,6 +639,17 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
             e.HasOne(x => x.Esal).WithMany().HasForeignKey(x => x.EsalId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        builder.Entity<MovimientoProducto>(e =>
+        {
+            e.ToTable("MovimientoProducto");
+            e.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(15);
+            e.Property(x => x.Nota).HasMaxLength(300);
+            e.Property(x => x.RegistradoPorId).HasMaxLength(450);
+            e.HasIndex(x => new { x.ProductoId, x.Fecha });
+            e.HasOne(x => x.Producto).WithMany(x => x.Movimientos).HasForeignKey(x => x.ProductoId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Pedido).WithMany().HasForeignKey(x => x.PedidoId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         builder.Entity<MovimientoMedicamento>(e =>
         {
             e.ToTable("MovimientoMedicamento");
@@ -813,6 +825,7 @@ public class MunerAppDbContext : IdentityDbContext<Usuario, IdentityRole, string
         AplicarFiltroEsal<ConversacionTienda>(builder);
         AplicarFiltroEsal<MensajeTienda>(builder);
         AplicarFiltroEsal<Pedido>(builder);
+        AplicarFiltroEsal<MovimientoProducto>(builder);
         AplicarFiltroEsal<Publicacion>(builder);
         AplicarFiltroEsal<Medicamento>(builder);
         AplicarFiltroEsal<MovimientoMedicamento>(builder);

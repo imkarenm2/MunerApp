@@ -24,12 +24,33 @@ public class Producto : IPerteneceAEsal
     /// <summary>Disponible, Agotado (se ve, pero no se puede pedir) u Oculto (no se ve en el catálogo).</summary>
     public EstadoProducto Estado { get; set; } = EstadoProducto.Disponible;
 
+    /// <summary>
+    /// Unidades disponibles. Null: la fundación no lleva inventario de este producto y maneja el estado a mano.
+    /// Con inventario, la venta se descuenta cuando el pedido pasa a Pagado y vuelve si ese pedido se cancela.
+    /// </summary>
+    public int? Cantidad { get; set; }
+
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
     public DateTime? FechaActualizacion { get; set; }
     public string? CreadoPorId { get; set; }
 
     public Esal? Esal { get; set; }
     public ICollection<FotoProducto> Fotos { get; set; } = new List<FotoProducto>();
+    public ICollection<MovimientoProducto> Movimientos { get; set; } = new List<MovimientoProducto>();
 
     public bool EsVisible => Estado != EstadoProducto.Oculto;
+
+    public bool LlevaInventario => Cantidad is not null;
+
+    /// <summary>
+    /// Estado que debe quedar después de un movimiento de inventario: sin unidades queda Agotado; si estaba
+    /// agotado por falta de unidades y vuelven a entrar, queda Disponible. Un producto oculto sigue oculto.
+    /// </summary>
+    public static EstadoProducto EstadoSegunInventario(EstadoProducto actual, int antes, int despues)
+    {
+        if (actual == EstadoProducto.Oculto) return actual;
+        if (despues <= 0) return EstadoProducto.Agotado;
+        if (antes <= 0 && actual == EstadoProducto.Agotado) return EstadoProducto.Disponible;
+        return actual;
+    }
 }

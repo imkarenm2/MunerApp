@@ -152,6 +152,13 @@ public class ChatsTiendaController : Controller
         else if (precio > 50_000_000)
             ModelState.AddModelError("Pedido.PrecioUnitario", "El precio por unidad no puede superar $ 50.000.000.");
 
+        // Inventario: no se acuerda más de lo que hay. Las unidades se descuentan cuando el pedido se pague.
+        var disponibles = await _db.Productos.AsNoTracking().Where(x => x.Id == c.ProductoId).Select(x => x.Cantidad).FirstOrDefaultAsync();
+        if (disponibles is int hay && pedido.Cantidad is int pide && pide > hay)
+            ModelState.AddModelError("Pedido.Cantidad", hay == 0
+                ? "Este producto no tiene unidades disponibles. Agrega unidades en el inventario del producto."
+                : $"Solo hay {hay} unidades disponibles de este producto.");
+
         if (!ModelState.IsValid)
         {
             var modelo = await ModeloAsync(c);
@@ -269,6 +276,7 @@ public class ChatsTiendaController : Controller
             NombreProducto = p.Nombre,
             PrecioProducto = p.Precio,
             EstadoProducto = p.Estado,
+            UnidadesDisponibles = await _db.Productos.AsNoTracking().Where(x => x.Id == p.Id).Select(x => x.Cantidad).FirstOrDefaultAsync(),
             FotoUrl = p.Fotos.OrderBy(f => f.Orden).ThenBy(f => f.Id).Select(f => _archivos.UrlPublica(f.Ruta)).FirstOrDefault(),
             Slug = c.Esal!.Slug,
             Mensajes = await MensajesAsync(c.Id, 0),
