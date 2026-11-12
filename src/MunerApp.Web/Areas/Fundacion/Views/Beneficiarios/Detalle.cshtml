@@ -12,10 +12,19 @@
             <h1 class="h2 mb-0">@Model.Nombre</h1>
             <partial name="_EstadoBeneficiario" model="Model.Estado" />
         </div>
-        @if (Model.PuedeGestionar)
-        {
-            <a class="btn btn-suave btn-sm" asp-action="Editar" asp-route-id="@Model.Id"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar datos</a>
-        }
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-primary btn-sm" asp-action="HojaDeVidaPdf" asp-route-id="@Model.Id"
+               title="Documento interno: queda registrado quién lo descarga"><i class="bi bi-file-earmark-arrow-down me-1" aria-hidden="true"></i>Descargar hoja de vida</a>
+            @if (Model.PuedeVerClinica)
+            {
+                <a class="btn btn-outline-primary btn-sm" asp-controller="HistoriaClinica" asp-action="Pdf" asp-route-id="@Model.Id"
+                   title="Documento interno: queda registrado quién lo descarga"><i class="bi bi-file-earmark-medical me-1" aria-hidden="true"></i>Descargar historia clínica</a>
+            }
+            @if (Model.PuedeGestionar)
+            {
+                <a class="btn btn-suave btn-sm" asp-action="Editar" asp-route-id="@Model.Id"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar datos</a>
+            }
+        </div>
     </div>
 
 

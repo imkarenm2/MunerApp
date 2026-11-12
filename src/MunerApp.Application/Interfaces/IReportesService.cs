@@ -38,6 +38,36 @@ public record DatosRendicionCausa(
     IReadOnlyList<string> Soportes,
     DateTime FechaPublicacionUtc);
 
+/// <summary>Un dato de la ficha: etiqueta y valor ya formateado.</summary>
+public record CampoFicha(string Etiqueta, string Valor);
+
+/// <summary>Grupo de datos de la ficha, por ejemplo "Reseña" o "Examen de ingreso".</summary>
+public record SeccionFicha(string Titulo, IReadOnlyList<CampoFicha> Campos);
+
+/// <summary>Tabla de la ficha, por ejemplo el historial de estados o los eventos clínicos. Los anchos son relativos.</summary>
+public record TablaFicha(
+    string Titulo,
+    IReadOnlyList<string> Columnas,
+    IReadOnlyList<float> Anchos,
+    IReadOnlyList<IReadOnlyList<string>> Filas,
+    string TextoSiVacia);
+
+/// <summary>
+/// Datos de un documento descargable de un beneficiario: la hoja de vida o la historia clínica (HU-017 y HU-019).
+/// Es información interna: el PDF lo marca como confidencial y dice quién lo descargó.
+/// </summary>
+public record DatosFichaBeneficiario(
+    string TipoDocumento,
+    string NombreEsal,
+    string NitEsal,
+    string NombreBeneficiario,
+    string Resumen,
+    byte[]? Foto,
+    IReadOnlyList<SeccionFicha> Secciones,
+    IReadOnlyList<TablaFicha> Tablas,
+    string GeneradoPor,
+    DateTime FechaGeneracionUtc);
+
 /// <summary>Reportes en PDF de la fundación.</summary>
 public interface IReportesService
 {
@@ -46,4 +76,7 @@ public interface IReportesService
 
     /// <summary>HU-046 escenario 2: rendición de cuentas de una causa, para la sección de transparencia.</summary>
     byte[] GenerarRendicionCausa(DatosRendicionCausa datos);
+
+    /// <summary>Hoja de vida o historia clínica de un beneficiario en PDF.</summary>
+    byte[] GenerarFichaBeneficiario(DatosFichaBeneficiario datos);
 }
