@@ -34,10 +34,12 @@ public class BeneficiariosController : Controller
     private readonly IAlmacenamientoArchivos _archivos;
     private readonly EstadosBeneficiario _estados;
     private readonly IModuloService _modulos;
+    private readonly FichasBeneficiario _fichas;
 
     public BeneficiariosController(MunerAppDbContext db, IEsalActual esalActual, IAlmacenamientoArchivos archivos,
-        EstadosBeneficiario estados, IModuloService modulos)
+        EstadosBeneficiario estados, IModuloService modulos, FichasBeneficiario fichas)
     {
+        _fichas = fichas;
         _db = db;
         _esalActual = esalActual;
         _archivos = archivos;
@@ -277,6 +279,18 @@ public class BeneficiariosController : Controller
         if (stream is null) return NotFound();
         Response.Headers.CacheControl = "private,max-age=300";
         return File(stream, ValidadorArchivos.ContentTypeDe(ruta));
+    }
+
+    /// <summary>
+    /// Hoja de vida en PDF. La descarga quien la puede ver en pantalla; el examen de ingreso solo va si el usuario
+    /// tiene acceso clínico. Nunca incluye datos del adoptante ni de los padrinos. Cada descarga queda registrada.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> HojaDeVidaPdf(int id)
+    {
+        var documento = await _fichas.HojaDeVidaAsync(id, Politicas.TieneAccesoClinico(User), User);
+        if (documento is null) return NotFound();
+        return File(documento.Contenido, "application/pdf", documento.NombreArchivo);
     }
 
     // ---------- Examen semiológico de ingreso (clínico) ----------

@@ -32,6 +32,8 @@ builder.Services.AddScoped<CausasPublicas>();
 builder.Services.AddScoped<AvisosCorreo>();
 builder.Services.AddScoped<EstadosBeneficiario>();
 builder.Services.AddScoped<InventarioMedicamentos>();
+builder.Services.AddScoped<InventarioTienda>();
+builder.Services.AddScoped<FichasBeneficiario>();
 
 // HU-039: revisión diaria en segundo plano (alertas de salud; HU-046 agrega el cierre de causas)
 builder.Services.AddScoped<AlertasSalud>();

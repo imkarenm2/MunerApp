@@ -312,6 +312,15 @@ public static class Textos
         _ => De(p).ToLowerInvariant()
     };
 
+    public static string De(TipoMovimientoProducto t) => t switch
+    {
+        TipoMovimientoProducto.Entrada => "Entrada",
+        TipoMovimientoProducto.Venta => "Venta",
+        TipoMovimientoProducto.Devolucion => "Devolución",
+        TipoMovimientoProducto.Ajuste => "Ajuste",
+        _ => t.ToString()
+    };
+
     public static string De(TipoMovimientoMedicamento t) => t switch
     {
         TipoMovimientoMedicamento.Registro => "Registro inicial",

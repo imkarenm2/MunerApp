@@ -33,9 +33,11 @@ public class HistoriaClinicaController : Controller
     private readonly MunerAppDbContext _db;
     private readonly IAlmacenamientoArchivos _archivos;
     private readonly IModuloService _modulos;
+    private readonly FichasBeneficiario _fichas;
 
-    public HistoriaClinicaController(MunerAppDbContext db, IAlmacenamientoArchivos archivos, IModuloService modulos)
+    public HistoriaClinicaController(MunerAppDbContext db, IAlmacenamientoArchivos archivos, IModuloService modulos, FichasBeneficiario fichas)
     {
+        _fichas = fichas;
         _db = db;
         _archivos = archivos;
         _modulos = modulos;
@@ -83,6 +85,15 @@ public class HistoriaClinicaController : Controller
             Eventos = eventos,
             PuedeRegistrar = Politicas.PuedeRegistrarClinica(User)
         });
+    }
+
+    /// <summary>Historia clínica completa en PDF (examen de ingreso y eventos). Cada descarga queda registrada.</summary>
+    [HttpGet]
+    public async Task<IActionResult> Pdf(int id)
+    {
+        var documento = await _fichas.HistoriaClinicaAsync(id, User);
+        if (documento is null) return NotFound();
+        return File(documento.Contenido, "application/pdf", documento.NombreArchivo);
     }
 
     // ---------- Escenario 1: registrar un evento ----------

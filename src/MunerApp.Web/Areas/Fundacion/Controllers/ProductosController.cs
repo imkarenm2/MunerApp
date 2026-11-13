@@ -20,6 +20,7 @@ namespace MunerApp.Web.Areas.Fundacion.Controllers;
 /// HU-023: productos de la tienda. Los administradores de la ESAL ven el listado; crear, editar, cambiar el estado
 /// y eliminar es del administrador principal, porque el catálogo es contenido público de la fundación.
 /// Requiere el módulo Tienda. El filtro global por ESAL impide ver o modificar productos de otra fundación.
+/// El inventario es opcional: si el producto tiene unidades, los pedidos pagados las descuentan (<see cref="InventarioTienda"/>).
 /// </summary>
 [Area("Fundacion")]
 [Authorize(Roles = Roles.AdministradorESAL)]
@@ -34,12 +35,14 @@ public class ProductosController : Controller
     private readonly MunerAppDbContext _db;
     private readonly IEsalActual _esalActual;
     private readonly IAlmacenamientoArchivos _archivos;
+    private readonly InventarioTienda _inventario;
 
-    public ProductosController(MunerAppDbContext db, IEsalActual esalActual, IAlmacenamientoArchivos archivos)
+    public ProductosController(MunerAppDbContext db, IEsalActual esalActual, IAlmacenamientoArchivos archivos, InventarioTienda inventario)
     {
         _db = db;
         _esalActual = esalActual;
         _archivos = archivos;
+        _inventario = inventario;
     }
 
     private string UsuarioId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -70,6 +73,7 @@ public class ProductosController : Controller
                     Precio = p.Precio,
                     Categoria = p.Categoria,
                     Estado = p.Estado,
+                    Cantidad = p.Cantidad,
                     FechaCreacion = p.FechaCreacion,
                     FotoUrl = p.Fotos.OrderBy(f => f.Orden).ThenBy(f => f.Id).Select(f => _archivos.UrlPublica(f.Ruta)).FirstOrDefault()
                 }).ToList()
@@ -99,9 +103,20 @@ public class ProductosController : Controller
             Descripcion = model.Descripcion.Trim(),
             Precio = precio!.Value,
             Categoria = LimpiarCategoria(model.Categoria),
-            Estado = model.Estado,
+            Estado = model.Cantidad == 0 && model.Estado == EstadoProducto.Disponible ? EstadoProducto.Agotado : model.Estado,
+            Cantidad = model.Cantidad,
             CreadoPorId = UsuarioId
         };
+        if (model.Cantidad is int unidades and > 0)
+            producto.Movimientos.Add(new MovimientoProducto
+            {
+                EsalId = producto.EsalId,
+                Tipo = TipoMovimientoProducto.Entrada,
+                Cantidad = unidades,
+                CantidadResultante = unidades,
+                Nota = "Inventario inicial",
+                RegistradoPorId = UsuarioId
+            });
         await AgregarFotosAsync(producto, validadas, ordenInicial: 0);
         _db.Productos.Add(producto);
         await _db.SaveChangesAsync();
@@ -127,7 +142,9 @@ public class ProductosController : Controller
             Descripcion = p.Descripcion,
             Precio = ((long)p.Precio).ToString("N0", new System.Globalization.CultureInfo("es-CO")),
             Categoria = p.Categoria,
-            Estado = p.Estado
+            Estado = p.Estado,
+            Cantidad = p.Cantidad,
+            CantidadOriginal = p.Cantidad
         }, p));
     }
 
@@ -142,18 +159,56 @@ public class ProductosController : Controller
         var precio = ValidarCampos(model);
         var fotos = (model.Fotos ?? new List<IFormFile>()).Where(f => f.Length > 0).ToList();
         var validadas = await ValidarFotosAsync(model, fotos, p.Fotos.Count, exigirUna: false);
+
+        // Si alguien registró una venta mientras se editaba, no se pisa: se muestra la cantidad nueva
+        var cambiaInventario = model.Cantidad != model.CantidadOriginal;
+        if (cambiaInventario && p.Cantidad != model.CantidadOriginal)
+            CantidadCambio(model, p.Cantidad);
         if (!ModelState.IsValid) return View(await PrepararAsync(model, p));
+
+        await using var transaccion = await _db.Database.BeginTransactionAsync();
+        if (cambiaInventario)
+        {
+            if (model.Cantidad is null)
+                p.Cantidad = null; // deja de llevar inventario
+            else if (p.Cantidad is null)
+            {
+                p.Cantidad = model.Cantidad;
+                p.Movimientos.Add(new MovimientoProducto
+                {
+                    EsalId = p.EsalId,
+                    Tipo = TipoMovimientoProducto.Entrada,
+                    Cantidad = model.Cantidad.Value,
+                    CantidadResultante = model.Cantidad.Value,
+                    Nota = "Inicio del inventario",
+                    RegistradoPorId = UsuarioId
+                });
+            }
+            else
+            {
+                var ajuste = await _inventario.AjustarAsync(p, p.Cantidad.Value, model.Cantidad.Value, "Ajuste al editar el producto", UsuarioId);
+                if (ajuste.Resultado == ResultadoInventario.Cambio)
+                {
+                    CantidadCambio(model, ajuste.Cantidad);
+                    return View(await PrepararAsync(model, p));
+                }
+            }
+        }
 
         p.Nombre = model.Nombre.Trim();
         p.Descripcion = model.Descripcion.Trim();
         p.Precio = precio!.Value;
         p.Categoria = LimpiarCategoria(model.Categoria);
-        p.Estado = model.Estado;
+        // Sin unidades no se puede pedir: queda agotado aunque se haya elegido Disponible
+        var sinUnidades = p.Cantidad == 0 && model.Estado == EstadoProducto.Disponible;
+        p.Estado = sinUnidades ? EstadoProducto.Agotado : model.Estado;
         p.FechaActualizacion = DateTime.UtcNow;
         await AgregarFotosAsync(p, validadas, ordenInicial: p.Fotos.Count == 0 ? 0 : p.Fotos.Max(f => f.Orden) + 1);
         await _db.SaveChangesAsync();
+        await transaccion.CommitAsync();
 
-        TempData["Mensaje"] = $"Guardaste los cambios de \"{p.Nombre}\".";
+        TempData["Mensaje"] = $"Guardaste los cambios de \"{p.Nombre}\"."
+            + (sinUnidades ? " Como no tiene unidades, quedó agotado." : "");
         return RedirectToAction(nameof(Index));
     }
 
@@ -189,6 +244,16 @@ public class ProductosController : Controller
         var p = await _db.Productos.FirstOrDefaultAsync(x => x.Id == id);
         if (p is null) return NotFound();
         if (!Enum.IsDefined(estado)) return BadRequest();
+        if (estado == EstadoProducto.Disponible && p.Cantidad == 0)
+        {
+            TempData["Error"] = $"\"{p.Nombre}\" no tiene unidades. Edita el producto y agrega unidades para que vuelva a estar disponible.";
+            return RedirectToAction(nameof(Index));
+        }
+        if (estado == EstadoProducto.Agotado && p.Cantidad > 0)
+        {
+            TempData["Error"] = $"\"{p.Nombre}\" todavía tiene {p.Cantidad} unidades. Para marcarlo como agotado, edítalo y deja las unidades en 0; si solo quieres que no se vea, ocúltalo.";
+            return RedirectToAction(nameof(Index));
+        }
 
         p.Estado = estado;
         p.FechaActualizacion = DateTime.UtcNow;
@@ -245,7 +310,23 @@ public class ProductosController : Controller
         }
         if (!Enum.IsDefined(model.Estado))
             ModelState.AddModelError(nameof(model.Estado), "Elige un estado válido.");
+        // Agotado significa que no hay unidades: no se puede guardar agotado con unidades
+        if (model.Estado == EstadoProducto.Agotado && model.Cantidad > 0)
+            ModelState.AddModelError(nameof(model.Cantidad), "Un producto agotado no tiene unidades. Déjalo en 0 o márcalo como disponible para agregarlas.");
         return precio;
+    }
+
+    /// <summary>La cantidad cambió en la base de datos desde que se abrió el formulario.</summary>
+    private void CantidadCambio(ProductoFormViewModel model, int? actual)
+    {
+        // Se muestra el valor actual y se toma como el nuevo punto de partida
+        ModelState.Remove(nameof(model.Cantidad));
+        ModelState.Remove(nameof(model.CantidadOriginal));
+        ModelState.AddModelError(nameof(model.Cantidad), actual is int hay
+            ? $"Mientras editabas cambió el inventario (por ejemplo, se pagó un pedido). Ahora hay {hay} unidades: revisa la cantidad y guarda de nuevo."
+            : "Mientras editabas cambió el inventario. Revisa la cantidad y guarda de nuevo.");
+        model.Cantidad = actual;
+        model.CantidadOriginal = actual;
     }
 
     /// <summary>"  ropa " → "Ropa": así "ropa" y "Ropa" son la misma categoría en el filtro del catálogo.</summary>
@@ -301,6 +382,14 @@ public class ProductosController : Controller
             : p.Fotos.OrderBy(f => f.Orden).ThenBy(f => f.Id).Select(f => new FotoProductoItem(f.Id, _archivos.UrlPublica(f.Ruta))).ToList();
         model.CategoriasExistentes = await _db.Productos.AsNoTracking()
             .Where(x => x.Categoria != null).Select(x => x.Categoria!).Distinct().OrderBy(c => c).ToListAsync();
+        model.Movimientos = p is null ? Array.Empty<MovimientoProductoItem>() : await (
+            from m in _db.MovimientosProducto.AsNoTracking()
+            where m.ProductoId == p.Id
+            join u in _db.Users on m.RegistradoPorId equals u.Id into us
+            from u in us.DefaultIfEmpty()
+            orderby m.Fecha descending, m.Id descending
+            select new MovimientoProductoItem(m.Fecha, m.Tipo, m.Cantidad, m.CantidadResultante, m.Nota, u == null ? null : u.NombreCompleto))
+            .Take(15).ToListAsync();
         return model;
     }
 }

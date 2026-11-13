@@ -55,6 +55,9 @@ public class ChatEsalDetalleViewModel
     public string NombreProducto { get; set; } = string.Empty;
     public decimal PrecioProducto { get; set; }
     public EstadoProducto EstadoProducto { get; set; }
+
+    /// <summary>Unidades del inventario; null si el producto no lleva inventario.</summary>
+    public int? UnidadesDisponibles { get; set; }
     public string? FotoUrl { get; set; }
     public string? Slug { get; set; }
     public IReadOnlyList<MensajeChatItem> Mensajes { get; set; } = Array.Empty<MensajeChatItem>();

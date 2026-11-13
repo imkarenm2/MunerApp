@@ -15,6 +15,39 @@
             <a asp-action="Index" class="btn btn-link">Cancelar</a>
         </div>
     </form>
+
+    @if (Model.Movimientos.Count > 0)
+    {
+        <section class="mu-card p-4 mt-4" aria-labelledby="titulo-inventario">
+            <h2 id="titulo-inventario" class="h5 mb-1">Movimientos del inventario</h2>
+            <p class="small text-suave mb-3">Los últimos @Model.Movimientos.Count. Se registran solos al pagar o cancelar pedidos y al cambiar las unidades.</p>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Movimiento</th>
+                            <th scope="col" class="text-end">Unidades</th>
+                            <th scope="col" class="text-end">Quedan</th>
+                            <th scope="col">Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Model.Movimientos)
+                        {
+                            <tr>
+                                <td class="text-nowrap small">@Formatos.FechaHora(m.Fecha)</td>
+                                <td>@Textos.De(m.Tipo)</td>
+                                <td class="text-end fw-semibold @(m.Cantidad < 0 ? "text-danger" : "text-success")">@(m.Cantidad > 0 ? "+" : "")@m.Cantidad</td>
+                                <td class="text-end">@m.CantidadResultante</td>
+                                <td class="small text-suave">@m.Nota@(m.RegistradoPor is null ? "" : $" · {m.RegistradoPor}")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
 </div>
 
 @* Formularios para quitar cada foto: van fuera del formulario principal para que Enter no los dispare *@

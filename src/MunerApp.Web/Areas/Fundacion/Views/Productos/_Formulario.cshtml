@@ -46,12 +46,27 @@
                 (EstadoProducto.Oculto, "No aparece en la tienda")
             })
             {
-                <input type="radio" class="btn-check" asp-for="Estado" value="@estado" id="estado-@estado" />
+                <input type="radio" class="btn-check" asp-for="Estado" value="@estado" id="estado-@estado" data-estado-producto />
                 <label class="chip" for="estado-@estado" title="@ayuda">@Textos.De(estado)</label>
             }
         </div>
         <div class="form-text">Disponible: se ve y se puede pedir. Agotado: se ve, pero no se puede pedir. Oculto: no aparece en la tienda.</div>
         <span asp-validation-for="Estado"></span>
+    </div>
+    <div class="col-12 col-sm-6">
+        <label asp-for="Cantidad" class="form-label"></label>
+        <div class="input-icono">
+            <i class="bi bi-box-seam" aria-hidden="true"></i>
+            <input asp-for="Cantidad" type="number" min="0" max="100000" step="1" class="form-control" inputmode="numeric" placeholder="Ej.: 70" data-cantidad-producto />
+        </div>
+        @if (editando)
+        {
+            <input asp-for="CantidadOriginal" type="hidden" />
+        }
+        <span asp-validation-for="Cantidad"></span>
+    </div>
+    <div class="col-12 col-sm-6 d-flex align-items-end">
+        <div class="form-text mb-sm-2">Si escribes las unidades, se descuentan cada vez que marques un pedido como pagado y el producto queda agotado al llegar a 0. Déjalo vacío si no quieres llevar inventario.</div>
     </div>
     <div class="col-12">
         <label class="form-label" for="Fotos">Fotos (@(editando ? $"hasta {maximo} en total" : $"al menos 1, máximo {maximo}"))</label>

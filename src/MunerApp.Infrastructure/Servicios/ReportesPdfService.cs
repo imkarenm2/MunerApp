@@ -10,6 +10,7 @@ namespace MunerApp.Infrastructure.Servicios;
 /// Reportes en PDF de la fundación con QuestPDF (misma licencia y estilo del comprobante de donación).
 /// HU-040: reporte de medicamentos, en horizontal porque tiene siete columnas.
 /// HU-046: rendición de cuentas de una causa.
+/// HU-017 y HU-019: hoja de vida e historia clínica de un beneficiario.
 /// </summary>
 public class ReportesPdfService : IReportesService
 {
@@ -230,6 +231,154 @@ public class ReportesPdfService : IReportesService
                     col.Item().PaddingTop(5).Row(fila =>
                     {
                         fila.RelativeItem().Text($"Publicado en MunerApp · {publicado.ToString("d 'de' MMMM 'de' yyyy, h:mm tt", Co)}").FontSize(7.5f).FontColor(TextoSuave);
+                        fila.ConstantItem(120).AlignRight().Text(t =>
+                        {
+                            t.Span("Página ").FontSize(7.5f).FontColor(TextoSuave);
+                            t.CurrentPageNumber().FontSize(7.5f).FontColor(TextoSuave);
+                            t.Span(" de ").FontSize(7.5f).FontColor(TextoSuave);
+                            t.TotalPages().FontSize(7.5f).FontColor(TextoSuave);
+                        });
+                    });
+                });
+            });
+        }).GeneratePdf();
+    }
+
+    /// <summary>
+    /// HU-017 y HU-019: hoja de vida o historia clínica de un beneficiario en PDF (vertical). Es información interna:
+    /// cada página dice que es confidencial y quién la descargó.
+    /// </summary>
+    public byte[] GenerarFichaBeneficiario(DatosFichaBeneficiario d)
+    {
+        // Si la foto no se puede leer (archivo dañado), el documento sale igual, sin foto
+        try { return Ficha(d); }
+        catch (Exception) when (d.Foto is not null) { return Ficha(d with { Foto = null }); }
+    }
+
+    private static byte[] Ficha(DatosFichaBeneficiario d)
+    {
+        var generado = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(d.FechaGeneracionUtc, DateTimeKind.Utc), ZonaColombia);
+
+        return Document.Create(documento =>
+        {
+            documento.Page(pagina =>
+            {
+                pagina.Size(PageSizes.Letter);
+                pagina.Margin(40);
+                pagina.PageColor(Colors.White);
+                pagina.DefaultTextStyle(x => x.FontSize(9.5f).FontColor("#1F2A2E"));
+
+                pagina.Header().Column(col =>
+                {
+                    col.Item().Row(fila =>
+                    {
+                        fila.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text("MunerApp").FontSize(20).Bold().FontColor(Principal);
+                            c.Item().Text($"{d.NombreEsal} · NIT {d.NitEsal}").FontSize(9).FontColor(TextoSuave);
+                        });
+                        fila.ConstantItem(220).AlignRight().Column(c =>
+                        {
+                            c.Item().AlignRight().Text(d.TipoDocumento.ToUpper(Co)).FontSize(10).Bold().FontColor(Acento);
+                            c.Item().AlignRight().Text(d.NombreBeneficiario).FontSize(13).Bold();
+                        });
+                    });
+                    col.Item().PaddingTop(10).LineHorizontal(2).LineColor(Principal);
+                });
+
+                pagina.Content().PaddingVertical(14).Column(col =>
+                {
+                    col.Spacing(14);
+
+                    // Encabezado del beneficiario: foto interna (si hay) y resumen
+                    col.Item().Row(fila =>
+                    {
+                        fila.Spacing(14);
+                        if (d.Foto is { Length: > 0 } foto)
+                            fila.ConstantItem(110).Height(110).Image(foto).FitArea();
+                        fila.RelativeItem().AlignMiddle().Column(c =>
+                        {
+                            c.Item().Text(d.NombreBeneficiario).FontSize(17).Bold();
+                            c.Item().Text(d.Resumen).FontSize(9.5f).FontColor(TextoSuave);
+                        });
+                    });
+
+                    foreach (var seccion in d.Secciones.Where(x => x.Campos.Count > 0))
+                    {
+                        col.Item().Column(c =>
+                        {
+                            c.Item().PaddingBottom(4).Text(seccion.Titulo).FontSize(12).Bold().FontColor(Principal);
+                            c.Item().Table(tabla =>
+                            {
+                                tabla.ColumnsDefinition(cols =>
+                                {
+                                    cols.RelativeColumn(1.1f);
+                                    cols.RelativeColumn(2f);
+                                    cols.RelativeColumn(1.1f);
+                                    cols.RelativeColumn(2f);
+                                });
+
+                                IContainer Celda(IContainer x) => x.BorderBottom(1).BorderColor(Borde).PaddingVertical(4).PaddingHorizontal(4);
+                                var enFila = 0; // cuántos pares van en la fila actual (0 o 1)
+                                foreach (var campo in seccion.Campos)
+                                {
+                                    // Los textos largos (observaciones, señales) ocupan toda la fila
+                                    var largo = campo.Valor.Length > 55;
+                                    if (largo && enFila == 1)
+                                    {
+                                        tabla.Cell().ColumnSpan(2).Element(Celda).Text("");
+                                        enFila = 0;
+                                    }
+                                    tabla.Cell().Element(Celda).Text(campo.Etiqueta).FontSize(8.5f).FontColor(TextoSuave);
+                                    if (largo)
+                                        tabla.Cell().ColumnSpan(3).Element(Celda).Text(campo.Valor);
+                                    else
+                                    {
+                                        tabla.Cell().Element(Celda).Text(campo.Valor);
+                                        enFila = 1 - enFila;
+                                    }
+                                }
+                                if (enFila == 1) tabla.Cell().ColumnSpan(2).Element(Celda).Text("");
+                            });
+                        });
+                    }
+
+                    foreach (var t in d.Tablas)
+                    {
+                        col.Item().Column(c =>
+                        {
+                            c.Item().PaddingBottom(4).Text(t.Titulo).FontSize(12).Bold().FontColor(Principal);
+                            if (t.Filas.Count == 0)
+                            {
+                                c.Item().Border(1).BorderColor(Borde).Padding(10).Text(t.TextoSiVacia).FontColor(TextoSuave);
+                                return;
+                            }
+                            c.Item().Table(tabla =>
+                            {
+                                tabla.ColumnsDefinition(cols =>
+                                {
+                                    foreach (var ancho in t.Anchos) cols.RelativeColumn(ancho);
+                                });
+                                tabla.Header(h =>
+                                {
+                                    foreach (var titulo in t.Columnas)
+                                        h.Cell().Background(Principal).PaddingVertical(5).PaddingHorizontal(4).Text(titulo).FontSize(8.5f).Bold().FontColor(Colors.White);
+                                });
+                                foreach (var filaDatos in t.Filas)
+                                    foreach (var valor in filaDatos)
+                                        tabla.Cell().BorderBottom(1).BorderColor(Borde).PaddingVertical(4).PaddingHorizontal(4).Text(valor).FontSize(8.5f);
+                            });
+                        });
+                    }
+                });
+
+                pagina.Footer().Column(col =>
+                {
+                    col.Item().LineHorizontal(1).LineColor(Borde);
+                    col.Item().PaddingTop(5).Text("Documento interno y confidencial de la fundación. No lo compartas fuera de ella.").FontSize(7.5f).Bold().FontColor(Acento);
+                    col.Item().Row(fila =>
+                    {
+                        fila.RelativeItem().Text($"Descargado de MunerApp por {d.GeneradoPor} · {generado.ToString("d 'de' MMMM 'de' yyyy, h:mm tt", Co)}").FontSize(7.5f).FontColor(TextoSuave);
                         fila.ConstantItem(120).AlignRight().Text(t =>
                         {
                             t.Span("Página ").FontSize(7.5f).FontColor(TextoSuave);

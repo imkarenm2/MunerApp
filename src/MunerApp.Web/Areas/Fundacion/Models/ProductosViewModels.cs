@@ -30,6 +30,14 @@ public class ProductoFormViewModel
     [Display(Name = "Estado")]
     public EstadoProducto Estado { get; set; } = EstadoProducto.Disponible;
 
+    /// <summary>Unidades disponibles. Vacío: la fundación no lleva inventario de este producto.</summary>
+    [Range(0, 100_000, ErrorMessage = "Escribe un número de unidades entre {1} y {2}.")]
+    [Display(Name = "Unidades disponibles (opcional)")]
+    public int? Cantidad { get; set; }
+
+    /// <summary>Al editar: las unidades que había cuando se abrió el formulario, para no pisar una venta hecha mientras tanto.</summary>
+    public int? CantidadOriginal { get; set; }
+
     [Display(Name = "Fotos")]
     public List<IFormFile>? Fotos { get; set; }
 
@@ -38,9 +46,14 @@ public class ProductoFormViewModel
 
     /// <summary>Categorías que ya usa la fundación, para sugerirlas.</summary>
     public IReadOnlyList<string> CategoriasExistentes { get; set; } = Array.Empty<string>();
+
+    /// <summary>Al editar: últimos movimientos del inventario.</summary>
+    public IReadOnlyList<MovimientoProductoItem> Movimientos { get; set; } = Array.Empty<MovimientoProductoItem>();
 }
 
 public record FotoProductoItem(int Id, string Url);
+
+public record MovimientoProductoItem(DateTime Fecha, TipoMovimientoProducto Tipo, int Cantidad, int CantidadResultante, string? Nota, string? RegistradoPor);
 
 public class ProductoItem
 {
@@ -49,6 +62,9 @@ public class ProductoItem
     public decimal Precio { get; set; }
     public string? Categoria { get; set; }
     public EstadoProducto Estado { get; set; }
+
+    /// <summary>Unidades disponibles; null si no lleva inventario.</summary>
+    public int? Cantidad { get; set; }
     public string? FotoUrl { get; set; }
     public DateTime FechaCreacion { get; set; }
 }

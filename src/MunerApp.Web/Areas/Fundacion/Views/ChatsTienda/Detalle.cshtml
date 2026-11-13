@@ -87,7 +87,11 @@
                         <div class="row g-2">
                             <div class="col-5">
                                 <label asp-for="Pedido.Cantidad" class="form-label"></label>
-                                <input asp-for="Pedido.Cantidad" type="number" min="1" max="1000" class="form-control" />
+                                <input asp-for="Pedido.Cantidad" type="number" min="1" max="@(Model.UnidadesDisponibles is int tope && tope > 0 ? Math.Min(tope, 1000) : 1000)" class="form-control" />
+                                @if (Model.UnidadesDisponibles is int hay)
+                                {
+                                    <div class="form-text">@(hay == 0 ? "Sin unidades en inventario." : hay == 1 ? "Queda 1 unidad." : $"Quedan {hay} unidades.")</div>
+                                }
                                 <span asp-validation-for="Pedido.Cantidad"></span>
                             </div>
                             <div class="col-7">
