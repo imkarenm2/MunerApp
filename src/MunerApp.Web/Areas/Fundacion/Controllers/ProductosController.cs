@@ -199,18 +199,16 @@ public class ProductosController : Controller
         p.Descripcion = model.Descripcion.Trim();
         p.Precio = precio!.Value;
         p.Categoria = LimpiarCategoria(model.Categoria);
-        // Sin unidades no se puede pedir: queda agotado aunque se haya elegido Disponible.
-        // Si estaba agotado por falta de unidades y se agregaron, vuelve a estar disponible.
+        // Sin unidades no se puede pedir: queda agotado aunque se haya elegido Disponible
         var sinUnidades = p.Cantidad == 0 && model.Estado == EstadoProducto.Disponible;
-        var reabastecido = model.Estado == EstadoProducto.Agotado && model.CantidadOriginal == 0 && p.Cantidad > 0;
-        p.Estado = sinUnidades ? EstadoProducto.Agotado : reabastecido ? EstadoProducto.Disponible : model.Estado;
+        p.Estado = sinUnidades ? EstadoProducto.Agotado : model.Estado;
         p.FechaActualizacion = DateTime.UtcNow;
         await AgregarFotosAsync(p, validadas, ordenInicial: p.Fotos.Count == 0 ? 0 : p.Fotos.Max(f => f.Orden) + 1);
         await _db.SaveChangesAsync();
         await transaccion.CommitAsync();
 
         TempData["Mensaje"] = $"Guardaste los cambios de \"{p.Nombre}\"."
-            + (sinUnidades ? " Como no tiene unidades, quedó agotado." : reabastecido ? " Como ya tiene unidades, volvió a estar disponible." : "");
+            + (sinUnidades ? " Como no tiene unidades, quedó agotado." : "");
         return RedirectToAction(nameof(Index));
     }
 
@@ -249,6 +247,11 @@ public class ProductosController : Controller
         if (estado == EstadoProducto.Disponible && p.Cantidad == 0)
         {
             TempData["Error"] = $"\"{p.Nombre}\" no tiene unidades. Edita el producto y agrega unidades para que vuelva a estar disponible.";
+            return RedirectToAction(nameof(Index));
+        }
+        if (estado == EstadoProducto.Agotado && p.Cantidad > 0)
+        {
+            TempData["Error"] = $"\"{p.Nombre}\" todavía tiene {p.Cantidad} unidades. Para marcarlo como agotado, edítalo y deja las unidades en 0; si solo quieres que no se vea, ocúltalo.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -307,6 +310,9 @@ public class ProductosController : Controller
         }
         if (!Enum.IsDefined(model.Estado))
             ModelState.AddModelError(nameof(model.Estado), "Elige un estado válido.");
+        // Agotado significa que no hay unidades: no se puede guardar agotado con unidades
+        if (model.Estado == EstadoProducto.Agotado && model.Cantidad > 0)
+            ModelState.AddModelError(nameof(model.Cantidad), "Un producto agotado no tiene unidades. Déjalo en 0 o márcalo como disponible para agregarlas.");
         return precio;
     }
 

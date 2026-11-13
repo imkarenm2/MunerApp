@@ -141,6 +141,31 @@ document.addEventListener('input', function (e) {
     input.value = digitos.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 });
 
+// Producto de la tienda: agotado significa 0 unidades, así que con "Agotado" no se escriben unidades.
+// Si el producto lleva inventario, el campo pasa a 0; al volver a "Disponible" se recupera lo que había escrito.
+function ajustarCantidadProducto(form) {
+    if (!form) return;
+    const cantidad = form.querySelector('[data-cantidad-producto]');
+    const agotado = form.querySelector('[data-estado-producto][value="Agotado"]');
+    if (!cantidad || !agotado) return;
+    if (agotado.checked) {
+        if (cantidad.value !== '' && cantidad.value !== '0') cantidad.dataset.anterior = cantidad.value;
+        if (cantidad.value !== '') cantidad.value = '0';
+        cantidad.readOnly = true;
+    } else {
+        cantidad.readOnly = false;
+        if (cantidad.dataset.anterior) {
+            cantidad.value = cantidad.dataset.anterior;
+            delete cantidad.dataset.anterior;
+        }
+    }
+}
+document.addEventListener('change', function (e) {
+    const radio = e.target;
+    if (radio instanceof HTMLInputElement && radio.hasAttribute('data-estado-producto')) ajustarCantidadProducto(radio.form);
+});
+document.querySelectorAll('[data-cantidad-producto]').forEach(function (c) { ajustarCantidadProducto(c.form); });
+
 // Postulación: mostrar los datos académicos solo para practicantes
 document.addEventListener('change', function (e) {
     const radio = e.target;

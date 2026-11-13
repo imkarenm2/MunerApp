@@ -46,7 +46,7 @@
                 (EstadoProducto.Oculto, "No aparece en la tienda")
             })
             {
-                <input type="radio" class="btn-check" asp-for="Estado" value="@estado" id="estado-@estado" />
+                <input type="radio" class="btn-check" asp-for="Estado" value="@estado" id="estado-@estado" data-estado-producto />
                 <label class="chip" for="estado-@estado" title="@ayuda">@Textos.De(estado)</label>
             }
         </div>
@@ -57,7 +57,7 @@
         <label asp-for="Cantidad" class="form-label"></label>
         <div class="input-icono">
             <i class="bi bi-box-seam" aria-hidden="true"></i>
-            <input asp-for="Cantidad" type="number" min="0" max="100000" step="1" class="form-control" inputmode="numeric" placeholder="Ej.: 70" />
+            <input asp-for="Cantidad" type="number" min="0" max="100000" step="1" class="form-control" inputmode="numeric" placeholder="Ej.: 70" data-cantidad-producto />
         </div>
         @if (editando)
         {
